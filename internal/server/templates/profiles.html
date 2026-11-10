@@ -1,77 +1,77 @@
 {{template "head" .}}
 {{template "nav" .}}
 <main>
-  <div class="pghead"><div class="tt"><h1>SMTP göndərmə profilləri</h1><p class="sub">Emaillərin göndərildiyi poçt serveri.</p></div></div>
-  {{if eq .Test "ok"}}<div class="note ok">Test emaili göndərildi.</div>{{end}}
-  {{if eq .Test "err"}}<div class="err">{{if .Flash}}{{.Flash}}{{else}}Test emaili göndərilə bilmədi — host/port/parolu yoxlayın.{{end}}</div>{{end}}
-  {{if eq .Test "bad"}}<div class="err">Düzgün email ünvanı daxil edin.</div>{{end}}
-  {{if eq .Test "inuse"}}<div class="err">Profil silinmədi — onu bir və ya bir neçə kampaniya istifadə edir. Əvvəlcə həmin kampaniyaları silin.</div>{{end}}
+  <div class="pghead"><div class="tt"><h1>{{t "prof.title"}}</h1><p class="sub">{{t "prof.subtitle"}}</p></div></div>
+  {{if eq .Test "ok"}}<div class="note ok">{{t "prof.test_ok"}}</div>{{end}}
+  {{if eq .Test "err"}}<div class="err">{{if .Flash}}{{.Flash}}{{else}}{{t "prof.test_err"}}{{end}}</div>{{end}}
+  {{if eq .Test "bad"}}<div class="err">{{t "prof.test_bad"}}</div>{{end}}
+  {{if eq .Test "inuse"}}<div class="err">{{t "prof.test_inuse"}}</div>{{end}}
 
   <div class="card">
-    <h2>Yeni profil</h2>
-    <p class="muted">Parol AES-256-GCM ilə şifrələnir. Xüsusi başlıqlar: hər sətir <code>Açar: Dəyər</code>.</p>
+    <h2>{{t "prof.new"}}</h2>
+    <p class="muted">{{t "prof.new_hint"}}</p>
     <form method="post" action="/profiles">
-      <label>Ad</label><input name="name" required>
+      <label>{{t "common.name"}}</label><input name="name" required>
       <div style="display:flex;gap:12px">
-        <div style="flex:3"><label>SMTP host</label><input name="smtp_host" required placeholder="smtp.example.com"></div>
-        <div style="flex:1"><label>Port</label><input name="smtp_port" type="number" min="1" max="65535" value="587"></div>
+        <div style="flex:3"><label>{{t "prof.smtp_host"}}</label><input name="smtp_host" required placeholder="smtp.example.com"></div>
+        <div style="flex:1"><label>{{t "prof.port"}}</label><input name="smtp_port" type="number" min="1" max="65535" value="587"></div>
       </div>
-      <p class="hint">STARTTLS dəstəklənir (adətən port <b>587</b> və ya 25). Port <b>465</b> (implicit TLS) dəstəklənmir.</p>
-      <label>Göndərən ünvan (From)</label><input name="from_address" required placeholder="IT Dəstək &lt;it@example.com&gt;">
-      <label>SMTP istifadəçi (opsional)</label><input name="smtp_username">
-      <label>SMTP parol (opsional)</label><input type="password" name="smtp_password">
-      <label>Xüsusi başlıqlar (opsional)</label>
+      <p class="hint">{{t "prof.starttls_hint"}}</p>
+      <label>{{t "prof.from_address"}}</label><input name="from_address" required placeholder="{{t "prof.from_placeholder"}}">
+      <label>{{t "prof.smtp_user"}}</label><input name="smtp_username">
+      <label>{{t "prof.smtp_password"}}</label><input type="password" name="smtp_password">
+      <label>{{t "prof.headers_optional"}}</label>
       <textarea name="headers" rows="2" placeholder="X-Mailer: Outlook&#10;Reply-To: support@example.com"></textarea>
-      <button type="submit">Yarat</button>
+      <button type="submit">{{t "common.create"}}</button>
     </form>
   </div>
 
   <div class="card">
-    <h2>Siyahı</h2>
+    <h2>{{t "common.list"}}</h2>
     <table>
-      <thead><tr><th>Ad</th><th>Host</th><th>Port</th><th>From</th><th>Auth</th><th>Test</th><th>Əməliyyat</th></tr></thead>
+      <thead><tr><th>{{t "common.name"}}</th><th>{{t "prof.host"}}</th><th>{{t "prof.port"}}</th><th>{{t "prof.from"}}</th><th>{{t "prof.auth"}}</th><th>{{t "prof.test"}}</th><th>{{t "prof.actions"}}</th></tr></thead>
       <tbody>
         {{range .Profiles}}
         <tr>
           <td>{{.Name}}</td><td>{{.SMTPHost}}</td><td>{{.SMTPPort}}</td><td>{{.FromAddress}}</td>
-          <td>{{if .HasPassword}}<span class="pill ok">Parol var</span>{{else if .SMTPUser}}<span class="pill warn">Parolsuz</span>{{else}}<span class="pill neutral">Auth yoxdur</span>{{end}}</td>
+          <td>{{if .HasPassword}}<span class="pill ok">{{t "prof.pill_has_pw"}}</span>{{else if .SMTPUser}}<span class="pill warn">{{t "prof.pill_no_pw"}}</span>{{else}}<span class="pill neutral">{{t "prof.pill_no_auth"}}</span>{{end}}</td>
           <td>
             <form method="post" action="/profiles/{{.ID}}/test" style="display:flex;gap:6px;margin:0">
-              <input name="to" type="email" placeholder="nümunə@şirkət.az" required aria-label="Test email ünvanı" style="padding:6px 8px">
-              <button type="submit" class="secondary" style="margin:0;padding:8px 14px">Göndər</button>
+              <input name="to" type="email" placeholder="{{t "prof.test_to_ph"}}" required aria-label="{{t "prof.test_to_aria"}}" style="padding:6px 8px">
+              <button type="submit" class="secondary" style="margin:0;padding:8px 14px">{{t "prof.send"}}</button>
             </form>
           </td>
           <td>
             <details class="edit">
-              <summary>Redaktə</summary>
+              <summary>{{t "common.edit"}}</summary>
               <div class="box">
               <form method="post" action="/profiles/{{.ID}}/edit">
-                <label>Ad</label><input name="name" value="{{.Name}}" required>
+                <label>{{t "common.name"}}</label><input name="name" value="{{.Name}}" required>
                 <div style="display:flex;gap:12px">
-                  <div style="flex:3"><label>SMTP host</label><input name="smtp_host" value="{{.SMTPHost}}" required></div>
-                  <div style="flex:1"><label>Port</label><input name="smtp_port" type="number" min="1" max="65535" value="{{.SMTPPort}}"></div>
+                  <div style="flex:3"><label>{{t "prof.smtp_host"}}</label><input name="smtp_host" value="{{.SMTPHost}}" required></div>
+                  <div style="flex:1"><label>{{t "prof.port"}}</label><input name="smtp_port" type="number" min="1" max="65535" value="{{.SMTPPort}}"></div>
                 </div>
-                <p class="hint">STARTTLS dəstəklənir (adətən port <b>587</b> və ya 25). Port <b>465</b> (implicit TLS) dəstəklənmir.</p>
-                <label>Göndərən ünvan (From)</label><input name="from_address" value="{{.FromAddress}}" required>
-                <label>SMTP istifadəçi (opsional)</label><input name="smtp_username" value="{{.SMTPUser}}">
-                <label>SMTP parol (boş = dəyişmə)</label><input type="password" name="smtp_password" placeholder="••••••••">
+                <p class="hint">{{t "prof.starttls_hint"}}</p>
+                <label>{{t "prof.from_address"}}</label><input name="from_address" value="{{.FromAddress}}" required>
+                <label>{{t "prof.smtp_user"}}</label><input name="smtp_username" value="{{.SMTPUser}}">
+                <label>{{t "prof.smtp_password_edit"}}</label><input type="password" name="smtp_password" placeholder="••••••••">
                 <label style="display:flex;align-items:center;gap:6px;font-weight:normal">
-                  <input type="checkbox" name="clear_password" value="1" style="width:auto;margin:0"> Saxlanmış parolu təmizlə
+                  <input type="checkbox" name="clear_password" value="1" style="width:auto;margin:0"> {{t "prof.clear_password"}}
                 </label>
-                <label>Xüsusi başlıqlar (hər sətir <code>Açar: Dəyər</code>)</label>
+                <label>{{t "prof.headers_label"}}</label>
                 <textarea name="headers" rows="2">{{range $k,$v := .Headers}}{{$k}}: {{$v}}
 {{end}}</textarea>
-                <button type="submit">Yadda saxla</button>
+                <button type="submit">{{t "common.save"}}</button>
               </form>
               </div>
             </details>
             <form method="post" action="/profiles/{{.ID}}/delete" style="margin:8px 0 0"
-                  data-confirm="'{{.Name}}' profili silinsin?">
-              <button type="submit" class="danger" style="padding:6px 12px">Sil</button>
+                  data-confirm="{{tf "prof.delete_confirm" .Name}}">
+              <button type="submit" class="danger" style="padding:6px 12px">{{t "common.delete"}}</button>
             </form>
           </td>
         </tr>
-        {{else}}<tr><td colspan="7" class="muted">Hələ profil yoxdur.</td></tr>{{end}}
+        {{else}}<tr><td colspan="7" class="muted">{{t "prof.empty"}}</td></tr>{{end}}
       </tbody>
     </table>
   </div>
