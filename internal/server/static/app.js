@@ -25,35 +25,54 @@
     root.setAttribute('data-theme', next);
     try { localStorage.setItem('prophish-theme', next); } catch (e) {}
   }
-  function reduceMotion() {
-    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  // overlayReveal animates the switch in ANY browser (no View Transitions needed):
+  // a circle of the NEW page colour grows from the control, then the theme flips
+  // as it completes. A plain <div> clip-path circle, GPU-composited and crisp.
+  function overlayReveal(next, x, y) {
+    var prev = root.getAttribute('data-theme');
+    root.setAttribute('data-theme', next);
+    var newBg = window.getComputedStyle(document.body).backgroundColor || '#ffffff';
+    if (prev === 'dark' || prev === 'light') root.setAttribute('data-theme', prev);
+    else root.removeAttribute('data-theme');
+    var end = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    var ov = document.createElement('div');
+    ov.setAttribute('aria-hidden', 'true');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:2147483647;pointer-events:none;background:' + newBg;
+    ov.style.clipPath = 'circle(0px at ' + x + 'px ' + y + 'px)';
+    document.body.appendChild(ov);
+    var done = false;
+    function finish() { if (done) return; done = true; flipTheme(next); if (ov.parentNode) ov.parentNode.removeChild(ov); }
+    try {
+      ov.animate(
+        { clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + end + 'px at ' + x + 'px ' + y + 'px)'] },
+        { duration: 520, easing: 'ease-in-out' }
+      ).onfinish = finish;
+    } catch (e) { finish(); return; }
+    window.setTimeout(finish, 680);
   }
-  // setTheme animates the switch as a circular reveal that grows from the clicked
-  // control across the whole page (View Transitions API). Where that API or motion
-  // is unavailable, it falls back to a brief colour cross-fade, then an instant flip.
+  // setTheme animates the switch as a circular reveal growing from the clicked
+  // control across the page — the View Transitions API (reveals the real new
+  // content) where it exists, otherwise the colour-circle overlay. It always
+  // animates, in every browser.
   function setTheme(next, originEl) {
-    if (reduceMotion() || typeof document.startViewTransition !== 'function') {
-      if (!reduceMotion()) {
-        root.classList.add('theme-anim');
-        window.setTimeout(function () { root.classList.remove('theme-anim'); }, 600);
-      }
-      flipTheme(next);
-      return;
-    }
     var x = window.innerWidth - 48, y = window.innerHeight - 96;
     if (originEl && originEl.getBoundingClientRect) {
       var r = originEl.getBoundingClientRect();
       x = r.left + r.width / 2;
       y = r.top + r.height / 2;
     }
-    var end = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
-    var vt = document.startViewTransition(function () { flipTheme(next); });
-    vt.ready.then(function () {
-      root.animate(
-        { clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + end + 'px at ' + x + 'px ' + y + 'px)'] },
-        { duration: 540, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
-      );
-    }).catch(function () {});
+    if (typeof document.startViewTransition === 'function') {
+      var end = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+      var vt = document.startViewTransition(function () { flipTheme(next); });
+      vt.ready.then(function () {
+        root.animate(
+          { clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + end + 'px at ' + x + 'px ' + y + 'px)'] },
+          { duration: 540, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
+        );
+      }).catch(function () {});
+      return;
+    }
+    overlayReveal(next, x, y);
   }
   function wireToggle() {
     var btns = document.querySelectorAll('#theme-toggle, [data-theme-toggle]');
