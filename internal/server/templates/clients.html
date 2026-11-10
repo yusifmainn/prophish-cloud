@@ -1,28 +1,28 @@
 {{template "head" .}}
 {{template "nav" .}}
 <main>
-  <div class="pghead"><div class="tt"><h1>Müştərilər</h1><p class="sub">Test etdiyiniz təşkilatlar, icazələr və hədəf qrupları.</p></div></div>
+  <div class="pghead"><div class="tt"><h1>{{t "nav.clients"}}</h1><p class="sub">{{t "cl.subtitle"}}</p></div></div>
   <div class="card">
-    <h2>Yeni müştəri</h2>
+    <h2>{{t "cl.new_client"}}</h2>
     <form method="post" action="/clients">
-      <label>Ad</label>
+      <label>{{t "common.name"}}</label>
       <input type="text" name="name" required>
-      <label>Əlaqə emaili</label>
+      <label>{{t "common.contact_email"}}</label>
       <input type="email" name="contact_email">
-      <label>Qeyd</label>
+      <label>{{t "common.note"}}</label>
       <textarea name="notes" rows="2"></textarea>
-      <button type="submit">Əlavə et</button>
+      <button type="submit">{{t "common.add"}}</button>
     </form>
   </div>
   <div class="card">
-    <h2>Siyahı</h2>
+    <h2>{{t "common.list"}}</h2>
     <table>
-      <thead><tr><th>Ad</th><th>Əlaqə</th><th>Yaradılıb</th></tr></thead>
+      <thead><tr><th>{{t "common.name"}}</th><th>{{t "common.contact"}}</th><th>{{t "common.created"}}</th></tr></thead>
       <tbody>
         {{range .Clients}}
         <tr><td><a href="/clients/{{.ID}}">{{.Name}}</a></td><td>{{.ContactEmail}}</td><td>{{.CreatedAt.Format "2006-01-02"}}</td></tr>
         {{else}}
-        <tr><td colspan="3" class="muted">Hələ müştəri yoxdur.</td></tr>
+        <tr><td colspan="3" class="muted">{{t "cl.empty"}}</td></tr>
         {{end}}
       </tbody>
     </table>

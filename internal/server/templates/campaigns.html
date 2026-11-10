@@ -3,84 +3,84 @@
 {{$sel := .Sel}}
 <main>
   <div class="pghead">
-    <div class="tt"><h1>Kampaniyalar</h1><p class="sub">Simulyasiya kampaniyalarını qurun, işə salın və izləyin.</p></div>
+    <div class="tt"><h1>{{t "nav.campaigns"}}</h1><p class="sub">{{t "camp.subtitle"}}</p></div>
   </div>
 
   {{if .Error}}<div class="err">{{.Error}}</div>{{end}}
 
   <div class="card">
-    <h2>{{if .EditID}}Kampaniyanı redaktə et (qaralama){{else}}Yeni kampaniya{{end}}</h2>
+    <h2>{{if .EditID}}{{t "camp.edit_title"}}{{else}}{{t "camp.new_title"}}{{end}}</h2>
     {{if or (not .Clients) (not .Templates) (not .Pages) (not .Profiles)}}
-    <div class="note">Kampaniya qurmaq üçün əvvəlcə lazımdır:{{if not .Clients}} bir <a href="/clients">müştəri + icazə + qrup</a>;{{end}}{{if not .Templates}} bir <a href="/templates">email şablonu</a>;{{end}}{{if not .Pages}} bir <a href="/pages">açılış səhifəsi</a>;{{end}}{{if not .Profiles}} bir <a href="/profiles">SMTP profili</a>.{{end}}</div>
+    <div class="note">{{t "camp.need_intro"}}{{if not .Clients}} {{t "camp.need_clients"}};{{end}}{{if not .Templates}} {{t "camp.need_template"}};{{end}}{{if not .Pages}} {{t "camp.need_page"}};{{end}}{{if not .Profiles}} {{t "camp.need_profile"}}.{{end}}</div>
     {{end}}
     <form method="post" action="{{if .EditID}}/campaigns/{{.EditID}}/edit{{else}}/campaigns{{end}}" data-campaign-form>
-      <div class="sectlbl">Əsas</div>
-      <label for="c-name">Kampaniya adı</label>
-      <input id="c-name" name="name" value="{{if $sel}}{{$sel.Name}}{{end}}" required placeholder="məs. Q1 maliyyə təlimi">
+      <div class="sectlbl">{{t "camp.sect_basics"}}</div>
+      <label for="c-name">{{t "camp.name_label"}}</label>
+      <input id="c-name" name="name" value="{{if $sel}}{{$sel.Name}}{{end}}" required placeholder="{{t "camp.name_ph"}}">
       <div class="formgrid">
         <div>
-          <label for="c-client">Müştəri</label>
+          <label for="c-client">{{t "common.client"}}</label>
           <select id="c-client" name="client_id" required>
-            <option value="">— seçin —</option>
+            <option value="">{{t "camp.select"}}</option>
             {{range .Clients}}<option value="{{.ID}}" {{if $sel}}{{if eq $sel.ClientID .ID}}selected{{end}}{{end}}>{{.Name}}</option>{{end}}
           </select>
         </div>
         <div>
-          <label for="c-auth">İcazə (RoE)</label>
+          <label for="c-auth">{{t "camp.auth_label"}}</label>
           <select id="c-auth" name="authorization_id" required>
-            <option value="">— seçin —</option>
-            {{range .Authorizations}}<option value="{{.ID}}" data-client="{{.ClientID}}" {{if $sel}}{{if eq $sel.AuthID .ID}}selected{{end}}{{end}}>{{.ClientName}} · {{.Scope}} (bitmə: {{.ValidTo.Format "2006-01-02"}})</option>{{end}}
+            <option value="">{{t "camp.select"}}</option>
+            {{range .Authorizations}}<option value="{{.ID}}" data-client="{{.ClientID}}" {{if $sel}}{{if eq $sel.AuthID .ID}}selected{{end}}{{end}}>{{.ClientName}} · {{.Scope}} {{tf "camp.auth_expires" (.ValidTo.Format "2006-01-02")}}</option>{{end}}
           </select>
         </div>
       </div>
-      <p class="hint" style="margin-top:6px">Müştəri seçiləndə icazə və qruplar avtomatik ona görə süzülür. İcazəsiz kampaniya göndərilmir.</p>
-      <p class="hint" data-empty-hint style="display:none;color:var(--warn)">Bu müştəri üçün icazə və ya hədəf qrupu yoxdur — əvvəlcə <a href="/clients">Müştərilər</a> bölməsində əlavə edin.</p>
+      <p class="hint" style="margin-top:6px">{{t "camp.filter_hint"}}</p>
+      <p class="hint" data-empty-hint style="display:none;color:var(--warn)">{{t "camp.no_data_pre"}} <a href="/clients">{{t "nav.clients"}}</a>{{t "camp.no_data_post"}}</p>
 
-      <div class="sectlbl">Hədəf qrupları</div>
+      <div class="sectlbl">{{t "camp.sect_groups"}}</div>
       <div class="pickwrap">
         {{range .Groups}}
         <label class="pick" data-group data-client="{{.ClientID}}" data-count="{{.Targets}}">
           <input type="checkbox" name="group_ids" value="{{.ID}}" {{if $sel}}{{if index $sel.GroupIDs .ID}}checked{{end}}{{end}}>
           <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span>
           <span style="min-width:0"><span class="t">{{.Name}}</span><span class="s">{{.ClientName}}</span></span>
-          <span class="n">{{.Targets}} işçi</span>
+          <span class="n">{{tf "common.employees_n" .Targets}}</span>
         </label>
-        {{else}}<span class="muted">Qrup yoxdur.</span>{{end}}
+        {{else}}<span class="muted">{{t "camp.no_groups"}}</span>{{end}}
       </div>
-      <div class="summ"><span class="muted" style="font-size:13px;color:var(--fg-2)">Seçilmiş hədəf</span><span class="big"><b data-count-out>0</b> <span style="font-size:13px;color:var(--muted);font-weight:500">işçi</span></span></div>
+      <div class="summ"><span class="muted" style="font-size:13px;color:var(--fg-2)">{{t "camp.selected_targets"}}</span><span class="big"><b data-count-out>0</b> <span style="font-size:13px;color:var(--muted);font-weight:500">{{t "camp.employees_word"}}</span></span></div>
 
-      <div class="sectlbl">Məzmun və göndərmə</div>
+      <div class="sectlbl">{{t "camp.sect_content"}}</div>
       <div class="formgrid">
         <div>
-          <label for="c-tpl">Email şablonu</label>
-          <select id="c-tpl" name="template_id" required><option value="">— seçin —</option>{{range .Templates}}<option value="{{.ID}}" {{if $sel}}{{if eq $sel.TemplateID .ID}}selected{{end}}{{end}}>{{.Name}}</option>{{end}}</select>
+          <label for="c-tpl">{{t "camp.template_label"}}</label>
+          <select id="c-tpl" name="template_id" required><option value="">{{t "camp.select"}}</option>{{range .Templates}}<option value="{{.ID}}" {{if $sel}}{{if eq $sel.TemplateID .ID}}selected{{end}}{{end}}>{{.Name}}</option>{{end}}</select>
         </div>
         <div>
-          <label for="c-page">Açılış səhifəsi</label>
-          <select id="c-page" name="landing_page_id" required><option value="">— seçin —</option>{{range .Pages}}<option value="{{.ID}}" {{if $sel}}{{if eq $sel.PageID .ID}}selected{{end}}{{end}}>{{.Name}}</option>{{end}}</select>
+          <label for="c-page">{{t "camp.page_label"}}</label>
+          <select id="c-page" name="landing_page_id" required><option value="">{{t "camp.select"}}</option>{{range .Pages}}<option value="{{.ID}}" {{if $sel}}{{if eq $sel.PageID .ID}}selected{{end}}{{end}}>{{.Name}}</option>{{end}}</select>
         </div>
         <div style="grid-column:1/-1">
-          <label for="c-smtp">SMTP profili</label>
-          <select id="c-smtp" name="sending_profile_id" required><option value="">— seçin —</option>{{range .Profiles}}<option value="{{.ID}}" {{if $sel}}{{if eq $sel.ProfileID .ID}}selected{{end}}{{end}}>{{.Name}}</option>{{end}}</select>
+          <label for="c-smtp">{{t "camp.smtp_label"}}</label>
+          <select id="c-smtp" name="sending_profile_id" required><option value="">{{t "camp.select"}}</option>{{range .Profiles}}<option value="{{.ID}}" {{if $sel}}{{if eq $sel.ProfileID .ID}}selected{{end}}{{end}}>{{.Name}}</option>{{end}}</select>
         </div>
       </div>
 
       <div style="display:flex;gap:10px;justify-content:flex-end;border-top:1px solid var(--border);padding-top:16px;margin-top:20px">
-        {{if .EditID}}<a class="btn secondary" href="/campaigns/{{.EditID}}">Ləğv et</a>{{end}}
-        <button type="submit">{{if .EditID}}Dəyişiklikləri yadda saxla{{else}}Kampaniya yarat (qaralama){{end}}</button>
+        {{if .EditID}}<a class="btn secondary" href="/campaigns/{{.EditID}}">{{t "common.cancel"}}</a>{{end}}
+        <button type="submit">{{if .EditID}}{{t "common.save_changes"}}{{else}}{{t "camp.create_draft"}}{{end}}</button>
       </div>
     </form>
   </div>
 
   <div class="card flush">
-    <h2 class="card-head">Bütün kampaniyalar</h2>
+    <h2 class="card-head">{{t "camp.all_title"}}</h2>
     <table>
-      <thead><tr><th>Ad</th><th>Müştəri</th><th>Status</th><th>Yaradılıb</th><th></th></tr></thead>
+      <thead><tr><th>{{t "common.name"}}</th><th>{{t "common.client"}}</th><th>{{t "common.status"}}</th><th>{{t "common.created"}}</th><th></th></tr></thead>
       <tbody>
         {{range .Campaigns}}
         <tr><td><a href="/campaigns/{{.ID}}" class="tlink">{{.Name}}</a></td><td>{{.ClientName}}</td><td>{{template "statuspill" .Status}}</td><td class="muted num">{{.CreatedAt.Format "2006-01-02"}}</td>
-            <td><a href="/campaigns/{{.ID}}" class="rowopen">Aç →</a></td></tr>
-        {{else}}<tr><td colspan="5"><div class="empty"><p>Hələ kampaniya yoxdur. Yuxarıdan birincini yaradın.</p></div></td></tr>{{end}}
+            <td><a href="/campaigns/{{.ID}}" class="rowopen">{{t "common.open_arrow"}}</a></td></tr>
+        {{else}}<tr><td colspan="5"><div class="empty"><p>{{t "camp.empty"}}</p></div></td></tr>{{end}}
       </tbody>
     </table>
   </div>

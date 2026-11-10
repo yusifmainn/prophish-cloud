@@ -36,27 +36,19 @@ var templateFuncs = template.FuncMap{
 			return "neutral"
 		}
 	},
-	// eventlabel localizes a tracking-event type to Azerbaijani for the timeline.
-	"eventlabel": func(t string) string {
-		switch t {
-		case "email_sent":
-			return "Email göndərildi"
-		case "email_opened":
-			return "Email açıldı"
-		case "link_clicked":
-			return "Link kliklədi"
-		case "data_submitted":
-			return "Məlumat göndərdi"
-		case "email_reported":
-			return "Phishing kimi bildirdi"
-		case "training_completed":
-			return "Təlim tamamladı"
-		case "error":
-			return "Xəta (göndərilmədi)"
-		default:
-			return t
-		}
-	},
+	// i18n translation helpers. These are placeholders registered at parse time
+	// so templates that reference {{t}}/{{tf}}/{{curlang}}/{{eventlabel}}/…
+	// parse; render() overrides each per request with a language-bound
+	// implementation (see langTemplateFuncs). The defaults resolve in the
+	// default language so the base template remains renderable on its own.
+	"t":           func(key string) template.HTML { return template.HTML(tr(defaultLang, key)) },
+	"tf":          func(key string, args ...any) template.HTML { return template.HTML(trf(defaultLang, key, args...)) },
+	"curlang":     func() string { return defaultLang },
+	"langs":       func() []string { return supportedLangs },
+	"langName":    func(code string) string { return langNames[code] },
+	// eventlabel localizes a tracking-event type for the timeline (language-aware
+	// at render time; raw code fallback for unknown/future types).
+	"eventlabel": func(code string) string { return label(defaultLang, "event", code) },
 	// eventclass maps a tracking-event type to a status-pill colour class.
 	"eventclass": func(t string) string {
 		switch t {
@@ -72,102 +64,9 @@ var templateFuncs = template.FuncMap{
 			return "neutral"
 		}
 	},
-	// actionlabel localizes an audit-log action code to Azerbaijani for the audit
-	// screen. Unknown or future codes fall through to the raw code so nothing breaks.
-	"actionlabel": func(a string) string {
-		switch a {
-		case "auth.login":
-			return "Daxil oldu"
-		case "auth.login_failed":
-			return "Uğursuz giriş"
-		case "auth.logout":
-			return "Çıxış etdi"
-		case "user.create":
-			return "Operator yaradıldı"
-		case "user.delete":
-			return "Operator silindi"
-		case "user.password_change":
-			return "Parol dəyişdirildi"
-		case "user.apikey_create":
-			return "API açarı yaradıldı"
-		case "user.apikey_revoke":
-			return "API açarı ləğv edildi"
-		case "imap.config_save":
-			return "IMAP parametrləri saxlanıldı"
-		case "client.create":
-			return "Müştəri yaradıldı"
-		case "client.update":
-			return "Müştəri yeniləndi"
-		case "client.delete":
-			return "Müştəri silindi"
-		case "authorization.create":
-			return "İcazə əlavə edildi"
-		case "authorization.update":
-			return "İcazə yeniləndi"
-		case "authorization.delete":
-			return "İcazə silindi"
-		case "group.create":
-			return "Qrup yaradıldı"
-		case "group.update":
-			return "Qrup yeniləndi"
-		case "group.delete":
-			return "Qrup silindi"
-		case "target.create":
-			return "Hədəf əlavə edildi"
-		case "target.update":
-			return "Hədəf yeniləndi"
-		case "target.delete":
-			return "Hədəf silindi"
-		case "target.import":
-			return "Hədəflər import edildi"
-		case "template.create":
-			return "Şablon yaradıldı"
-		case "template.update":
-			return "Şablon yeniləndi"
-		case "template.delete":
-			return "Şablon silindi"
-		case "template.import":
-			return "Şablon import edildi"
-		case "profile.create":
-			return "SMTP profili yaradıldı"
-		case "profile.update":
-			return "SMTP profili yeniləndi"
-		case "profile.delete":
-			return "SMTP profili silindi"
-		case "profile.test":
-			return "Test emaili göndərildi"
-		case "page.create":
-			return "Səhifə yaradıldı"
-		case "page.update":
-			return "Səhifə yeniləndi"
-		case "page.delete":
-			return "Səhifə silindi"
-		case "page.import":
-			return "Səhifə import edildi"
-		case "campaign.create":
-			return "Kampaniya yaradıldı"
-		case "campaign.update":
-			return "Kampaniya yeniləndi"
-		case "campaign.rename":
-			return "Kampaniya adı dəyişdirildi"
-		case "campaign.launch":
-			return "Kampaniya işə salındı"
-		case "campaign.schedule":
-			return "Kampaniya planlaşdırıldı"
-		case "campaign.cancel":
-			return "Kampaniya ləğv edildi"
-		case "campaign.archive":
-			return "Kampaniya arxivləndi"
-		case "campaign.delete":
-			return "Kampaniya silindi"
-		case "campaign.resend":
-			return "Yenidən göndərildi"
-		case "campaign.report_pdf":
-			return "PDF hesabat yükləndi"
-		default:
-			return a
-		}
-	},
+	// actionlabel localizes an audit-log action code for the audit screen
+	// (language-aware at render time; raw code fallback for unknown/future codes).
+	"actionlabel": func(code string) string { return label(defaultLang, "action", code) },
 	// authstate classifies an authorization window against the current time for
 	// the status pill on the client page: active / future / expired. valid_to is
 	// stored at end-of-day, so a same-day window reads as active.
@@ -196,15 +95,36 @@ func parseTemplates() (*template.Template, error) {
 // under the key "Toast", so every page shows success/error banners with no extra
 // per-handler wiring.
 func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name string, data any) {
+	lang := langFromRequest(r)
 	if m, ok := data.(map[string]any); ok {
 		if _, exists := m["Toast"]; !exists {
 			if f := s.popFlash(r); f != nil {
 				m["Toast"] = f
 			}
 		}
+		// Localize handler-set messages, whose source text is Azerbaijani, into
+		// the request language: the one-off flash toast and any inline form error.
+		if f, ok := m["Toast"].(*FlashMessage); ok && f != nil {
+			f.Msg = trFlash(lang, f.Msg)
+		}
+		if e, ok := m["Error"].(string); ok {
+			m["Error"] = trFlash(lang, e)
+		}
 	}
+	// Bind the request's UI language into the template helpers. Cloning the
+	// parsed set per request and layering language-bound funcs over it lets every
+	// template (and scalar-data sub-templates like {{template "statuspill"
+	// .Status}}) call {{t "key"}} without threading the language through any
+	// handler's data.
+	tmpl, err := s.templates.Clone()
+	if err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
+		return
+	}
+	tmpl = tmpl.Funcs(langTemplateFuncs(lang))
+
 	var buf bytes.Buffer
-	if err := s.templates.ExecuteTemplate(&buf, name, data); err != nil {
+	if err := tmpl.ExecuteTemplate(&buf, name, data); err != nil {
 		http.Error(w, "template error", http.StatusInternalServerError)
 		return
 	}

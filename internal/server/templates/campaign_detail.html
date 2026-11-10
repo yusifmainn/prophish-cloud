@@ -1,61 +1,59 @@
-{{define "statuspill"}}{{if eq . "completed"}}<span class="pill ok">Tamamlandı</span>{{else if eq . "running"}}<span class="pill info">Davam edir</span>{{else if eq . "scheduled"}}<span class="pill warn">Planlaşdırılıb</span>{{else if eq . "draft"}}<span class="pill neutral">Qaralama</span>{{else if eq . "archived"}}<span class="pill neutral">Arxivləndi</span>{{else if eq . "cancelled"}}<span class="pill neutral">Ləğv edildi</span>{{else}}<span class="pill neutral">{{.}}</span>{{end}}{{end}}
-{{define "targetpill"}}{{if eq . "submitted"}}<span class="pill crit">Məlumat verdi</span>{{else if eq . "clicked"}}<span class="pill warn">Kliklədi</span>{{else if eq . "opened"}}<span class="pill info">Açdı</span>{{else if eq . "sent"}}<span class="pill neutral">Göndərildi</span>{{else if eq . "scheduled"}}<span class="pill neutral">Gözləyir</span>{{else if eq . "error"}}<span class="pill crit">Göndərilmədi</span>{{else}}<span class="pill neutral">{{.}}</span>{{end}}{{end}}
 {{template "head" .}}
 {{template "nav" .}}
 <main>
   <div class="pghead">
     <div class="tt">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h1 style="margin:0">{{.C.Name}}</h1>{{template "statuspill" .C.Status}}</div>
-      <p class="sub"><a href="/campaigns">← Kampaniyalar</a> · Müştəri: <b>{{.C.ClientName}}</b> · İcazə: {{.C.AuthScope}} (bitmə: {{.C.AuthValidTo.Format "2006-01-02"}}){{if or (eq .C.Status "draft") (eq .C.Status "scheduled")}} · hesabat kampaniya işə salındıqdan sonra əlçatandır{{end}}</p>
+      <p class="sub"><a href="/campaigns">← {{t "nav.campaigns"}}</a> · {{t "common.client"}}: <b>{{.C.ClientName}}</b> · {{t "campd.authorization"}}: {{.C.AuthScope}} ({{t "campd.expiry"}}: {{.C.AuthValidTo.Format "2006-01-02"}}){{if or (eq .C.Status "draft") (eq .C.Status "scheduled")}} · {{t "campd.report_after_launch"}}{{end}}</p>
     </div>
     {{if not (or (eq .C.Status "draft") (eq .C.Status "scheduled"))}}
     <div class="act">
-      <a class="btn secondary" href="/campaigns/{{.C.ID}}/report.pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>PDF hesabat</a>
-      <a class="btn secondary" href="/campaigns/{{.C.ID}}/export.csv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>CSV export</a>
+      <a class="btn secondary" href="/campaigns/{{.C.ID}}/report.pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>{{t "campd.pdf_report"}}</a>
+      <a class="btn secondary" href="/campaigns/{{.C.ID}}/export.csv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>{{t "campd.csv_export"}}</a>
     </div>
     {{end}}
   </div>
 
   {{if eq .C.Status "running"}}
-  <div class="note" data-live-poll><span>● Göndərilir — <b data-live-sent>{{.Stats.Sent}}</b> / <b data-live-total>{{.Stats.Total}}</b> göndərildi. Nəticə avtomatik yenilənir.</span><button type="button" class="secondary" data-live-toggle style="margin:0 0 0 auto;align-self:center;padding:4px 11px;font-size:12px">Dayandır</button></div>
+  <div class="note" data-live-poll><span>● {{t "campd.sending"}} — <b data-live-sent>{{.Stats.Sent}}</b> / <b data-live-total>{{.Stats.Total}}</b> {{t "campd.sent_status_refresh"}}</span><button type="button" class="secondary" data-live-toggle style="margin:0 0 0 auto;align-self:center;padding:4px 11px;font-size:12px">{{t "campd.pause"}}</button></div>
   {{end}}
 
   <div class="rgrid">
     <div class="card">
-      <h2>Davranış icmalı — {{.Stats.Total}} hədəf</h2>
+      <h2>{{t "campd.behavior_overview"}} — {{tf "campd.targets_n" .Stats.Total}}</h2>
       <div class="funnel">
-        <div class="fstep"><span class="flabel"><i class="fdot" style="background:var(--neutral)"></i>Göndərildi</span><div class="ftrack"><span class="fbar" style="width:{{.Pct.Sent}}%;background:var(--neutral)">{{.Stats.Sent}}</span><span class="fpct">{{.Pct.Sent}}%</span></div></div>
-        <div class="fstep"><span class="flabel"><i class="fdot" style="background:var(--info)"></i>Açıldı</span><div class="ftrack"><span class="fbar" style="width:{{.Pct.Opened}}%;background:var(--info)">{{.Stats.Opened}}</span><span class="fpct">{{.Pct.Opened}}%</span></div></div>
-        <div class="fstep"><span class="flabel"><i class="fdot" style="background:var(--warn)"></i>Kliklədi</span><div class="ftrack"><span class="fbar" style="width:{{.Pct.Clicked}}%;background:var(--warn)">{{.Stats.Clicked}}</span><span class="fpct">{{.Pct.Clicked}}%</span></div></div>
-        <div class="fstep"><span class="flabel"><i class="fdot" style="background:var(--crit)"></i>Məlumat verdi</span><div class="ftrack"><span class="fbar" style="width:{{.Pct.Submitted}}%;background:var(--crit)">{{.Stats.Submitted}}</span><span class="fpct">{{.Pct.Submitted}}%</span></div></div>
+        <div class="fstep"><span class="flabel"><i class="fdot" style="background:var(--neutral)"></i>{{t "campd.f_sent"}}</span><div class="ftrack"><span class="fbar" style="width:{{.Pct.Sent}}%;background:var(--neutral)">{{.Stats.Sent}}</span><span class="fpct">{{.Pct.Sent}}%</span></div></div>
+        <div class="fstep"><span class="flabel"><i class="fdot" style="background:var(--info)"></i>{{t "campd.f_opened"}}</span><div class="ftrack"><span class="fbar" style="width:{{.Pct.Opened}}%;background:var(--info)">{{.Stats.Opened}}</span><span class="fpct">{{.Pct.Opened}}%</span></div></div>
+        <div class="fstep"><span class="flabel"><i class="fdot" style="background:var(--warn)"></i>{{t "campd.f_clicked"}}</span><div class="ftrack"><span class="fbar" style="width:{{.Pct.Clicked}}%;background:var(--warn)">{{.Stats.Clicked}}</span><span class="fpct">{{.Pct.Clicked}}%</span></div></div>
+        <div class="fstep"><span class="flabel"><i class="fdot" style="background:var(--crit)"></i>{{t "campd.f_submitted"}}</span><div class="ftrack"><span class="fbar" style="width:{{.Pct.Submitted}}%;background:var(--crit)">{{.Stats.Submitted}}</span><span class="fpct">{{.Pct.Submitted}}%</span></div></div>
       </div>
-      <div class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px;flex:none;margin-top:1px"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span><b>Parol saxlanmır.</b> "Məlumat verdi" yalnız formanın göndərildiyi faktını sayır — daxil edilən dəyərlər oxunmur və yazılmır.</span></div>
-      <p class="hint" style="margin-top:8px">Qeyd: "Açıldı" piksel-əsaslıdır; bəzi poçt sistemləri şəkilləri bloklayır (açılma az görünə bilər) və ya linkləri avtomatik yoxlayır (açılma/klik şişə bilər).</p>
+      <div class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px;flex:none;margin-top:1px"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span><b>{{t "campd.no_password_stored"}}</b> {{t "campd.no_password_note"}}</span></div>
+      <p class="hint" style="margin-top:8px">{{t "common.note"}}: {{t "campd.open_pixel_hint"}}</p>
     </div>
 
     <div class="card">
-      <h2>Risk balı</h2>
+      <h2>{{t "campd.risk_score"}}</h2>
       <div class="riskbig" style="color:var(--{{.RiskClass}})">{{.RiskLabel}}</div>
-      <p class="muted" style="margin:0">Klik {{.Pct.Clicked}}% · Məlumat vermə {{.Pct.Submitted}}%</p>
-      <div class="statline"><span class="muted" style="display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2" style="width:15px;height:15px;flex:none"><path d="M20 6L9 17l-5-5"/></svg>Phishing kimi bildirdi</span><span class="bignum" style="color:var(--ok)">{{.Stats.Reported}}</span></div>
-      <div class="muted" style="font-size:11.5px;margin-top:2px">{{.Pct.Reported}}% — müsbət göstərici</div>
+      <p class="muted" style="margin:0">{{t "campd.click"}} {{.Pct.Clicked}}% · {{t "campd.submission"}} {{.Pct.Submitted}}%</p>
+      <div class="statline"><span class="muted" style="display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2" style="width:15px;height:15px;flex:none"><path d="M20 6L9 17l-5-5"/></svg>{{t "campd.reported_as_phishing"}}</span><span class="bignum" style="color:var(--ok)">{{.Stats.Reported}}</span></div>
+      <div class="muted" style="font-size:11.5px;margin-top:2px">{{.Pct.Reported}}% — {{t "campd.positive_indicator"}}</div>
     </div>
   </div>
 
   {{if or (eq .C.Status "draft") (eq .C.Status "scheduled")}}
   <div class="card">
-    <h2>İşə sal / Planlaşdır</h2>
-    {{if eq .C.Status "draft"}}<p style="margin:0 0 12px"><a href="/campaigns/{{.C.ID}}/edit">✎ Konfiqurasiyanı redaktə et (şablon, qrup, landing, SMTP)</a></p>{{end}}
-    <p class="muted">Göndərmədən əvvəl sistem icazənin hələ də etibarlı olduğunu yenidən yoxlayır.</p>
+    <h2>{{t "campd.launch_schedule"}}</h2>
+    {{if eq .C.Status "draft"}}<p style="margin:0 0 12px"><a href="/campaigns/{{.C.ID}}/edit">✎ {{t "campd.edit_config"}}</a></p>{{end}}
+    <p class="muted">{{t "campd.recheck_auth"}}</p>
     <form method="post" action="/campaigns/{{.C.ID}}/launch" style="display:inline-block;margin-right:10px"
-          data-confirm="Kampaniya indi işə salınsın? Seçilmiş hədəflərə simulyasiya emailləri göndəriləcək.">
-      <button type="submit">İndi işə sal</button>
+          data-confirm="{{t "campd.confirm_launch"}}">
+      <button type="submit">{{t "campd.launch_now"}}</button>
     </form>
     <form method="post" action="/campaigns/{{.C.ID}}/schedule" style="margin-top:14px">
       <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
-        <div><label>Başlama vaxtı</label><input type="datetime-local" name="launch_at" value="{{.NowLocal}}" required></div>
-        <div><label>Tədricən göndərmə sonu (opsional)</label><input type="datetime-local" name="send_by"></div>
-        <button type="submit" class="secondary">Planlaşdır</button>
+        <div><label>{{t "campd.start_time"}}</label><input type="datetime-local" name="launch_at" value="{{.NowLocal}}" required></div>
+        <div><label>{{t "campd.send_by"}}</label><input type="datetime-local" name="send_by"></div>
+        <button type="submit" class="secondary">{{t "campd.schedule"}}</button>
       </div>
     </form>
   </div>
@@ -63,39 +61,39 @@
 
   {{if eq .C.Status "running"}}
   <div class="card">
-    <h2>Əməliyyatlar</h2>
-    <p class="muted">Kampaniya hazırda göndərilir. Göndərməni dərhal dayandıra bilərsiniz — hələ göndərilməmiş emaillar getməyəcək.</p>
+    <h2>{{t "campd.operations"}}</h2>
+    <p class="muted">{{t "campd.running_note"}}</p>
     <form method="post" action="/campaigns/{{.C.ID}}/cancel" style="display:inline-block"
-          data-confirm="Göndərmə dayandırılsın? Hələ göndərilməmiş emaillar getməyəcək.">
-      <button type="submit" class="danger">■ Göndərməni dayandır</button>
+          data-confirm="{{t "campd.confirm_cancel"}}">
+      <button type="submit" class="danger">■ {{t "campd.stop_sending"}}</button>
     </form>
   </div>
   {{end}}
 
   {{if eq .C.Status "completed"}}
   <div class="card">
-    <h2>Əməliyyatlar</h2>
+    <h2>{{t "campd.operations"}}</h2>
     <form method="post" action="/campaigns/{{.C.ID}}/resend" style="display:inline-block"
-          data-confirm="Emaili açmayan hədəflərə təkrar göndərilsin?">
-      <button type="submit" class="secondary">Açmayanlara təkrar göndər</button>
+          data-confirm="{{t "campd.confirm_resend"}}">
+      <button type="submit" class="secondary">{{t "campd.resend_nonopeners"}}</button>
     </form>
   </div>
   {{end}}
 
   <div class="card">
-    <h2>Konfiqurasiya</h2>
+    <h2>{{t "campd.configuration"}}</h2>
     <table>
-      <tr><th>Şablon</th><td>{{.C.TemplateName}}</td></tr>
-      <tr><th>Açılış səhifəsi</th><td>{{.C.PageName}}</td></tr>
-      <tr><th>SMTP profili</th><td>{{.C.ProfileName}}</td></tr>
+      <tr><th>{{t "campd.template"}}</th><td>{{.C.TemplateName}}</td></tr>
+      <tr><th>{{t "campd.landing_page"}}</th><td>{{.C.PageName}}</td></tr>
+      <tr><th>{{t "campd.smtp_profile"}}</th><td>{{.C.ProfileName}}</td></tr>
     </table>
   </div>
 
   {{if .Groups}}
   <div class="card">
-    <h2>Şöbələr üzrə bölgü</h2>
+    <h2>{{t "campd.dept_breakdown"}}</h2>
     <table>
-      <thead><tr><th>Şöbə</th><th>Hədəf</th><th>Kliklədi</th><th>Məlumat verdi</th><th>Bildirdi</th></tr></thead>
+      <thead><tr><th>{{t "campd.department"}}</th><th>{{t "campd.target"}}</th><th>{{t "campd.f_clicked"}}</th><th>{{t "campd.f_submitted"}}</th><th>{{t "campd.reported"}}</th></tr></thead>
       <tbody>
         {{range .Groups}}
         <tr><td>{{.Name}}</td><td>{{.Total}}</td><td>{{pct .Clicked .Total}}%</td>
@@ -108,47 +106,47 @@
   {{end}}
 
   <div class="card">
-    <h2>Hədəflər üzrə nəticə</h2>
+    <h2>{{t "campd.results_by_target"}}</h2>
     <table>
-      <thead><tr><th>Email</th><th>Ad</th><th>Vəzifə</th><th>Status</th><th>Göndərildi</th></tr></thead>
+      <thead><tr><th>Email</th><th>{{t "common.name"}}</th><th>{{t "common.position"}}</th><th>{{t "common.status"}}</th><th>{{t "campd.f_sent"}}</th></tr></thead>
       <tbody>
         {{range .Results}}
         <tr><td>{{.Email}}</td><td>{{.FirstName}} {{.LastName}}</td><td class="muted">{{.Position}}</td><td>{{template "targetpill" .Status}}</td><td class="muted">{{if .SentAt}}{{lt "01-02 15:04" .SentAt}}{{else}}—{{end}}</td></tr>
-        {{else}}<tr><td colspan="5" class="muted">Hədəf yoxdur.</td></tr>{{end}}
+        {{else}}<tr><td colspan="5" class="muted">{{t "campd.no_targets"}}</td></tr>{{end}}
       </tbody>
     </table>
   </div>
 
   <div class="card">
-    <h2>Hadisə tarixçəsi</h2>
+    <h2>{{t "campd.event_history"}}</h2>
     <table>
-      <thead><tr><th>Vaxt</th><th>Email</th><th>Hadisə</th><th>IP</th></tr></thead>
+      <thead><tr><th>{{t "campd.time"}}</th><th>Email</th><th>{{t "campd.event"}}</th><th>IP</th></tr></thead>
       <tbody>
         {{range .Events}}
         <tr><td>{{lt "01-02 15:04:05" .CreatedAt}}</td><td>{{.Email}}</td><td><span class="pill {{eventclass .Type}}">{{eventlabel .Type}}</span></td><td class="muted">{{.IP}}</td></tr>
-        {{else}}<tr><td colspan="4" class="muted">Hələ hadisə yoxdur.</td></tr>{{end}}
+        {{else}}<tr><td colspan="4" class="muted">{{t "campd.no_events"}}</td></tr>{{end}}
       </tbody>
     </table>
   </div>
 
   <div class="card">
-    <h2>Adı dəyişdir</h2>
+    <h2>{{t "campd.rename"}}</h2>
     <form method="post" action="/campaigns/{{.C.ID}}/rename" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
-      <div style="flex:1;min-width:220px"><label>Kampaniya adı</label><input name="name" value="{{.C.Name}}" required></div>
-      <button type="submit">Yadda saxla</button>
+      <div style="flex:1;min-width:220px"><label>{{t "campd.campaign_name"}}</label><input name="name" value="{{.C.Name}}" required></div>
+      <button type="submit">{{t "common.save"}}</button>
     </form>
-    <p class="muted" style="margin:10px 0 0">Qaralama kampaniyanın konfiqurasiyasını (şablon, qrup, landing, SMTP) <b>Redaktə et</b> ilə dəyişmək olar. İşə salınandan sonra konfiqurasiya kilidlənir — belə, hesabat göndərilənə sadiq qalır.</p>
+    <p class="muted" style="margin:10px 0 0">{{t "campd.rename_hint_before"}}<b>{{t "campd.edit_action"}}</b>{{t "campd.rename_hint_after"}}</p>
   </div>
 
   <div class="card">
-    <h2>Təhlükəli zona</h2>
+    <h2>{{t "common.danger_zone"}}</h2>
     <form method="post" action="/campaigns/{{.C.ID}}/archive" style="display:inline-block;margin-right:10px"
-          data-confirm="Kampaniya arxivlənsin? Siyahıdan gizlənəcək, məlumatlar qalacaq.">
-      <button type="submit" class="secondary">Arxivlə</button>
+          data-confirm="{{t "campd.confirm_archive"}}">
+      <button type="submit" class="secondary">{{t "campd.archive"}}</button>
     </form>
     <form method="post" action="/campaigns/{{.C.ID}}/delete" style="display:inline-block"
-          data-confirm="DİQQƏT: Kampaniya və onun bütün nəticələri həmişəlik silinəcək. Bu geri qaytarıla bilməz. Davam edilsin?">
-      <button type="submit" class="danger">Sil</button>
+          data-confirm="{{t "campd.confirm_delete"}}">
+      <button type="submit" class="danger">{{t "common.delete"}}</button>
     </form>
   </div>
 </main>

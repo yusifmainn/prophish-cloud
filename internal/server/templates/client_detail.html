@@ -2,125 +2,125 @@
 {{template "nav" .}}
 <main>
   <h1>{{.Client.Name}}</h1>
-  <p class="muted" style="margin:8px 0 16px"><a href="/clients">← Müştərilər</a>{{if .Client.ContactEmail}} · {{.Client.ContactEmail}}{{end}}</p>
+  <p class="muted" style="margin:8px 0 16px"><a href="/clients">← {{t "nav.clients"}}</a>{{if .Client.ContactEmail}} · {{.Client.ContactEmail}}{{end}}</p>
 
   <div data-tabs>
     <div class="tabs">
-      <a href="#info">Məlumat</a>
-      <a href="#auth">İcazələr ({{len .Authorizations}})</a>
-      <a href="#groups">Qruplar ({{len .Groups}})</a>
+      <a href="#info">{{t "cld.tab_info"}}</a>
+      <a href="#auth">{{t "cld.tab_auth"}} ({{len .Authorizations}})</a>
+      <a href="#groups">{{t "cld.tab_groups"}} ({{len .Groups}})</a>
     </div>
 
     <div data-panel="info">
       <div class="card">
-        <h2>Müştəri məlumatı</h2>
+        <h2>{{t "cld.info_title"}}</h2>
         <form method="post" action="/clients/{{.Client.ID}}/edit">
-          <label>Ad</label><input name="name" value="{{.Client.Name}}" required>
-          <label>Əlaqə emaili</label><input type="email" name="contact_email" value="{{.Client.ContactEmail}}">
-          <label>Qeyd</label><textarea name="notes" rows="3">{{.Client.Notes}}</textarea>
-          <button type="submit">Yadda saxla</button>
+          <label>{{t "common.name"}}</label><input name="name" value="{{.Client.Name}}" required>
+          <label>{{t "common.contact_email"}}</label><input type="email" name="contact_email" value="{{.Client.ContactEmail}}">
+          <label>{{t "common.note"}}</label><textarea name="notes" rows="3">{{.Client.Notes}}</textarea>
+          <button type="submit">{{t "common.save"}}</button>
         </form>
       </div>
       <div class="card">
-        <h2>Təhlükəli zona</h2>
-        <p class="muted">Müştərini silmək onun <b>bütün</b> icazə, qrup, işçi, şablon, səhifə və kampaniyalarını (nəticələri ilə) həmişəlik silir. Geri qaytarıla bilməz.</p>
+        <h2>{{t "common.danger_zone"}}</h2>
+        <p class="muted">{{t "cld.danger_warn"}}</p>
         <form method="post" action="/clients/{{.Client.ID}}/delete"
-              data-confirm="DİQQƏT: '{{.Client.Name}}' və ona bağlı BÜTÜN məlumat həmişəlik silinəcək. Davam edilsin?">
-          <button type="submit" class="danger">Müştərini sil</button>
+              data-confirm="{{tf "cld.delete_confirm" .Client.Name}}">
+          <button type="submit" class="danger">{{t "cld.delete_client"}}</button>
         </form>
       </div>
     </div>
 
     <div data-panel="auth">
       <div class="card">
-        <h2>İcazələr və Razılaşma (RoE)</h2>
-        <p class="hint">Kampaniya yalnız etibarlı icazə onu əhatə etdiyi zaman göndərilə bilər.</p>
+        <h2>{{t "cld.auth_title"}}</h2>
+        <p class="hint">{{t "cld.auth_hint"}}</p>
         {{range .Authorizations}}
         <div class="litem">
           <div class="litem-head">
             <div class="litem-main">
-              <div class="t">{{.Scope}} {{$st := authstate .ValidFrom .ValidTo}}<span class="pill {{if eq $st "active"}}ok{{else if eq $st "future"}}warn{{else}}neutral{{end}}" style="margin-left:4px">{{if eq $st "active"}}Aktiv{{else if eq $st "future"}}Gələcək{{else}}Bitib{{end}}</span></div>
+              <div class="t">{{.Scope}} {{$st := authstate .ValidFrom .ValidTo}}<span class="pill {{if eq $st "active"}}ok{{else if eq $st "future"}}warn{{else}}neutral{{end}}" style="margin-left:4px">{{if eq $st "active"}}{{t "cld.authstate_active"}}{{else if eq $st "future"}}{{t "cld.authstate_future"}}{{else}}{{t "cld.authstate_expired"}}{{end}}</span></div>
               <div class="s">{{.AuthorizedBy}}{{if .DocumentRef}} · {{.DocumentRef}}{{end}} · {{.ValidFrom.Format "2006-01-02"}} → {{.ValidTo.Format "2006-01-02"}}</div>
             </div>
-            <form method="post" action="/authorizations/{{.ID}}/delete" data-confirm="Bu icazə silinsin?">
-              <button type="submit" class="iconbtn danger" title="Sil">✕</button>
+            <form method="post" action="/authorizations/{{.ID}}/delete" data-confirm="{{t "cld.auth_delete_confirm"}}">
+              <button type="submit" class="iconbtn danger" title="{{t "common.delete"}}">✕</button>
             </form>
           </div>
           <details class="edit">
-            <summary>Redaktə</summary>
+            <summary>{{t "common.edit"}}</summary>
             <div class="box">
               <form method="post" action="/authorizations/{{.ID}}/edit">
-                <label>Əhatə dairəsi</label><input name="scope" value="{{.Scope}}" required>
-                <label>İmzalayan</label><input name="authorized_by" value="{{.AuthorizedBy}}" required>
-                <label>Sənəd istinadı</label><input name="document_ref" value="{{.DocumentRef}}">
+                <label>{{t "cld.scope"}}</label><input name="scope" value="{{.Scope}}" required>
+                <label>{{t "cld.signed_by"}}</label><input name="authorized_by" value="{{.AuthorizedBy}}" required>
+                <label>{{t "cld.document_ref"}}</label><input name="document_ref" value="{{.DocumentRef}}">
                 <div class="formgrid">
-                  <div><label>Etibarlıdır (başlanğıc)</label><input type="date" name="valid_from" value="{{.ValidFrom.Format "2006-01-02"}}" required></div>
-                  <div><label>Etibarlıdır (son)</label><input type="date" name="valid_to" value="{{.ValidTo.Format "2006-01-02"}}" required></div>
+                  <div><label>{{t "cld.valid_from"}}</label><input type="date" name="valid_from" value="{{.ValidFrom.Format "2006-01-02"}}" required></div>
+                  <div><label>{{t "cld.valid_to"}}</label><input type="date" name="valid_to" value="{{.ValidTo.Format "2006-01-02"}}" required></div>
                 </div>
-                <button type="submit">Yadda saxla</button>
+                <button type="submit">{{t "common.save"}}</button>
               </form>
             </div>
           </details>
         </div>
         {{else}}
-        <div class="empty"><p>Hələ icazə yoxdur. Aşağıdan əlavə edin.</p></div>
+        <div class="empty"><p>{{t "cld.auth_empty"}}</p></div>
         {{end}}
       </div>
       <div class="card">
-        <h2>Yeni icazə</h2>
+        <h2>{{t "cld.auth_new"}}</h2>
         <form method="post" action="/clients/{{.Client.ID}}/authorizations">
-          <label>Əhatə dairəsi (icazə verilən domen/hədəflər)</label>
-          <input name="scope" required placeholder="*.musteri.az daxili işçilər">
-          <label>İmzalayan (müştəri tərəfindən)</label>
+          <label>{{t "cld.scope_full"}}</label>
+          <input name="scope" required placeholder="{{t "cld.scope_ph"}}">
+          <label>{{t "cld.signed_by_full"}}</label>
           <input name="authorized_by" required>
-          <label>Sənəd istinadı (müqavilə/RoE fayl adı və ya nömrə)</label>
+          <label>{{t "cld.document_ref_full"}}</label>
           <input name="document_ref">
           <div class="formgrid">
-            <div><label>Etibarlıdır (başlanğıc)</label><input type="date" name="valid_from" value="{{.Today}}" required></div>
-            <div><label>Etibarlıdır (son)</label><input type="date" name="valid_to" required></div>
+            <div><label>{{t "cld.valid_from"}}</label><input type="date" name="valid_from" value="{{.Today}}" required></div>
+            <div><label>{{t "cld.valid_to"}}</label><input type="date" name="valid_to" required></div>
           </div>
-          <button type="submit">İcazə əlavə et</button>
+          <button type="submit">{{t "cld.auth_add"}}</button>
         </form>
       </div>
     </div>
 
     <div data-panel="groups">
       <div class="card">
-        <h2>Hədəf qrupları</h2>
+        <h2>{{t "cld.groups_title"}}</h2>
         {{range .Groups}}
         <div class="litem">
           <div class="litem-head">
             <div class="litem-main">
               <div class="t"><a href="/groups/{{.ID}}">{{.Name}}</a></div>
-              <div class="s">{{.Targets}} işçi</div>
+              <div class="s">{{tf "common.employees_n" .Targets}}</div>
             </div>
             <div class="rowact">
-              <a class="iconbtn" href="/groups/{{.ID}}" title="Aç">→</a>
-              <form method="post" action="/groups/{{.ID}}/delete" data-confirm="'{{.Name}}' qrupu və işçiləri silinsin?">
-                <button type="submit" class="iconbtn danger" title="Sil">✕</button>
+              <a class="iconbtn" href="/groups/{{.ID}}" title="{{t "cld.open"}}">→</a>
+              <form method="post" action="/groups/{{.ID}}/delete" data-confirm="{{tf "cld.group_delete_confirm" .Name}}">
+                <button type="submit" class="iconbtn danger" title="{{t "common.delete"}}">✕</button>
               </form>
             </div>
           </div>
           <details class="edit">
-            <summary>Adını dəyiş</summary>
+            <summary>{{t "common.rename"}}</summary>
             <div class="box">
               <form method="post" action="/groups/{{.ID}}/rename">
-                <label>Qrup adı</label><input name="name" value="{{.Name}}" required>
-                <button type="submit">Yadda saxla</button>
+                <label>{{t "cld.group_name"}}</label><input name="name" value="{{.Name}}" required>
+                <button type="submit">{{t "common.save"}}</button>
               </form>
             </div>
           </details>
         </div>
         {{else}}
-        <div class="empty"><p>Hələ qrup yoxdur. Aşağıdan yaradın.</p></div>
+        <div class="empty"><p>{{t "cld.groups_empty"}}</p></div>
         {{end}}
       </div>
       <div class="card">
-        <h2>Yeni qrup</h2>
+        <h2>{{t "cld.group_new"}}</h2>
         <form method="post" action="/clients/{{.Client.ID}}/groups">
-          <label>Qrup adı</label>
-          <input name="name" required placeholder="Maliyyə şöbəsi">
-          <button type="submit">Qrup yarat</button>
+          <label>{{t "cld.group_name"}}</label>
+          <input name="name" required placeholder="{{t "cld.group_name_ph"}}">
+          <button type="submit">{{t "cld.group_create"}}</button>
         </form>
       </div>
     </div>

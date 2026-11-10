@@ -44,6 +44,10 @@ func (s *Server) AdminRouter() http.Handler {
 
 	// Public (unauthenticated) routes. Login/setup get CSRF origin checks too.
 	r.Get("/healthz", s.handleHealth)
+	// Language switch: sets the UI-language cookie and redirects back. Public so
+	// it also works from the login/setup screens; safe-redirect enforced in the
+	// handler (same-origin relative path only).
+	r.Get("/lang/{code}", s.handleSetLang)
 	r.Get("/login", s.handleLoginForm)
 	r.With(s.checkOrigin).Post("/login", s.handleLoginSubmit)
 	r.Get("/setup", s.handleSetupForm)

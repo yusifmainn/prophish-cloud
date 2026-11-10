@@ -1,5 +1,5 @@
 {{define "head"}}<!doctype html>
-<html lang="az">
+<html lang="{{curlang}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -211,6 +211,14 @@
   .flashbar.info{border-color:var(--info-bd);color:var(--info)}
   .flashbar.hide{opacity:0;transform:translate(-50%,-8px);transition:opacity .3s,transform .3s}
 
+  /* ---- Language switcher (fixed, top-right, on every page) ---- */
+  .langsw{position:fixed;top:14px;right:16px;z-index:70;display:inline-flex;gap:2px;padding:3px;border-radius:10px;background:var(--surface);border:1px solid var(--border-strong);box-shadow:var(--shadow-sm)}
+  .langsw a{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:25px;padding:0 8px;border-radius:7px;font-size:11.5px;font-weight:650;letter-spacing:.02em;color:var(--muted);text-decoration:none;transition:background .12s,color .12s}
+  .langsw a:hover{color:var(--ink);text-decoration:none;background:var(--surface-2)}
+  .langsw a.on{background:var(--accent);color:var(--accent-ink)}
+  .langsw a.on:hover{background:var(--accent);color:var(--accent-ink)}
+  @media (max-width:960px){.langsw{top:14px;right:14px}}
+
   /* ---- Tabs ---- */
   .tabs{display:flex;gap:3px;border-bottom:1px solid var(--border);margin-bottom:22px;flex-wrap:wrap}
   .tabs a{padding:11px 15px;color:var(--muted);font-weight:550;font-size:14px;border-bottom:2px solid transparent;margin-bottom:-1px}
@@ -313,57 +321,62 @@
 </head>
 <body>
 <div class="app">
+<nav class="langsw" aria-label="{{t "nav.language"}}">{{$cur := curlang}}{{range langs}}<a href="/lang/{{.}}" class="{{if eq . $cur}}on{{end}}"{{if eq . $cur}} aria-current="true"{{end}}>{{langName .}}</a>{{end}}</nav>
 {{end}}
 
 {{define "nav"}}
 {{template "flash" .}}
 <input type="checkbox" id="nav-toggle" class="nav-toggle">
-<label class="hamb" for="nav-toggle" aria-label="Menyu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></label>
+<label class="hamb" for="nav-toggle" aria-label="{{t "nav.menu"}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></label>
 <aside class="rail">
   <div class="brand">
     <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" fill="#fff" opacity=".22"/><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" stroke="#fff" stroke-width="1.6"/><path d="M8.5 12l2.4 2.4 4.6-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-    <span><b>PROPhish</b><small>Awareness Platforması</small></span>
-    <button type="button" class="themebtn" id="theme-toggle" aria-label="Tema dəyiş" title="Tema dəyiş"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"></svg></button>
+    <span><b>PROPhish</b><small>{{t "brand.tagline"}}</small></span>
+    <button type="button" class="themebtn" id="theme-toggle" aria-label="{{t "nav.theme"}}" title="{{t "nav.theme"}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"></svg></button>
   </div>
 
   <div class="navgroup">
-    <div class="lbl">İş sahəsi</div>
+    <div class="lbl">{{t "nav.workspace"}}</div>
     <nav>
-      <a href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Nəzarət paneli</a>
-      <a href="/campaigns"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-9"/></svg>Kampaniyalar</a>
+      <a href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>{{t "nav.dashboard"}}</a>
+      <a href="/campaigns"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-9"/></svg>{{t "nav.campaigns"}}</a>
     </nav>
   </div>
 
   <div class="navgroup">
-    <div class="lbl">Qurğu</div>
+    <div class="lbl">{{t "nav.setup"}}</div>
     <nav>
-      <a href="/clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="10" cy="7" r="3.5"/><path d="M21 21v-2a4 4 0 00-3-3.87"/></svg>Müştərilər</a>
-      <a href="/templates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v16"/></svg>Şablonlar</a>
-      <a href="/pages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6h16M4 12h16M4 18h11"/></svg>Səhifələr</a>
-      <a href="/profiles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>SMTP profilləri</a>
+      <a href="/clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="10" cy="7" r="3.5"/><path d="M21 21v-2a4 4 0 00-3-3.87"/></svg>{{t "nav.clients"}}</a>
+      <a href="/templates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v16"/></svg>{{t "nav.templates"}}</a>
+      <a href="/pages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6h16M4 12h16M4 18h11"/></svg>{{t "nav.pages"}}</a>
+      <a href="/profiles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>{{t "nav.profiles"}}</a>
     </nav>
   </div>
 
   <div class="navgroup">
-    <div class="lbl">Admin</div>
+    <div class="lbl">{{t "nav.admin"}}</div>
     <nav>
-      <a href="/users"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M5 21v-1a7 7 0 0114 0v1"/></svg>İstifadəçilər</a>
-      <a href="/settings/imap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Parametrlər</a>
-      <a href="/audit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Audit jurnalı</a>
+      <a href="/users"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M5 21v-1a7 7 0 0114 0v1"/></svg>{{t "nav.users"}}</a>
+      <a href="/settings/imap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>{{t "nav.settings"}}</a>
+      <a href="/audit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>{{t "nav.audit"}}</a>
     </nav>
   </div>
 
   <div class="spacer"></div>
   <div class="railuser">
     <span class="avatar">OP</span>
-    <span style="min-width:0"><b style="font-size:13px;color:var(--ink)">Operator</b><small style="display:block">PROPhish</small></span>
+    <span style="min-width:0"><b style="font-size:13px;color:var(--ink)">{{t "nav.operator"}}</b><small style="display:block">PROPhish</small></span>
   </div>
-  <form action="/logout" method="post"><button type="submit" class="logout">Çıxış</button></form>
+  <form action="/logout" method="post"><button type="submit" class="logout">{{t "nav.logout"}}</button></form>
 </aside>
 <label class="scrim" for="nav-toggle" aria-hidden="true"></label>
 {{end}}
 
 {{define "flash"}}{{if .Toast}}<div class="flashbar {{.Toast.Kind}}" role="status" id="flashbar">{{.Toast.Msg}}</div>{{end}}{{end}}
+
+{{define "statuspill"}}{{if eq . "completed"}}<span class="pill ok">{{t "pill.completed"}}</span>{{else if eq . "running"}}<span class="pill info">{{t "pill.running"}}</span>{{else if eq . "scheduled"}}<span class="pill warn">{{t "pill.scheduled"}}</span>{{else if eq . "draft"}}<span class="pill neutral">{{t "pill.draft"}}</span>{{else if eq . "archived"}}<span class="pill neutral">{{t "pill.archived"}}</span>{{else if eq . "cancelled"}}<span class="pill neutral">{{t "pill.cancelled"}}</span>{{else}}<span class="pill neutral">{{.}}</span>{{end}}{{end}}
+
+{{define "targetpill"}}{{if eq . "submitted"}}<span class="pill crit">{{t "pill.submitted"}}</span>{{else if eq . "clicked"}}<span class="pill warn">{{t "pill.clicked"}}</span>{{else if eq . "opened"}}<span class="pill info">{{t "pill.opened"}}</span>{{else if eq . "sent"}}<span class="pill neutral">{{t "pill.sent"}}</span>{{else if eq . "scheduled"}}<span class="pill neutral">{{t "pill.pending"}}</span>{{else if eq . "error"}}<span class="pill crit">{{t "pill.failed"}}</span>{{else}}<span class="pill neutral">{{.}}</span>{{end}}{{end}}
 
 {{define "authbrand"}}<div class="authbrand"><span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" fill="#fff" opacity=".22"/><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" stroke="#fff" stroke-width="1.6"/><path d="M8.5 12l2.4 2.4 4.6-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><b>PROPhish</b><small>Awareness Platforması</small></span></div>{{end}}
 
