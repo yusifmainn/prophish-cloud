@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PROPhish</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <style>
   /* PROPhish — Stripe-direction design system. Deep navy ink, soft indigo accent,
      airy whitespace, gently floating cards with layered blue-tinted shadows and
@@ -84,6 +87,18 @@
   .brand .logo svg{width:20px;height:20px}
   .brand b{font-size:15.5px;font-weight:700;color:var(--ink);line-height:1.1}
   .brand small{display:block;color:var(--faint);font-size:11.5px;font-weight:500}
+  /* Brand logo mark — theme-aware (light vs dark background version), square 1:1. */
+  .brandlogo{display:inline-flex;flex:none}
+  .brandlogo img{width:100%;height:100%;display:block}
+  .brand .brandlogo{width:38px;height:38px}
+  .authbrand .brandlogo{width:46px;height:46px}
+  .brandlogo .logo-dark{display:none}
+  .brandlogo .logo-light{display:block}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .brandlogo .logo-dark{display:block}:root:not([data-theme="light"]) .brandlogo .logo-light{display:none}}
+  :root[data-theme="dark"] .brandlogo .logo-dark{display:block}
+  :root[data-theme="dark"] .brandlogo .logo-light{display:none}
+  :root[data-theme="light"] .brandlogo .logo-dark{display:none}
+  :root[data-theme="light"] .brandlogo .logo-light{display:block}
   .authbrand{display:flex;flex-direction:column;align-items:center;gap:13px;margin:0 0 22px;text-align:center}
   .authbrand .logo{width:46px;height:46px;border-radius:13px;background:linear-gradient(145deg,var(--accent),var(--accent-2) 60%,#b98cff);display:grid;place-items:center;color:#fff;box-shadow:0 10px 24px -10px color-mix(in srgb,var(--accent) 65%,transparent)}
   .authbrand .logo svg{width:25px;height:25px}
@@ -330,7 +345,7 @@
 <label class="hamb" for="nav-toggle" aria-label="{{t "nav.menu"}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></label>
 <aside class="rail">
   <div class="brand">
-    <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" fill="#fff" opacity=".22"/><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" stroke="#fff" stroke-width="1.6"/><path d="M8.5 12l2.4 2.4 4.6-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <span class="brandlogo"><img class="logo-light" src="/static/logo-mark.svg" alt="PROPhish"><img class="logo-dark" src="/static/logo-mark-dark-bg.svg" alt="PROPhish"></span>
     <span><b>PROPhish</b><small>{{t "brand.tagline"}}</small></span>
     <button type="button" class="themebtn" id="theme-toggle" aria-label="{{t "nav.theme"}}" title="{{t "nav.theme"}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"></svg></button>
   </div>
@@ -378,7 +393,7 @@
 
 {{define "targetpill"}}{{if eq . "submitted"}}<span class="pill crit">{{t "pill.submitted"}}</span>{{else if eq . "clicked"}}<span class="pill warn">{{t "pill.clicked"}}</span>{{else if eq . "opened"}}<span class="pill info">{{t "pill.opened"}}</span>{{else if eq . "sent"}}<span class="pill neutral">{{t "pill.sent"}}</span>{{else if eq . "scheduled"}}<span class="pill neutral">{{t "pill.pending"}}</span>{{else if eq . "error"}}<span class="pill crit">{{t "pill.failed"}}</span>{{else}}<span class="pill neutral">{{.}}</span>{{end}}{{end}}
 
-{{define "authbrand"}}<div class="authbrand"><span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" fill="#fff" opacity=".22"/><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" stroke="#fff" stroke-width="1.6"/><path d="M8.5 12l2.4 2.4 4.6-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><b>PROPhish</b><small>{{t "brand.tagline"}}</small></span></div>{{end}}
+{{define "authbrand"}}<div class="authbrand"><span class="brandlogo"><img class="logo-light" src="/static/logo-mark.svg" alt="PROPhish"><img class="logo-dark" src="/static/logo-mark-dark-bg.svg" alt="PROPhish"></span><span><b>PROPhish</b><small>{{t "brand.tagline"}}</small></span></div>{{end}}
 
 {{define "foot"}}
 </div>

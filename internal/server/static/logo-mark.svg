@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="PROPhish">
+  <defs>
+    <linearGradient id="pBody" gradientUnits="userSpaceOnUse" x1="0" y1="64" x2="0" y2="370">
+      <stop offset="0" stop-color="#5B21B6"/>
+      <stop offset="1" stop-color="#2E0A63"/>
+    </linearGradient>
+    <linearGradient id="pHook" gradientUnits="userSpaceOnUse" x1="240" y1="0" x2="62" y2="0">
+      <stop offset="0.35" stop-color="#2E0A63"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(16 -5)">
+    <path fill="url(#pBody)" fill-rule="evenodd" d="M182 370V64H300A118 118 0 0 1 300 300H238V370ZM238 120V244H300A62 62 0 0 0 300 120Z"/>
+    <path fill="url(#pHook)" d="M238 360V370A88 88 0 0 1 62 370V300L90 244L142 318L118 306V370A32 32 0 0 0 182 370V360Z"/>
+    <g fill="#22D3EE">
+      <circle cx="298" cy="170" r="18"/>
+      <path d="M290 178H306L312 214H284Z"/>
+    </g>
+  </g>
+</svg>
