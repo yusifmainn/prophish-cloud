@@ -124,9 +124,15 @@ func init() {
 		"action.campaign.report_pdf":  {"az": "PDF hesabat yükləndi", "en": "PDF report downloaded", "ru": "PDF-отчёт скачан"},
 
 		// ---- Login screen ----
-		"login.title":    {"az": "Giriş", "en": "Sign in", "ru": "Вход"},
-		"login.subtitle": {"az": "PROPhish hesabınıza daxil olun.", "en": "Sign in to your PROPhish account.", "ru": "Войдите в свой аккаунт PROPhish."},
-		"login.password": {"az": "Parol", "en": "Password", "ru": "Пароль"},
-		"login.submit":   {"az": "Daxil ol", "en": "Sign in", "ru": "Войти"},
+		"login.title":      {"az": "Giriş", "en": "Sign in", "ru": "Вход"},
+		"login.subtitle":   {"az": "İdarəçinizin sizin üçün yaratdığı hesabla daxil olun.", "en": "Use the account your administrator created for you.", "ru": "Войдите с учётной записью, созданной администратором."},
+		"login.email":      {"az": "Email", "en": "Email", "ru": "Email"},
+		"login.password":   {"az": "Parol", "en": "Password", "ru": "Пароль"},
+		"login.submit":     {"az": "Daxil ol", "en": "Sign in", "ru": "Войти"},
+		"login.audit_note": {"az": "Bütün girişlər audit jurnalında qeyd olunur.", "en": "All sign-ins are recorded in the audit log.", "ru": "Все входы фиксируются в журнале аудита."},
+		"login.show_password": {"az": "Parolu göstər", "en": "Show password", "ru": "Показать пароль"},
+		"login.lang_label":  {"az": "Dil", "en": "Language", "ru": "Язык"},
+		"login.hero_tagline": {"az": "PROPhish — məlumatlandırma platforması. Real phishing simulyasiyaları keçirin, kimin kliklədiyini görün və səhvləri təlimə çevirin.", "en": "PROPhish — awareness platform. Run realistic phishing simulations, see who clicks, and turn mistakes into training.", "ru": "PROPhish — платформа осведомлённости. Проводите реалистичные фишинговые симуляции, смотрите, кто переходит по ссылкам, и превращайте ошибки в обучение."},
+		"login.footer":     {"az": "© 2026 Prosol CJSC. Bütün hüquqlar qorunur. · Prosol CJSC məhsulu — lisenziyalı, satılmır.", "en": "© 2026 Prosol CJSC. All rights reserved. · A Prosol CJSC product — licensed, not sold.", "ru": "© 2026 Prosol CJSC. Все права защищены. · Продукт Prosol CJSC — лицензируется, не продаётся."},
 	})
 }

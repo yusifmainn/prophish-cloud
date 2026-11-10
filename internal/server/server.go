@@ -54,6 +54,8 @@ func (s *Server) AdminRouter() http.Handler {
 	r.With(s.checkOrigin).Post("/setup", s.handleSetupSubmit)
 	r.Get("/static/app.js", s.handleStaticJS)
 		r.Get("/static/editor.js", s.handleStaticEditorJS)
+		r.Get("/static/auth.js", s.handleStaticAuthJS)
+		r.Get("/static/hero/{name}", s.handleStaticHero)
 		r.Get("/static/fonts/{name}", s.handleStaticFont)
 
 	// Authenticated routes. checkOrigin adds CSRF defense-in-depth on top of the

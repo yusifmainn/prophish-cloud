@@ -46,6 +46,7 @@ var templateFuncs = template.FuncMap{
 	"curlang":     func() string { return defaultLang },
 	"langs":       func() []string { return supportedLangs },
 	"langName":    func(code string) string { return langNames[code] },
+	"langFullName": func(code string) string { return langNamesFull[code] },
 	// eventlabel localizes a tracking-event type for the timeline (language-aware
 	// at render time; raw code fallback for unknown/future types).
 	"eventlabel": func(code string) string { return label(defaultLang, "event", code) },
