@@ -1,0 +1,48 @@
+{{template "head" .}}
+{{template "nav" .}}
+<main>
+  <div class="pghead"><div class="tt"><h1>Açılış səhifələri</h1><p class="sub">İşçi linkə klikləyəndən sonra gördüyü səhifə. Dəyərlər saxlanmır.</p></div></div>
+  {{if eq .Import "ok"}}<div class="note ok">Sayt klonlandı.</div>{{end}}
+  {{if eq .Import "err"}}<div class="err">Sayt yüklənə bilmədi — URL-i yoxlayın.</div>{{end}}
+
+  <div class="card">
+    <h2>URL-dən klonla</h2>
+    <p class="muted">Mövcud bir səhifəni çəkib açılış səhifəsinə çevirir. Formalar avtomatik <code>{{"{{.SubmitURL}}"}}</code>-ə yönəldilir; dəyərlər saxlanmır.</p>
+    <form method="post" action="/pages/import">
+      <label>Ad</label><input name="name" required>
+      <label>URL</label><input name="url" required placeholder="https://login.microsoftonline.com">
+      <label>Yönləndirmə URL (opsional)</label><input name="redirect_url">
+      <button type="submit">Klonla</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Yeni səhifə (əl ilə)</h2>
+    <p class="muted">Forma <code>action="{{"{{.SubmitURL}}"}}"</code> və <code>method="post"</code> olmalıdır. Dəyərlər <strong>saxlanılmır</strong>.</p>
+    <form method="post" action="/pages">
+      <label>Ad</label><input name="name" required>
+      <label>HTML məzmun</label>
+      <textarea name="html_body" rows="8" data-editor="landing" required>&lt;form method="post" action="{{"{{.SubmitURL}}"}}"&gt;
+  &lt;input name="username" placeholder="İstifadəçi adı"&gt;
+  &lt;input name="password" type="password" placeholder="Parol"&gt;
+  &lt;button&gt;Daxil ol&lt;/button&gt;
+&lt;/form&gt;</textarea>
+      <label>Yönləndirmə URL (opsional)</label>
+      <input name="redirect_url" placeholder="https://musteri.az/tehlukesizlik-telimi">
+      <button type="submit">Yarat</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Siyahı</h2>
+    <table>
+      <thead><tr><th>Ad</th><th>Yönləndirmə</th><th>Yaradılıb</th><th></th></tr></thead>
+      <tbody>
+        {{range .Pages}}
+        <tr><td><a href="/pages/{{.ID}}">{{.Name}}</a></td><td>{{.RedirectURL}}</td><td>{{.CreatedAt.Format "2006-01-02"}}</td><td><a href="/pages/{{.ID}}">Aç →</a></td></tr>
+        {{else}}<tr><td colspan="4" class="muted">Hələ səhifə yoxdur.</td></tr>{{end}}
+      </tbody>
+    </table>
+  </div>
+</main>
+{{template "foot" .}}

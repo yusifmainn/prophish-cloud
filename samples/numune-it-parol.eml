@@ -1,0 +1,21 @@
+From: IT Destek Xidmeti <it-support@sirket-daxili.com>
+To: {{.Email}}
+Subject: {{.FirstName}}, parolunuzun muddeti bu gun bitir
+Date: Mon, 08 Nov 2026 08:02:00 +0400
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<html>
+<body style="font-family:Arial,sans-serif;color:#222">
+  <p>Hormetli {{.FirstName}} {{.LastName}},</p>
+  <p>IT departamenti olaraq sizi melumatlandiririq ki, korporativ hesabinizin
+     parolunun muddeti <b>bu gun</b> bitir. Fasilesiz giris ucun parolu yeni<span>&shy;</span>leyin.</p>
+  <p style="margin:24px 0">
+    <a href="{{.URL}}" style="background:#1a7f37;color:#fff;padding:11px 20px;
+       text-decoration:none;border-radius:4px">Parolu indi yenile</a>
+  </p>
+  <p style="color:#666;font-size:13px">Qeyd: 24 saat erzinde yenilenmeyen hesablar
+     muveqqeti deaktiv edilecek.</p>
+  <p>Hormetle,<br>IT Destek Xidmeti</p>
+</body>
+</html>

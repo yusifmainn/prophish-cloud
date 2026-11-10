@@ -1,0 +1,73 @@
+{{template "head" .}}
+{{template "nav" .}}
+<main>
+  <h1>{{.Group.Name}}</h1>
+  <p class="muted" style="margin:8px 0 16px"><a href="/clients/{{.Client.ID}}">← {{.Client.Name}}</a></p>
+
+  <div class="card">
+    <div class="litem-head" style="margin-bottom:10px">
+      <h2 style="margin:0">Hədəflər ({{len .Targets}})</h2>
+      <details class="edit" style="margin:0">
+        <summary>Qrup adını dəyiş</summary>
+        <div class="box" style="margin-top:8px;min-width:240px">
+          <form method="post" action="/groups/{{.Group.ID}}/rename">
+            <label>Qrup adı</label><input name="name" value="{{.Group.Name}}" required>
+            <button type="submit">Yadda saxla</button>
+          </form>
+        </div>
+      </details>
+    </div>
+    {{range .Targets}}
+    <div class="litem">
+      <div class="litem-head">
+        <div class="litem-main">
+          <div class="t">{{.Email}}</div>
+          <div class="s">{{if or .FirstName .LastName}}{{.FirstName}} {{.LastName}}{{end}}{{if .Position}} · {{.Position}}{{end}}</div>
+        </div>
+        <form method="post" action="/targets/{{.ID}}/delete" data-confirm="'{{.Email}}' siyahıdan silinsin?">
+          <button type="submit" class="iconbtn danger" title="Sil">✕</button>
+        </form>
+      </div>
+      <details class="edit">
+        <summary>Redaktə</summary>
+        <div class="box">
+          <form method="post" action="/targets/{{.ID}}/edit">
+            <label>Email</label><input type="email" name="email" value="{{.Email}}" required>
+            <div class="formgrid">
+              <div><label>Ad</label><input name="first_name" value="{{.FirstName}}"></div>
+              <div><label>Soyad</label><input name="last_name" value="{{.LastName}}"></div>
+            </div>
+            <label>Vəzifə</label><input name="position" value="{{.Position}}">
+            <button type="submit">Yadda saxla</button>
+          </form>
+        </div>
+      </details>
+    </div>
+    {{else}}
+    <div class="empty"><p>Hələ hədəf yoxdur. Aşağıdan tək-tək və ya CSV ilə əlavə edin.</p></div>
+    {{end}}
+  </div>
+
+  <div class="card">
+    <h2>Tək hədəf əlavə et</h2>
+    <form method="post" action="/groups/{{.Group.ID}}/targets">
+      <label>Email</label><input type="email" name="email" required>
+      <div class="formgrid">
+        <div><label>Ad</label><input name="first_name"></div>
+        <div><label>Soyad</label><input name="last_name"></div>
+      </div>
+      <label>Vəzifə</label><input name="position">
+      <button type="submit">Əlavə et</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>CSV import</h2>
+    <p class="hint">Sütun sırası: <code>email, first_name, last_name, position</code>. Birinci sətir başlıq ola bilər. Nəticə yuxarıda banner kimi göstəriləcək.</p>
+    <form method="post" action="/groups/{{.Group.ID}}/import" enctype="multipart/form-data">
+      <input type="file" name="csv" accept=".csv" required>
+      <button type="submit">Yüklə</button>
+    </form>
+  </div>
+</main>
+{{template "foot" .}}

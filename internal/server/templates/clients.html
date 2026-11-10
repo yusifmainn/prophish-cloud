@@ -1,0 +1,31 @@
+{{template "head" .}}
+{{template "nav" .}}
+<main>
+  <div class="pghead"><div class="tt"><h1>Müştərilər</h1><p class="sub">Test etdiyiniz təşkilatlar, icazələr və hədəf qrupları.</p></div></div>
+  <div class="card">
+    <h2>Yeni müştəri</h2>
+    <form method="post" action="/clients">
+      <label>Ad</label>
+      <input type="text" name="name" required>
+      <label>Əlaqə emaili</label>
+      <input type="email" name="contact_email">
+      <label>Qeyd</label>
+      <textarea name="notes" rows="2"></textarea>
+      <button type="submit">Əlavə et</button>
+    </form>
+  </div>
+  <div class="card">
+    <h2>Siyahı</h2>
+    <table>
+      <thead><tr><th>Ad</th><th>Əlaqə</th><th>Yaradılıb</th></tr></thead>
+      <tbody>
+        {{range .Clients}}
+        <tr><td><a href="/clients/{{.ID}}">{{.Name}}</a></td><td>{{.ContactEmail}}</td><td>{{.CreatedAt.Format "2006-01-02"}}</td></tr>
+        {{else}}
+        <tr><td colspan="3" class="muted">Hələ müştəri yoxdur.</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</main>
+{{template "foot" .}}

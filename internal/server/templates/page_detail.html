@@ -1,0 +1,35 @@
+{{template "head" .}}
+{{template "nav" .}}
+<main>
+  <h1>{{.P.Name}}</h1>
+  <p class="muted" style="margin:8px 0 18px"><a href="/pages">← Açılış səhifələri</a></p>
+
+  <div class="card">
+    <h2>Səhifəni redaktə et</h2>
+    <p class="hint">Forma <code>action="{{"{{.SubmitURL}}"}}"</code> və <code>method="post"</code> olmalıdır — yoxsa “göndərdi” hadisəsi qeyd olunmaz. Dəyişənlər: <code>{{"{{.FirstName}}"}}</code>, <code>{{"{{.LastName}}"}}</code>, <code>{{"{{.Position}}"}}</code>, <code>{{"{{.SubmitURL}}"}}</code>.</p>
+    <form method="post" action="/pages/{{.P.ID}}/edit">
+      <label>Ad</label><input name="name" value="{{.P.Name}}" required>
+      <label>HTML məzmun</label>
+      <textarea name="html_body" rows="14" data-editor="landing" required>{{.P.HTMLBody}}</textarea>
+      <label>Yönləndirmə URL (opsional)</label>
+      <input name="redirect_url" value="{{.P.RedirectURL}}" placeholder="https://musteri.az/tehlukesizlik-telimi">
+      <button type="submit">Yadda saxla</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Önizləmə</h2>
+    <p class="hint">Nümunə işçi məlumatı ilə render olunur (Aysel Məmmədova · Mühasib). Dəyişiklikdən sonra yenilənir.</p>
+    <div class="preview"><iframe src="/pages/{{.P.ID}}/preview" style="height:460px" title="Landing önizləmə"></iframe></div>
+  </div>
+
+  <div class="card">
+    <h2>Təhlükəli zona</h2>
+    <p class="muted">Səhifəni bir kampaniya istifadə edirsə silinə bilməz (əvvəlcə həmin kampaniyaları silin).</p>
+    <form method="post" action="/pages/{{.P.ID}}/delete" style="display:inline-block"
+          data-confirm="'{{.P.Name}}' açılış səhifəsi həmişəlik silinsin?">
+      <button type="submit" class="danger">Səhifəni sil</button>
+    </form>
+  </div>
+</main>
+{{template "foot" .}}

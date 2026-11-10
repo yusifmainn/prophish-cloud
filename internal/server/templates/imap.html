@@ -1,0 +1,37 @@
+{{template "head" .}}
+{{template "nav" .}}
+<main>
+  <h1>Parametrlər — Bildirilən emaillər (IMAP)</h1>
+  <div class="card">
+    <h2>IMAP qutusu</h2>
+    <p class="muted">İşçilərin "şübhəli" deyə bildirdiyi (forward etdiyi) emailləri bu qutudan oxuyuruq. Göndərilən emaillərdə gizli <code>X-SecDrill-RID</code> başlığı olduğu üçün bildirən işçi avtomatik kampaniyaya bağlanır.</p>
+    <form method="post" action="/settings/imap">
+      <div style="display:flex;gap:12px">
+        <div style="flex:3"><label>Host</label><input name="host" value="{{if .Cfg}}{{.Cfg.Host}}{{end}}" placeholder="imap.example.com"></div>
+        <div style="flex:1"><label>Port</label><input name="port" type="number" inputmode="numeric" min="1" max="65535" value="{{if .Cfg}}{{.Cfg.Port}}{{else}}993{{end}}"></div>
+      </div>
+      <label>İstifadəçi</label><input name="username" value="{{if .Cfg}}{{.Cfg.Username}}{{end}}">
+      <label>Parol (dəyişmək üçün doldurun)</label><input type="password" name="password">
+      <label>Qovluq</label><input name="folder" value="{{if .Cfg}}{{.Cfg.Folder}}{{else}}INBOX{{end}}">
+      <label>Yoxlama aralığı (saniyə)</label><input name="poll_seconds" type="number" inputmode="numeric" min="1" value="{{if .Cfg}}{{.Cfg.PollSeconds}}{{else}}60{{end}}">
+      <div style="margin-top:10px">
+        <label style="display:inline"><input type="checkbox" name="use_tls" style="width:auto" {{if or (not .Cfg) .Cfg.UseTLS}}checked{{end}}> TLS (993)</label>
+        <label style="display:inline;margin-left:18px"><input type="checkbox" name="enabled" style="width:auto" {{if and .Cfg .Cfg.Enabled}}checked{{end}}> Aktiv</label>
+      </div>
+      <button type="submit">Yadda saxla</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Bildirilən emaillər</h2>
+    <table>
+      <thead><tr><th>Vaxt</th><th>Bildirən</th><th>Mövzu</th></tr></thead>
+      <tbody>
+        {{range .Reported}}
+        <tr><td>{{.At}}</td><td>{{.Reporter}}</td><td>{{.Subject}}</td></tr>
+        {{else}}<tr><td colspan="3" class="muted">Hələ bildiriş yoxdur.</td></tr>{{end}}
+      </tbody>
+    </table>
+  </div>
+</main>
+{{template "foot" .}}

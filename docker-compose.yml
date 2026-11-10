@@ -1,0 +1,63 @@
+# SecDrill — local/self-hosted stack.
+# Keep this on an isolated network/host. Do NOT expose the admin panel or the
+# database port to the public internet. Put the public server behind a TLS reverse proxy.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: secdrill-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: secdrill
+      POSTGRES_PASSWORD: ${SECDRILL_DB_PASSWORD:?set SECDRILL_DB_PASSWORD in .env}
+      POSTGRES_DB: secdrill
+    ports:
+      # Bind only to localhost so the DB is never reachable from outside this machine.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - secdrill_pgdata:/var/lib/postgresql/data
+      # Schema migrations are applied by the app at startup (single source of
+      # truth, so upgrades pick up new migrations), not via the initdb mount.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U secdrill"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    container_name: secdrill-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SECDRILL_DB_URL: postgres://secdrill:${SECDRILL_DB_PASSWORD}@db:5432/secdrill?sslmode=disable
+      SECDRILL_ADMIN_ADDR: 0.0.0.0:8443
+      SECDRILL_PUBLIC_ADDR: 0.0.0.0:8080
+      # The external URL targets reach; override in .env for real campaigns.
+      SECDRILL_PUBLIC_BASE_URL: ${SECDRILL_PUBLIC_BASE_URL:-http://localhost:8080}
+      # REQUIRED: set a 32-byte base64 secret in .env (openssl rand -base64 32).
+      SECDRILL_SESSION_KEY: ${SECDRILL_SESSION_KEY:?set SECDRILL_SESSION_KEY in .env}
+      SECDRILL_SECURE_COOKIES: ${SECDRILL_SECURE_COOKIES:-false}
+      # Operator time zone for scheduling + display (IANA name). Defaults to UTC.
+      SECDRILL_TIMEZONE: ${SECDRILL_TIMEZONE:-UTC}
+    ports:
+      # Admin panel — keep bound to localhost; reach it over a VPN/SSH tunnel.
+      - "127.0.0.1:8443:8443"
+      # Public server — in production, do NOT publish directly; front it with a
+      # TLS reverse proxy that only forwards /t/, /p/, /s/ paths.
+      - "127.0.0.1:8080:8080"
+
+  # Optional local test mail server. Start with:  docker compose --profile test up -d
+  # Then create a SMTP sending profile in the admin UI with host=mailhog port=1025
+  # (no username/password). Catch sent emails at http://127.0.0.1:8025
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: secdrill-mailhog
+    profiles: ["test"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025" # web UI / API (SMTP :1025 stays on the internal network)
+
+volumes:
+  secdrill_pgdata:

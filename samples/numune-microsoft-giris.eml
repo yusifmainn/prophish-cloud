@@ -1,0 +1,50 @@
+From: Microsoft Hesab Komandasi <no-reply@account-security-microsoft.com>
+To: {{.Email}}
+Subject: Hesabinizda qeyri-adi giris askarlandi
+Date: Mon, 08 Nov 2026 09:14:00 +0400
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="SECDRILL_SAMPLE_BOUNDARY"
+
+--SECDRILL_SAMPLE_BOUNDARY
+Content-Type: text/plain; charset=UTF-8
+
+Hormetli {{.FirstName}},
+
+Hesabiniza namelum bir cihazdan giris cehdi askarlandi. Eger bu siz deyilsinizse,
+hesabinizi qorumaq ucun derhal tesdiqleyin:
+
+{{.URL}}
+
+Hormetle,
+Microsoft Hesab Tehlukesizliyi Komandasi
+
+--SECDRILL_SAMPLE_BOUNDARY
+Content-Type: text/html; charset=UTF-8
+
+<html>
+<body style="font-family:Segoe UI,Arial,sans-serif;color:#201f1e">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="border:1px solid #edebe9">
+        <tr><td style="background:#0067b8;padding:16px 24px;color:#fff;font-size:18px;font-weight:600">Microsoft</td></tr>
+        <tr><td style="padding:24px">
+          <p>Hormetli {{.FirstName}} {{.LastName}},</p>
+          <p>Hesabiniza <b>namelum bir cihazdan</b> giris cehdi askarlandi. Eger bu siz
+             deyilsinizse, hesabinizi qorumaq ucun girisi derhal tesdiqleyin.</p>
+          <p style="margin:28px 0">
+            <a href="{{.URL}}" style="background:#0067b8;color:#fff;padding:12px 22px;
+               text-decoration:none;border-radius:4px;font-weight:600">Girisi tesdiqle</a>
+          </p>
+          <p style="color:#605e5c;font-size:13px">Eger duymeye klikleye bilmirsinizse, bu unvani
+             brauzere kopyalayin:<br>{{.URL}}</p>
+          <p>Hormetle,<br>Microsoft Hesab Tehlukesizliyi Komandasi</p>
+        </td></tr>
+        <tr><td style="background:#faf9f8;padding:16px 24px;color:#a19f9d;font-size:12px">
+          Bu avtomatik mesajdir. Cavab yazmayin.</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+
+--SECDRILL_SAMPLE_BOUNDARY--

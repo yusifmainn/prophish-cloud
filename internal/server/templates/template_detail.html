@@ -1,0 +1,57 @@
+{{template "head" .}}
+{{template "nav" .}}
+<main>
+  <h1>{{.T.Name}}</h1>
+  <p class="muted"><a href="/templates">← Şablonlar</a> · Mövzu: {{.T.Subject}}</p>
+
+  <div class="card">
+    <h2>Əlavələr (attachments)</h2>
+    <table>
+      <thead><tr><th>Fayl</th><th>Tip</th><th></th></tr></thead>
+      <tbody>
+        {{range .T.Attachments}}
+        <tr><td>{{.Filename}}</td><td>{{.ContentType}}</td>
+            <td><div class="rowact"><form method="post" action="/templates/{{$.T.ID}}/attachments/{{.ID}}/delete" data-confirm="'{{.Filename}}' əlavəsi silinsin?">
+                  <button class="iconbtn danger" title="Sil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></form></div></td></tr>
+        {{else}}<tr><td colspan="3" class="muted">Əlavə yoxdur.</td></tr>{{end}}
+      </tbody>
+    </table>
+    <form method="post" action="/templates/{{.T.ID}}/attachments" enctype="multipart/form-data" style="margin-top:14px">
+      <input type="file" name="file" required>
+      <button type="submit">Yüklə</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Şablonu redaktə et</h2>
+    <p class="muted">Dəyişənlər: <code>{{"{{.FirstName}}"}}</code>, <code>{{"{{.LastName}}"}}</code>, <code>{{"{{.Email}}"}}</code>, <code>{{"{{.Position}}"}}</code>, <code>{{"{{.URL}}"}}</code>, <code>{{"{{.TrackingPixel}}"}}</code>.</p>
+    <form method="post" action="/templates/{{.T.ID}}/edit">
+      <label>Ad</label><input name="name" value="{{.T.Name}}" required>
+      <label>Mövzu (Subject)</label><input name="subject" value="{{.T.Subject}}" required>
+      <label>HTML məzmun</label>
+      <textarea name="html_body" rows="10" data-editor="email" required>{{.T.HTMLBody}}</textarea>
+      <label>Mətn versiyası (opsional)</label>
+      <textarea name="text_body" rows="2">{{.T.TextBody}}</textarea>
+      <label>Xüsusi başlıqlar (opsional, hər sətir <code>Açar: Dəyər</code>)</label>
+      <textarea name="headers" rows="2">{{range $k,$v := .T.Headers}}{{$k}}: {{$v}}
+{{end}}</textarea>
+      <button type="submit">Yadda saxla</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Önizləmə</h2>
+    <p class="muted">Nümunə işçi məlumatı ilə — dəyişənlər doldurulmuş halda göstərilir.</p>
+    <div class="preview"><iframe src="/templates/{{.T.ID}}/preview" style="height:460px" title="Email önizləmə"></iframe></div>
+  </div>
+
+  <div class="card">
+    <h2>Təhlükəli zona</h2>
+    <p class="muted">Şablonu bir kampaniya istifadə edirsə silinə bilməz (əvvəlcə həmin kampaniyanı silin).</p>
+    <form method="post" action="/templates/{{.T.ID}}/delete" style="display:inline-block"
+          data-confirm="'{{.T.Name}}' şablonu həmişəlik silinsin?">
+      <button type="submit" class="danger">Şablonu sil</button>
+    </form>
+  </div>
+</main>
+{{template "foot" .}}

@@ -1,0 +1,19 @@
+{{template "head" .}}
+<main>
+  <div class="center">
+    {{template "authbrand" .}}
+    <div class="card">
+      <h1>Giriş</h1>
+      <p class="muted">SecDrill hesabınıza daxil olun.</p>
+      {{if .Error}}<div class="err">{{.Error}}</div>{{end}}
+      <form method="post" action="/login">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" required autofocus autocomplete="username">
+        <label for="password">Parol</label>
+        <input id="password" type="password" name="password" required autocomplete="current-password">
+        <button type="submit">Daxil ol</button>
+      </form>
+    </div>
+  </div>
+</main>
+{{template "foot" .}}

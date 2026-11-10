@@ -1,0 +1,31 @@
+{{template "head" .}}
+{{template "nav" .}}
+<main>
+  <h1>Audit jurnalı</h1>
+  <p class="muted" style="margin:8px 0 18px">
+    Operatorların təhlükəsizliyə təsir edən əməliyyatları — kim, nə vaxt, haradan.
+    Yalnız fakt qeyd olunur; <b>heç bir parol və ya gizli dəyər saxlanmır</b>. Son 300 qeyd.
+  </p>
+
+  <div class="card">
+    <h2>Son hadisələr</h2>
+    <table>
+      <thead><tr><th>Vaxt</th><th>Operator</th><th>Əməliyyat</th><th>Obyekt</th><th>Təfərrüat</th><th>IP</th></tr></thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>
+          <td style="white-space:nowrap">{{lt "2006-01-02 15:04:05" .CreatedAt}}</td>
+          <td>{{if .ActorEmail}}{{.ActorEmail}}{{else}}<span class="muted">—</span>{{end}}</td>
+          <td><span class="pill {{auditclass .Action}}">{{actionlabel .Action}}</span></td>
+          <td class="muted">{{.TargetType}}{{if .TargetID}} · {{.TargetID}}{{end}}</td>
+          <td>{{.Detail}}</td>
+          <td class="muted" style="white-space:nowrap">{{.IP}}</td>
+        </tr>
+        {{else}}
+        <tr><td colspan="6" class="muted">Hələ audit qeydi yoxdur.</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</main>
+{{template "foot" .}}

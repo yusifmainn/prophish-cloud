@@ -1,0 +1,49 @@
+{{template "head" .}}
+{{template "nav" .}}
+<main>
+  <div class="pghead"><div class="tt"><h1>Email şablonları</h1><p class="sub">Hədəf işçilərə göndərilən simulyasiya emailləri. Vizual redaktor və ya .eml import.</p></div></div>
+  {{if eq .Import "ok"}}<div class="note ok">Email import olundu.</div>{{end}}
+  {{if eq .Import "err"}}<div class="err">Email oxuna bilmədi — formatı yoxlayın.</div>{{end}}
+  {{if eq .Err "inuse"}}<div class="err">Şablon silinmədi — onu bir və ya bir neçə kampaniya istifadə edir. Əvvəlcə həmin kampaniyaları silin.</div>{{end}}
+
+  <div class="card">
+    <h2>Yeni şablon</h2>
+    <p class="muted">Dəyişənlər: <code>{{"{{.FirstName}}"}}</code>, <code>{{"{{.LastName}}"}}</code>, <code>{{"{{.Email}}"}}</code>, <code>{{"{{.Position}}"}}</code>, <code>{{"{{.URL}}"}}</code>, <code>{{"{{.TrackingPixel}}"}}</code>.</p>
+    <form method="post" action="/templates">
+      <label>Ad</label><input name="name" required>
+      <label>Mövzu (Subject)</label><input name="subject" required>
+      <label>HTML məzmun</label>
+      <textarea name="html_body" rows="8" data-editor="email" required>&lt;p&gt;Salam {{"{{.FirstName}}"}},&lt;/p&gt;&lt;p&gt;Hesabınızı təsdiqləyin: &lt;a href="{{"{{.URL}}"}}"&gt;buraya klikləyin&lt;/a&gt;.&lt;/p&gt;</textarea>
+      <label>Mətn versiyası (opsional)</label>
+      <textarea name="text_body" rows="2"></textarea>
+      <label>Xüsusi başlıqlar (opsional, hər sətir <code>Açar: Dəyər</code>)</label>
+      <textarea name="headers" rows="2" placeholder="X-Mailer: Outlook"></textarea>
+      <button type="submit">Yarat</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Email import (.eml / xam mətn)</h2>
+    <p class="muted">Mövcud bir emaili olduğu kimi yapışdırın — mövzu və HTML/mətn avtomatik çıxarılacaq.</p>
+    <form method="post" action="/templates/import">
+      <label>Ad</label><input name="name" required>
+      <label>Xam email mətni</label>
+      <textarea name="raw" rows="6" required placeholder="From: ...&#10;Subject: ...&#10;Content-Type: text/html&#10;&#10;<html>..."></textarea>
+      <button type="submit">Import et</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Siyahı</h2>
+    <table>
+      <thead><tr><th>Ad</th><th>Mövzu</th><th>Yaradılıb</th><th></th></tr></thead>
+      <tbody>
+        {{range .Templates}}
+        <tr><td><a href="/templates/{{.ID}}" class="tlink">{{.Name}}</a></td><td>{{.Subject}}</td><td>{{.CreatedAt.Format "2006-01-02"}}</td>
+            <td><a href="/templates/{{.ID}}">Aç →</a></td></tr>
+        {{else}}<tr><td colspan="4" class="muted">Hələ şablon yoxdur.</td></tr>{{end}}
+      </tbody>
+    </table>
+  </div>
+</main>
+{{template "foot" .}}

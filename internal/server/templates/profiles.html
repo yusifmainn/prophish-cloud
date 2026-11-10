@@ -1,0 +1,79 @@
+{{template "head" .}}
+{{template "nav" .}}
+<main>
+  <div class="pghead"><div class="tt"><h1>SMTP göndərmə profilləri</h1><p class="sub">Emaillərin göndərildiyi poçt serveri.</p></div></div>
+  {{if eq .Test "ok"}}<div class="note ok">Test emaili göndərildi.</div>{{end}}
+  {{if eq .Test "err"}}<div class="err">{{if .Flash}}{{.Flash}}{{else}}Test emaili göndərilə bilmədi — host/port/parolu yoxlayın.{{end}}</div>{{end}}
+  {{if eq .Test "bad"}}<div class="err">Düzgün email ünvanı daxil edin.</div>{{end}}
+  {{if eq .Test "inuse"}}<div class="err">Profil silinmədi — onu bir və ya bir neçə kampaniya istifadə edir. Əvvəlcə həmin kampaniyaları silin.</div>{{end}}
+
+  <div class="card">
+    <h2>Yeni profil</h2>
+    <p class="muted">Parol AES-256-GCM ilə şifrələnir. Xüsusi başlıqlar: hər sətir <code>Açar: Dəyər</code>.</p>
+    <form method="post" action="/profiles">
+      <label>Ad</label><input name="name" required>
+      <div style="display:flex;gap:12px">
+        <div style="flex:3"><label>SMTP host</label><input name="smtp_host" required placeholder="smtp.example.com"></div>
+        <div style="flex:1"><label>Port</label><input name="smtp_port" type="number" min="1" max="65535" value="587"></div>
+      </div>
+      <p class="hint">STARTTLS dəstəklənir (adətən port <b>587</b> və ya 25). Port <b>465</b> (implicit TLS) dəstəklənmir.</p>
+      <label>Göndərən ünvan (From)</label><input name="from_address" required placeholder="IT Dəstək &lt;it@example.com&gt;">
+      <label>SMTP istifadəçi (opsional)</label><input name="smtp_username">
+      <label>SMTP parol (opsional)</label><input type="password" name="smtp_password">
+      <label>Xüsusi başlıqlar (opsional)</label>
+      <textarea name="headers" rows="2" placeholder="X-Mailer: Outlook&#10;Reply-To: support@example.com"></textarea>
+      <button type="submit">Yarat</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Siyahı</h2>
+    <table>
+      <thead><tr><th>Ad</th><th>Host</th><th>Port</th><th>From</th><th>Auth</th><th>Test</th><th>Əməliyyat</th></tr></thead>
+      <tbody>
+        {{range .Profiles}}
+        <tr>
+          <td>{{.Name}}</td><td>{{.SMTPHost}}</td><td>{{.SMTPPort}}</td><td>{{.FromAddress}}</td>
+          <td>{{if .HasPassword}}<span class="pill ok">Parol var</span>{{else if .SMTPUser}}<span class="pill warn">Parolsuz</span>{{else}}<span class="pill neutral">Auth yoxdur</span>{{end}}</td>
+          <td>
+            <form method="post" action="/profiles/{{.ID}}/test" style="display:flex;gap:6px;margin:0">
+              <input name="to" type="email" placeholder="nümunə@şirkət.az" required aria-label="Test email ünvanı" style="padding:6px 8px">
+              <button type="submit" class="secondary" style="margin:0;padding:8px 14px">Göndər</button>
+            </form>
+          </td>
+          <td>
+            <details class="edit">
+              <summary>Redaktə</summary>
+              <div class="box">
+              <form method="post" action="/profiles/{{.ID}}/edit">
+                <label>Ad</label><input name="name" value="{{.Name}}" required>
+                <div style="display:flex;gap:12px">
+                  <div style="flex:3"><label>SMTP host</label><input name="smtp_host" value="{{.SMTPHost}}" required></div>
+                  <div style="flex:1"><label>Port</label><input name="smtp_port" type="number" min="1" max="65535" value="{{.SMTPPort}}"></div>
+                </div>
+                <p class="hint">STARTTLS dəstəklənir (adətən port <b>587</b> və ya 25). Port <b>465</b> (implicit TLS) dəstəklənmir.</p>
+                <label>Göndərən ünvan (From)</label><input name="from_address" value="{{.FromAddress}}" required>
+                <label>SMTP istifadəçi (opsional)</label><input name="smtp_username" value="{{.SMTPUser}}">
+                <label>SMTP parol (boş = dəyişmə)</label><input type="password" name="smtp_password" placeholder="••••••••">
+                <label style="display:flex;align-items:center;gap:6px;font-weight:normal">
+                  <input type="checkbox" name="clear_password" value="1" style="width:auto;margin:0"> Saxlanmış parolu təmizlə
+                </label>
+                <label>Xüsusi başlıqlar (hər sətir <code>Açar: Dəyər</code>)</label>
+                <textarea name="headers" rows="2">{{range $k,$v := .Headers}}{{$k}}: {{$v}}
+{{end}}</textarea>
+                <button type="submit">Yadda saxla</button>
+              </form>
+              </div>
+            </details>
+            <form method="post" action="/profiles/{{.ID}}/delete" style="margin:8px 0 0"
+                  data-confirm="'{{.Name}}' profili silinsin?">
+              <button type="submit" class="danger" style="padding:6px 12px">Sil</button>
+            </form>
+          </td>
+        </tr>
+        {{else}}<tr><td colspan="7" class="muted">Hələ profil yoxdur.</td></tr>{{end}}
+      </tbody>
+    </table>
+  </div>
+</main>
+{{template "foot" .}}

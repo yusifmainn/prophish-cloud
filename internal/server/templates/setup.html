@@ -1,0 +1,20 @@
+{{template "head" .}}
+<main>
+  <div class="center">
+    {{template "authbrand" .}}
+    <div class="card">
+      <h1>İlk operator hesabı</h1>
+      <p class="muted">Bu, platformanın ilk operator hesabıdır.</p>
+      {{if .Error}}<div class="err">{{.Error}}</div>{{end}}
+      <form method="post" action="/setup">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" required autofocus autocomplete="username">
+        <label for="password">Parol</label>
+        <input id="password" type="password" name="password" required minlength="12" autocomplete="new-password">
+        <div class="hint">Ən azı 12 simvol.</div>
+        <button type="submit">Hesabı yarat</button>
+      </form>
+    </div>
+  </div>
+</main>
+{{template "foot" .}}

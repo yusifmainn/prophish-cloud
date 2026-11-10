@@ -1,0 +1,88 @@
+{{template "head" .}}
+{{template "nav" .}}
+{{$sel := .Sel}}
+<main>
+  <div class="pghead">
+    <div class="tt"><h1>Kampaniyalar</h1><p class="sub">Simulyasiya kampaniyalarını qurun, işə salın və izləyin.</p></div>
+  </div>
+
+  {{if .Error}}<div class="err">{{.Error}}</div>{{end}}
+
+  <div class="card">
+    <h2>{{if .EditID}}Kampaniyanı redaktə et (qaralama){{else}}Yeni kampaniya{{end}}</h2>
+    {{if or (not .Clients) (not .Templates) (not .Pages) (not .Profiles)}}
+    <div class="note">Kampaniya qurmaq üçün əvvəlcə lazımdır:{{if not .Clients}} bir <a href="/clients">müştəri + icazə + qrup</a>;{{end}}{{if not .Templates}} bir <a href="/templates">email şablonu</a>;{{end}}{{if not .Pages}} bir <a href="/pages">açılış səhifəsi</a>;{{end}}{{if not .Profiles}} bir <a href="/profiles">SMTP profili</a>.{{end}}</div>
+    {{end}}
+    <form method="post" action="{{if .EditID}}/campaigns/{{.EditID}}/edit{{else}}/campaigns{{end}}" data-campaign-form>
+      <div class="sectlbl">Əsas</div>
+      <label for="c-name">Kampaniya adı</label>
+      <input id="c-name" name="name" value="{{if $sel}}{{$sel.Name}}{{end}}" required placeholder="məs. Q1 maliyyə təlimi">
+      <div class="formgrid">
+        <div>
+          <label for="c-client">Müştəri</label>
+          <select id="c-client" name="client_id" required>
+            <option value="">— seçin —</option>
+            {{range .Clients}}<option value="{{.ID}}" {{if $sel}}{{if eq $sel.ClientID .ID}}selected{{end}}{{end}}>{{.Name}}</option>{{end}}
+          </select>
+        </div>
+        <div>
+          <label for="c-auth">İcazə (RoE)</label>
+          <select id="c-auth" name="authorization_id" required>
+            <option value="">— seçin —</option>
+            {{range .Authorizations}}<option value="{{.ID}}" data-client="{{.ClientID}}" {{if $sel}}{{if eq $sel.AuthID .ID}}selected{{end}}{{end}}>{{.ClientName}} · {{.Scope}} (bitmə: {{.ValidTo.Format "2006-01-02"}})</option>{{end}}
+          </select>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:6px">Müştəri seçiləndə icazə və qruplar avtomatik ona görə süzülür. İcazəsiz kampaniya göndərilmir.</p>
+      <p class="hint" data-empty-hint style="display:none;color:var(--warn)">Bu müştəri üçün icazə və ya hədəf qrupu yoxdur — əvvəlcə <a href="/clients">Müştərilər</a> bölməsində əlavə edin.</p>
+
+      <div class="sectlbl">Hədəf qrupları</div>
+      <div class="pickwrap">
+        {{range .Groups}}
+        <label class="pick" data-group data-client="{{.ClientID}}" data-count="{{.Targets}}">
+          <input type="checkbox" name="group_ids" value="{{.ID}}" {{if $sel}}{{if index $sel.GroupIDs .ID}}checked{{end}}{{end}}>
+          <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span>
+          <span style="min-width:0"><span class="t">{{.Name}}</span><span class="s">{{.ClientName}}</span></span>
+          <span class="n">{{.Targets}} işçi</span>
+        </label>
+        {{else}}<span class="muted">Qrup yoxdur.</span>{{end}}
+      </div>
+      <div class="summ"><span class="muted" style="font-size:13px;color:var(--fg-2)">Seçilmiş hədəf</span><span class="big"><b data-count-out>0</b> <span style="font-size:13px;color:var(--muted);font-weight:500">işçi</span></span></div>
+
+      <div class="sectlbl">Məzmun və göndərmə</div>
+      <div class="formgrid">
+        <div>
+          <label for="c-tpl">Email şablonu</label>
+          <select id="c-tpl" name="template_id" required><option value="">— seçin —</option>{{range .Templates}}<option value="{{.ID}}" {{if $sel}}{{if eq $sel.TemplateID .ID}}selected{{end}}{{end}}>{{.Name}}</option>{{end}}</select>
+        </div>
+        <div>
+          <label for="c-page">Açılış səhifəsi</label>
+          <select id="c-page" name="landing_page_id" required><option value="">— seçin —</option>{{range .Pages}}<option value="{{.ID}}" {{if $sel}}{{if eq $sel.PageID .ID}}selected{{end}}{{end}}>{{.Name}}</option>{{end}}</select>
+        </div>
+        <div style="grid-column:1/-1">
+          <label for="c-smtp">SMTP profili</label>
+          <select id="c-smtp" name="sending_profile_id" required><option value="">— seçin —</option>{{range .Profiles}}<option value="{{.ID}}" {{if $sel}}{{if eq $sel.ProfileID .ID}}selected{{end}}{{end}}>{{.Name}}</option>{{end}}</select>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;border-top:1px solid var(--border);padding-top:16px;margin-top:20px">
+        {{if .EditID}}<a class="btn secondary" href="/campaigns/{{.EditID}}">Ləğv et</a>{{end}}
+        <button type="submit">{{if .EditID}}Dəyişiklikləri yadda saxla{{else}}Kampaniya yarat (qaralama){{end}}</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card flush">
+    <h2 class="card-head">Bütün kampaniyalar</h2>
+    <table>
+      <thead><tr><th>Ad</th><th>Müştəri</th><th>Status</th><th>Yaradılıb</th><th></th></tr></thead>
+      <tbody>
+        {{range .Campaigns}}
+        <tr><td><a href="/campaigns/{{.ID}}" class="tlink">{{.Name}}</a></td><td>{{.ClientName}}</td><td>{{template "statuspill" .Status}}</td><td class="muted num">{{.CreatedAt.Format "2006-01-02"}}</td>
+            <td><a href="/campaigns/{{.ID}}" class="rowopen">Aç →</a></td></tr>
+        {{else}}<tr><td colspan="5"><div class="empty"><p>Hələ kampaniya yoxdur. Yuxarıdan birincini yaradın.</p></div></td></tr>{{end}}
+      </tbody>
+    </table>
+  </div>
+</main>
+{{template "foot" .}}
