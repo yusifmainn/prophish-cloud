@@ -53,12 +53,14 @@ var fontFS embed.FS
 // inline scripts are blocked). It is an unauthenticated GET — the file is not secret.
 func (s *Server) handleStaticJS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache")
 	_, _ = w.Write(staticAppJS)
 }
 
 // handleStaticEditorJS serves the same-origin WYSIWYG editor script.
 func (s *Server) handleStaticEditorJS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache")
 	_, _ = w.Write(staticEditorJS)
 }
 
@@ -66,6 +68,7 @@ func (s *Server) handleStaticEditorJS(w http.ResponseWriter, r *http.Request) {
 // toggle + password reveal). Unauthenticated GET; the file is not secret.
 func (s *Server) handleStaticAuthJS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache")
 	_, _ = w.Write(staticAuthJS)
 }
 
