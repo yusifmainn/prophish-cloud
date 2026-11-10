@@ -25,6 +25,11 @@
     if (!btn) return;
     btn.addEventListener('click', function () {
       var next = effective() === 'dark' ? 'light' : 'dark';
+      // Smooth colour cross-fade during the switch (unless reduced-motion).
+      if (!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        root.classList.add('theme-anim');
+        window.setTimeout(function () { root.classList.remove('theme-anim'); }, 600);
+      }
       root.setAttribute('data-theme', next);
       try { localStorage.setItem('prophish-theme', next); } catch (e) {}
     });

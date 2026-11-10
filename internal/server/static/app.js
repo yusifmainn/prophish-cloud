@@ -19,24 +19,25 @@
   var saved = stored();
   if (saved === 'dark' || saved === 'light') root.setAttribute('data-theme', saved);
 
-  var SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/>';
-  var MOON = '<path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/>';
-
-  function paintIcon() {
-    var btn = document.getElementById('theme-toggle');
-    if (!btn) return;
-    var svg = btn.querySelector('svg');
-    if (svg) svg.innerHTML = effective() === 'dark' ? MOON : SUN;
+  // Theme toggle. The sun/moon icon is picked in CSS from the active theme, so
+  // this only flips data-theme (+ persists it). A short-lived <html class=
+  // "theme-anim"> turns on a smooth colour cross-fade across the whole UI for the
+  // duration of the switch (respecting prefers-reduced-motion).
+  function setTheme(next) {
+    if (!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+      root.classList.add('theme-anim');
+      window.setTimeout(function () { root.classList.remove('theme-anim'); }, 600);
+    }
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('prophish-theme', next); } catch (e) {}
   }
   function wireToggle() {
-    var btn = document.getElementById('theme-toggle');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      var next = effective() === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme', next);
-      try { localStorage.setItem('prophish-theme', next); } catch (e) {}
-      paintIcon();
-    });
+    var btns = document.querySelectorAll('#theme-toggle, [data-theme-toggle]');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener('click', function () {
+        setTheme(effective() === 'dark' ? 'light' : 'dark');
+      });
+    }
   }
   function markActive() {
     var path = location.pathname;
@@ -203,11 +204,8 @@
     start();
   }
 
-  function init() { paintIcon(); wireToggle(); markActive(); wireConfirms(); wireFlash(); wireTabs(); wireCampaignForm(); wireLivePoll(); }
+  function init() { wireToggle(); markActive(); wireConfirms(); wireFlash(); wireTabs(); wireCampaignForm(); wireLivePoll(); }
 
-  if (window.matchMedia) {
-    try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintIcon); } catch (e) {}
-  }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {

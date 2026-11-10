@@ -137,6 +137,12 @@
     .auth-right{display:none}
     .auth-mid{padding:30px 0}
   }
+  /* Animated theme transition: smooth colour cross-fade while switching. */
+  @media (prefers-reduced-motion:no-preference){
+    :root.theme-anim,:root.theme-anim *,:root.theme-anim *::before,:root.theme-anim *::after{
+      transition:background-color .5s ease,color .5s ease,border-color .5s ease,fill .5s ease,box-shadow .5s ease,background-image .5s ease!important;
+    }
+  }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
