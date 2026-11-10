@@ -2,7 +2,7 @@ package store
 
 import (
 	"github.com/jackc/pgx/v5"
-	"secdrill/internal/models"
+	"prophish/internal/models"
 )
 
 // AddTarget inserts a single target, ignoring duplicates within the same group.

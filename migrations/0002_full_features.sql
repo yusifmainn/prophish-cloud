@@ -1,4 +1,4 @@
--- SecDrill 0002 — feature parity additions.
+-- PROPhish 0002 — feature parity additions.
 
 -- API keys for operators (REST API auth).
 ALTER TABLE users ADD COLUMN IF NOT EXISTS api_key TEXT UNIQUE;

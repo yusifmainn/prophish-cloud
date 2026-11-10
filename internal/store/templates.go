@@ -3,7 +3,7 @@ package store
 import (
 	"encoding/json"
 
-	"secdrill/internal/models"
+	"prophish/internal/models"
 )
 
 func (s *Store) CreateTemplate(c ctx, clientID *string, name, subject, html, text string, headers map[string]string) (string, error) {

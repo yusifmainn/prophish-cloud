@@ -18,8 +18,8 @@ import (
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/client"
 
-	"secdrill/internal/auth"
-	"secdrill/internal/store"
+	"prophish/internal/auth"
+	"prophish/internal/store"
 )
 
 const (
@@ -124,12 +124,12 @@ func (m *Monitor) poll(ctx context.Context, cfg *store.IMAPConfig) error {
 
 	seqset := new(imap.SeqSet)
 	seqset.AddNum(uids...)
-	// Fetch ONLY the X-SecDrill-RID header (peeked, so it isn't marked read),
+	// Fetch ONLY the X-PROPhish-RID header (peeked, so it isn't marked read),
 	// never the whole message body — a hostile/oversized message can't be buffered.
 	section := &imap.BodySectionName{
 		BodyPartName: imap.BodyPartName{
 			Specifier: imap.HeaderSpecifier,
-			Fields:    []string{"X-SecDrill-RID"},
+			Fields:    []string{"X-PROPhish-RID"},
 		},
 		Peek: true,
 	}
@@ -153,7 +153,7 @@ func (m *Monitor) poll(ctx context.Context, cfg *store.IMAPConfig) error {
 			// Bounded read, then parse only the TOP-LEVEL headers (not the whole
 			// body) so a quoted/forwarded copy of the header cannot forge a report.
 			if parsed, perr := mail.ReadMessage(io.LimitReader(r, maxBody)); perr == nil {
-				rid = strings.TrimSpace(parsed.Header.Get("X-SecDrill-RID"))
+				rid = strings.TrimSpace(parsed.Header.Get("X-PROPhish-RID"))
 			}
 		}
 

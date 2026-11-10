@@ -3,7 +3,7 @@ package store
 import (
 	"encoding/json"
 
-	"secdrill/internal/models"
+	"prophish/internal/models"
 )
 
 func (s *Store) CreateSendingProfile(c ctx, name, host string, port int, user, fromAddr string, passwordEnc []byte, headers map[string]string) (string, error) {

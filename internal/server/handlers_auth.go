@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"secdrill/internal/auth"
-	"secdrill/internal/store"
+	"prophish/internal/auth"
+	"prophish/internal/store"
 )
 
 func (s *Server) handleSetupForm(w http.ResponseWriter, r *http.Request) {

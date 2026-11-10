@@ -1,4 +1,4 @@
-/* SecDrill WYSIWYG redaktoru — eyni mənşəli (CSP script-src 'self'), xarici kitabxana yoxdur.
+/* PROPhish WYSIWYG redaktoru — eyni mənşəli (CSP script-src 'self'), xarici kitabxana yoxdur.
    <textarea data-editor="email|landing"> elementini vizual redaktora çevirir: toolbar,
    dəyişən əlavəsi və HTML-mənbə keçidi. Textarea DOM-da (gizli) qalır və sinxron saxlanılır,
    ona görə forma əvvəlki kimi HTML göndərir. JS sönülüdürsə, textarea adi şəkildə işləyir. */

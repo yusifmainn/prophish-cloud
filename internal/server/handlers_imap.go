@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"secdrill/internal/auth"
-	"secdrill/internal/store"
+	"prophish/internal/auth"
+	"prophish/internal/store"
 )
 
 func (s *Server) handleIMAPForm(w http.ResponseWriter, r *http.Request) {

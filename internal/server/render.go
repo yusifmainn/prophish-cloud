@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"secdrill/internal/models"
+	"prophish/internal/models"
 )
 
 //go:embed templates/*.html
@@ -17,7 +17,7 @@ var templateFS embed.FS
 // templateFuncs are helpers available inside every template.
 var templateFuncs = template.FuncMap{
 	// lt ("local time") formats a timestamp in the process time zone
-	// (SECDRILL_TIMEZONE, set on time.Local at startup). Timestamps come back
+	// (PROPHISH_TIMEZONE, set on time.Local at startup). Timestamps come back
 	// from Postgres in UTC, so this converts them for display, e.g.
 	// {{lt "2006-01-02 15:04:05" .CreatedAt}}.
 	"lt": func(layout string, t time.Time) string {

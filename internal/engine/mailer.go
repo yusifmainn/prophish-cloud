@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"secdrill/internal/models"
+	"prophish/internal/models"
 )
 
 // SMTPConfig describes how to connect to a sending server.
@@ -146,8 +146,8 @@ func (a *loginAuth) Next(fromServer []byte, more bool) ([]byte, error) {
 }
 
 func buildMIME(from string, m Message) string {
-	altBoundary := "secdrill_alt_7f3a9c"
-	mixBoundary := "secdrill_mix_4b1e8d"
+	altBoundary := "prophish_alt_7f3a9c"
+	mixBoundary := "prophish_mix_4b1e8d"
 	hasAttach := len(m.Attachments) > 0
 
 	var b strings.Builder
@@ -214,7 +214,7 @@ func stripCRLF(s string) string {
 	return strings.NewReplacer("\r", "", "\n", "").Replace(s)
 }
 
-// isReservedHeader guards headers SecDrill sets itself.
+// isReservedHeader guards headers PROPhish sets itself.
 func isReservedHeader(k string) bool {
 	switch strings.ToLower(strings.TrimSpace(k)) {
 	case "from", "to", "subject", "date", "mime-version", "content-type", "content-transfer-encoding":

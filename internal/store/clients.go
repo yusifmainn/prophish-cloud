@@ -5,7 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"secdrill/internal/models"
+	"prophish/internal/models"
 )
 
 // ErrClientReferenced is returned by DeleteClient when the client cannot be

@@ -3,7 +3,7 @@ package store
 import (
 	"time"
 
-	"secdrill/internal/models"
+	"prophish/internal/models"
 )
 
 func (s *Store) CreateCampaign(c ctx, clientID, authID, name, templateID, pageID, profileID, createdBy string) (string, error) {

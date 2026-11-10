@@ -1,4 +1,4 @@
-module secdrill
+module prophish
 
 go 1.27
 

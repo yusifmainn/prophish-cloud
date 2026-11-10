@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-pdf/fpdf"
 
-	"secdrill/internal/models"
+	"prophish/internal/models"
 )
 
 // DejaVu Sans is embedded for full Azerbaijani/Unicode coverage. It is free and
@@ -103,7 +103,7 @@ func Generate(d Data) ([]byte, error) {
 	if footerBy == "" {
 		footerBy = "—"
 	}
-	footerText := "SecDrill · Hazırladı: " + footerBy + " · " + d.GeneratedAt.In(time.Local).Format("2006-01-02 15:04")
+	footerText := "PROPhish · Hazırladı: " + footerBy + " · " + d.GeneratedAt.In(time.Local).Format("2006-01-02 15:04")
 	pdf.SetFooterFunc(func() {
 		pdf.SetY(-13)
 		pdf.SetDrawColor(colLine[0], colLine[1], colLine[2])
@@ -125,7 +125,7 @@ func Generate(d Data) ([]byte, error) {
 	pdf.SetXY(left+4, 18)
 	pdf.SetFont("DejaVu", "B", 15)
 	pdf.SetTextColor(255, 255, 255)
-	pdf.CellFormat(contentW-8, 8, "SecDrill — Phishing Məlumatlandırma Hesabatı", "", 0, "L", false, 0, "")
+	pdf.CellFormat(contentW-8, 8, "PROPhish — Phishing Məlumatlandırma Hesabatı", "", 0, "L", false, 0, "")
 	pdf.Ln(16)
 
 	// ---- Meta ----

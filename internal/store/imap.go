@@ -6,7 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// IMAPConfig is the single global mailbox SecDrill polls for reported emails.
+// IMAPConfig is the single global mailbox PROPhish polls for reported emails.
 type IMAPConfig struct {
 	ID          string
 	Host        string

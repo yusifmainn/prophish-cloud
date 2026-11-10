@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"secdrill/internal/auth"
-	"secdrill/internal/store"
+	"prophish/internal/auth"
+	"prophish/internal/store"
 )
 
 // Launcher sends campaigns. It enforces that a valid authorization exists before
@@ -198,7 +198,7 @@ func (l *Launcher) Launch(ctx context.Context, campaignID string) error {
 
 		// Per-message headers: carry the result token so a reported (forwarded)
 		// email can be mapped back to this target.
-		msgHeaders := map[string]string{"X-SecDrill-RID": it.Token}
+		msgHeaders := map[string]string{"X-PROPhish-RID": it.Token}
 		for k, v := range headers {
 			msgHeaders[k] = v
 		}
@@ -301,9 +301,9 @@ func (l *Launcher) SendTestEmail(ctx context.Context, profileID, to string) erro
 	}
 	return Send(cfg, Message{
 		To:       to,
-		Subject:  "SecDrill test email",
-		TextBody: "Bu, SecDrill SMTP profilinin test mesajıdır. Göndərmə işləyir.",
-		HTMLBody: "<p>Bu, <strong>SecDrill</strong> SMTP profilinin test mesajıdır. Göndərmə işləyir.</p>",
+		Subject:  "PROPhish test email",
+		TextBody: "Bu, PROPhish SMTP profilinin test mesajıdır. Göndərmə işləyir.",
+		HTMLBody: "<p>Bu, <strong>PROPhish</strong> SMTP profilinin test mesajıdır. Göndərmə işləyir.</p>",
 		Headers:  profile.Headers,
 	})
 }

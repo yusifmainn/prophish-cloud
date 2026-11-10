@@ -1,4 +1,4 @@
-# SecDrill
+# PROPhish
 
 **Öz serverində işləyən, təhlükəsizlik-prioritetli phishing məlumatlandırma (awareness) simulyasiya platforması.**
 Müqavilə bağladığınız müştəri təşkilatlarda, yazılı icazə əsasında, işçilərin sosial mühəndislik hücumlarına həssaslığını ölçmək və keçməyənlərə təlim vermək üçün nəzərdə tutulub.
@@ -87,11 +87,11 @@ curl -H "X-API-Key: <açar>" http://127.0.0.1:8443/api/campaigns/<id>
    ```
 2. `.env` faylını yaradın (`.env.example`-dən köçürün) və açarı yazın:
    ```
-   SECDRILL_SESSION_KEY=<yuxarıdakı açar>
-   SECDRILL_PUBLIC_BASE_URL=http://localhost:8080
-   SECDRILL_TIMEZONE=Asia/Baku
+   PROPHISH_SESSION_KEY=<yuxarıdakı açar>
+   PROPHISH_PUBLIC_BASE_URL=http://localhost:8080
+   PROPHISH_TIMEZONE=Asia/Baku
    ```
-   > `SECDRILL_TIMEZONE` planlaşdırma vaxtlarının və tarixlərin hansı saat qurşağında göstərilməsini təyin edir (defolt: UTC). Təyin etməsəniz, "09:00"-a planlaşdırılan kampaniya 09:00 UTC-də gedər.
+   > `PROPHISH_TIMEZONE` planlaşdırma vaxtlarının və tarixlərin hansı saat qurşağında göstərilməsini təyin edir (defolt: UTC). Təyin etməsəniz, "09:00"-a planlaşdırılan kampaniya 09:00 UTC-də gedər.
 3. Stacki qaldırın:
    ```bash
    docker compose up -d --build
@@ -128,7 +128,7 @@ Dayandırmaq: `docker compose down` · Məlumatı da silmək: `docker compose do
 - **Rol icazəsi (RBAC):** SMTP/IMAP konfiqi, icazə yaratma, istifadəçi idarəsi, kampaniya silmə → yalnız **admin**.
 - **CSRF:** SameSite=Lax üstünə Origin/Referer yoxlaması.
 - **Login:** brute-force lockout + timing-sabit yoxlama.
-- **Public server:** rate-limit + concurrency cap; XFF yalnız `SECDRILL_TRUSTED_PROXIES`-dən qəbul olunur.
+- **Public server:** rate-limit + concurrency cap; XFF yalnız `PROPHISH_TRUSTED_PROXIES`-dən qəbul olunur.
 - **CSV export:** formul (DDE) injeksiyası neytrallaşdırılır.
 - **API açarları:** yalnız SHA-256 hash saxlanır (plaintext bir dəfə göstərilir).
 - **IMAP:** STARTTLS məcburidir, oxuma limitli, RID yalnız üst başlıqdan oxunur və göndərici target ilə uyğunlaşdırılır.
@@ -139,7 +139,7 @@ Dayandırmaq: `docker compose down` · Məlumatı da silmək: `docker compose do
 - public rate-limiter real müştəri IP-sinə görə açarlanır.
 - open/click/submit event-ləri yalnız ilk keçiddə yazılır (DB-doldurma DoS bağlandı).
 - **"reported" ayrıca bayraqdır** — `submitted`/`clicked` statusunu artıq üstələmir (işçi uğursuzluğunu "ağ yuya" bilmir).
-- login/setup `checkOrigin` altındadır; `decodeKey` yalnız base64/hex 32 bayt qəbul edir; multipart temp fayllar silinir; parol dəyişmə cari parol tələb edir + sessiya rotasiyası; IMAP yalnız RID başlığını çəkir; Postgres parolu compose-da `SECDRILL_DB_PASSWORD` ilə parametrləşdirilib.
+- login/setup `checkOrigin` altındadır; `decodeKey` yalnız base64/hex 32 bayt qəbul edir; multipart temp fayllar silinir; parol dəyişmə cari parol tələb edir + sessiya rotasiyası; IMAP yalnız RID başlığını çəkir; Postgres parolu compose-da `PROPHISH_DB_PASSWORD` ilə parametrləşdirilib.
 
 Qalan aşağı-riskli tövsiyələr: public server üçün ayrıca DB pool; event retention/arxiv job; reported üçün DKIM/DMARC uyğunluq yoxlaması (mail-auth infrastrukturu tələb edir); production-da `.env` açarlarının rotasiyası.
 
@@ -147,7 +147,7 @@ Qalan aşağı-riskli tövsiyələr: public server üçün ayrıca DB pool; even
 
 - [ ] Admin paneli (`:8443`) **internetə açmayın** — VPN və ya SSH tunel arxasında saxlayın.
 - [ ] Public serveri birbaşa yox, **TLS reverse proxy** (Nginx/Caddy) arxasında verin; yalnız `/t/`, `/p/`, `/s/` yollarını ötürün.
-- [ ] `SECDRILL_SECURE_COOKIES=true` (HTTPS altında).
+- [ ] `PROPHISH_SECURE_COOKIES=true` (HTTPS altında).
 - [ ] Postgres portunu (`5432`) publik açmayın; disk şifrələməsi (at rest) tətbiq edin.
 - [ ] `.env`-i heç vaxt git-ə əlavə etməyin (artıq `.gitignore`-dadır); güclü DB parolu seçin.
 - [ ] Hər kampaniya üçün müştəri ilə imzalanmış **RoE/icazə** olsun və sistemdə qeyd edilsin.

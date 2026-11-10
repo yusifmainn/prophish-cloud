@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"secdrill/internal/importer"
+	"prophish/internal/importer"
 )
 
 // handlePageImport clones a live URL into a new landing page.

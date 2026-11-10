@@ -4,7 +4,7 @@
   <h1>Parametrlər — Bildirilən emaillər (IMAP)</h1>
   <div class="card">
     <h2>IMAP qutusu</h2>
-    <p class="muted">İşçilərin "şübhəli" deyə bildirdiyi (forward etdiyi) emailləri bu qutudan oxuyuruq. Göndərilən emaillərdə gizli <code>X-SecDrill-RID</code> başlığı olduğu üçün bildirən işçi avtomatik kampaniyaya bağlanır.</p>
+    <p class="muted">İşçilərin "şübhəli" deyə bildirdiyi (forward etdiyi) emailləri bu qutudan oxuyuruq. Göndərilən emaillərdə gizli <code>X-PROPhish-RID</code> başlığı olduğu üçün bildirən işçi avtomatik kampaniyaya bağlanır.</p>
     <form method="post" action="/settings/imap">
       <div style="display:flex;gap:12px">
         <div style="flex:3"><label>Host</label><input name="host" value="{{if .Cfg}}{{.Cfg.Host}}{{end}}" placeholder="imap.example.com"></div>

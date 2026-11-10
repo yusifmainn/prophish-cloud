@@ -15,13 +15,13 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 
-	"secdrill/internal/config"
-	"secdrill/internal/database"
-	"secdrill/internal/engine"
-	"secdrill/internal/imappoll"
-	"secdrill/internal/publicsrv"
-	"secdrill/internal/server"
-	"secdrill/internal/store"
+	"prophish/internal/config"
+	"prophish/internal/database"
+	"prophish/internal/engine"
+	"prophish/internal/imappoll"
+	"prophish/internal/publicsrv"
+	"prophish/internal/server"
+	"prophish/internal/store"
 )
 
 func main() {
@@ -62,7 +62,7 @@ func main() {
 	sessions := scs.New()
 	sessions.Lifetime = 8 * time.Hour
 	sessions.IdleTimeout = 30 * time.Minute
-	sessions.Cookie.Name = "secdrill_session"
+	sessions.Cookie.Name = "prophish_session"
 	sessions.Cookie.HttpOnly = true
 	sessions.Cookie.SameSite = http.SameSiteLaxMode
 	sessions.Cookie.Secure = cfg.SecureCookies
@@ -99,14 +99,14 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("SecDrill admin panel listening on http://%s", cfg.AdminAddr)
+		log.Printf("PROPhish admin panel listening on http://%s", cfg.AdminAddr)
 		if err := adminServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("admin listen: %v", err)
 		}
 	}()
 
 	go func() {
-		log.Printf("SecDrill public server listening on http://%s", cfg.PublicAddr)
+		log.Printf("PROPhish public server listening on http://%s", cfg.PublicAddr)
 		if err := publicServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("public listen: %v", err)
 		}

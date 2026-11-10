@@ -1,6 +1,6 @@
 package store
 
-import "secdrill/internal/models"
+import "prophish/internal/models"
 
 func (s *Store) CreateGroup(c ctx, clientID, name string) (string, error) {
 	var id string

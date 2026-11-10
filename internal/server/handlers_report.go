@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"secdrill/internal/report"
+	"prophish/internal/report"
 )
 
 // handleCampaignReportPDF generates and streams a client-facing PDF report for a

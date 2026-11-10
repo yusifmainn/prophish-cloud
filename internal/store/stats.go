@@ -1,6 +1,6 @@
 package store
 
-import "secdrill/internal/models"
+import "prophish/internal/models"
 
 // GroupStat is a per-department (group) aggregate used in the client PDF report.
 type GroupStat struct {

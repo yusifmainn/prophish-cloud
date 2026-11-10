@@ -9,8 +9,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"secdrill/internal/auth"
-	"secdrill/internal/models"
+	"prophish/internal/auth"
+	"prophish/internal/models"
 )
 
 // campaignPageData gathers everything the campaigns page (list + create form)

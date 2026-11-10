@@ -8,9 +8,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"secdrill/internal/config"
-	"secdrill/internal/engine"
-	"secdrill/internal/store"
+	"prophish/internal/config"
+	"prophish/internal/engine"
+	"prophish/internal/store"
 )
 
 // Server holds shared dependencies and implements the HTTP handlers.

@@ -1,6 +1,6 @@
 package store
 
-import "secdrill/internal/models"
+import "prophish/internal/models"
 
 func (s *Store) CreateLandingPage(c ctx, clientID *string, name, html, redirect string) (string, error) {
 	var id string

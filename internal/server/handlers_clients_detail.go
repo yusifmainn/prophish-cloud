@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"secdrill/internal/store"
+	"prophish/internal/store"
 )
 
 func (s *Server) handleClientDetail(w http.ResponseWriter, r *http.Request) {

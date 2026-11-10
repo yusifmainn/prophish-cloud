@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"secdrill/internal/models"
-	"secdrill/internal/store"
+	"prophish/internal/models"
+	"prophish/internal/store"
 )
 
 // TestTemplatesRender parses every embedded template and executes it with

@@ -1,4 +1,4 @@
--- SecDrill 0004 — audit log.
+-- PROPhish 0004 — audit log.
 --
 -- An append-only record of security-relevant OPERATOR actions (who did what,
 -- when, from where). This is distinct from the `events` table, which records

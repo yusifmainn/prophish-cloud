@@ -95,7 +95,7 @@ func CloneSite(rawURL string) (string, error) {
 
 	client := ssrfSafeClient()
 	req, _ := http.NewRequest("GET", rawURL, nil)
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; SecDrill/1.0)")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; PROPhish/1.0)")
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("fetch: %w", err)

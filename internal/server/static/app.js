@@ -1,10 +1,10 @@
-/* SecDrill admin — progressive enhancement served from same origin (CSP: script-src 'self').
+/* PROPhish admin — progressive enhancement served from same origin (CSP: script-src 'self').
    Applies the saved theme before body render, then wires the toggle + active nav on load. */
 (function () {
   var root = document.documentElement;
 
   function stored() {
-    try { return localStorage.getItem('secdrill-theme'); } catch (e) { return null; }
+    try { return localStorage.getItem('prophish-theme'); } catch (e) { return null; }
   }
   function systemDark() {
     return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -34,7 +34,7 @@
     btn.addEventListener('click', function () {
       var next = effective() === 'dark' ? 'light' : 'dark';
       root.setAttribute('data-theme', next);
-      try { localStorage.setItem('secdrill-theme', next); } catch (e) {}
+      try { localStorage.setItem('prophish-theme', next); } catch (e) {}
       paintIcon();
     });
   }

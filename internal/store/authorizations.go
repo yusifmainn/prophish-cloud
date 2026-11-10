@@ -3,7 +3,7 @@ package store
 import (
 	"time"
 
-	"secdrill/internal/models"
+	"prophish/internal/models"
 )
 
 func (s *Store) CreateAuthorization(c ctx, clientID, scope, authorizedBy, docRef string, from, to time.Time) (string, error) {

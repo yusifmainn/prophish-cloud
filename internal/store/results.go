@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"secdrill/internal/models"
+	"prophish/internal/models"
 )
 
 // CreateResultsForCampaign materializes one result row per target across all groups

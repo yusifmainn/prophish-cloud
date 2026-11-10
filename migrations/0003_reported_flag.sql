@@ -1,4 +1,4 @@
--- SecDrill 0003 — make "reported" an independent fact, not a status that can
+-- PROPhish 0003 — make "reported" an independent fact, not a status that can
 -- override 'submitted'/'clicked'. A target recognising the phish (good) must
 -- never erase the record that they had clicked or submitted (bad).
 

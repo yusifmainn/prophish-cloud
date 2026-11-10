@@ -25,7 +25,7 @@ type Config struct {
 	EncryptionKey  []byte       // 32 bytes, derived from SessionKey via HKDF; used ONLY to encrypt SMTP/IMAP secrets
 	SecureCookies  bool
 	TrustedProxies []*net.IPNet   // CIDRs whose X-Forwarded-For is trusted on the public listener
-	Location       *time.Location // display/scheduling time zone (SECDRILL_TIMEZONE), defaults to UTC
+	Location       *time.Location // display/scheduling time zone (PROPHISH_TIMEZONE), defaults to UTC
 }
 
 // Load reads configuration from the process environment. If a .env file exists in the
@@ -34,45 +34,45 @@ func Load() (*Config, error) {
 	_ = loadDotEnv(".env")
 
 	c := &Config{
-		DatabaseURL:   getenv("SECDRILL_DB_URL", ""),
-		AdminAddr:     getenv("SECDRILL_ADMIN_ADDR", "127.0.0.1:8443"),
-		PublicAddr:    getenv("SECDRILL_PUBLIC_ADDR", "127.0.0.1:8080"),
-		PublicBaseURL: strings.TrimRight(getenv("SECDRILL_PUBLIC_BASE_URL", "http://127.0.0.1:8080"), "/"),
-		SecureCookies:  strings.EqualFold(getenv("SECDRILL_SECURE_COOKIES", "false"), "true"),
-		TrustedProxies: parseCIDRs(getenv("SECDRILL_TRUSTED_PROXIES", "")),
+		DatabaseURL:   getenv("PROPHISH_DB_URL", ""),
+		AdminAddr:     getenv("PROPHISH_ADMIN_ADDR", "127.0.0.1:8443"),
+		PublicAddr:    getenv("PROPHISH_PUBLIC_ADDR", "127.0.0.1:8080"),
+		PublicBaseURL: strings.TrimRight(getenv("PROPHISH_PUBLIC_BASE_URL", "http://127.0.0.1:8080"), "/"),
+		SecureCookies:  strings.EqualFold(getenv("PROPHISH_SECURE_COOKIES", "false"), "true"),
+		TrustedProxies: parseCIDRs(getenv("PROPHISH_TRUSTED_PROXIES", "")),
 	}
 
 	if c.DatabaseURL == "" {
-		return nil, fmt.Errorf("SECDRILL_DB_URL is required")
+		return nil, fmt.Errorf("PROPHISH_DB_URL is required")
 	}
 
-	rawKey := getenv("SECDRILL_SESSION_KEY", "")
+	rawKey := getenv("PROPHISH_SESSION_KEY", "")
 	if rawKey == "" || rawKey == "replace_with_random_32_byte_secret" {
-		return nil, fmt.Errorf("SECDRILL_SESSION_KEY is required; generate one with: openssl rand -base64 32")
+		return nil, fmt.Errorf("PROPHISH_SESSION_KEY is required; generate one with: openssl rand -base64 32")
 	}
 	key, err := decodeKey(rawKey)
 	if err != nil {
-		return nil, fmt.Errorf("invalid SECDRILL_SESSION_KEY: %w", err)
+		return nil, fmt.Errorf("invalid PROPHISH_SESSION_KEY: %w", err)
 	}
 	if len(key) != 32 {
-		return nil, fmt.Errorf("SECDRILL_SESSION_KEY must decode to exactly 32 bytes, got %d", len(key))
+		return nil, fmt.Errorf("PROPHISH_SESSION_KEY must decode to exactly 32 bytes, got %d", len(key))
 	}
 	c.SessionKey = key
 
 	// Derive a SEPARATE 32-byte key for encrypting stored credentials, so the
 	// cookie-signing key and the credential-encryption key are cryptographically
 	// independent even though they come from one configured secret (key separation).
-	c.EncryptionKey = deriveKey(key, "secdrill-credential-encryption-v1")
+	c.EncryptionKey = deriveKey(key, "prophish-credential-encryption-v1")
 
 	// Time zone for scheduling input and timestamp display. Defaults to UTC so
-	// behaviour is deterministic; set SECDRILL_TIMEZONE=Asia/Baku (for example)
+	// behaviour is deterministic; set PROPHISH_TIMEZONE=Asia/Baku (for example)
 	// so a campaign scheduled for "09:00" sends at 09:00 local time, not 09:00 UTC.
-	// The tz database is embedded in the binary (see cmd/secdrill), so named zones
+	// The tz database is embedded in the binary (see cmd/prophish), so named zones
 	// resolve even in the minimal distroless container.
-	tzName := getenv("SECDRILL_TIMEZONE", "UTC")
+	tzName := getenv("PROPHISH_TIMEZONE", "UTC")
 	loc, err := time.LoadLocation(tzName)
 	if err != nil {
-		return nil, fmt.Errorf("invalid SECDRILL_TIMEZONE %q: %w", tzName, err)
+		return nil, fmt.Errorf("invalid PROPHISH_TIMEZONE %q: %w", tzName, err)
 	}
 	c.Location = loc
 

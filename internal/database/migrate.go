@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"secdrill/migrations"
+	"prophish/migrations"
 )
 
 // Migrate applies every embedded *.sql migration that has not yet been applied,

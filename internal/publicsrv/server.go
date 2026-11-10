@@ -13,7 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"secdrill/internal/store"
+	"prophish/internal/store"
 )
 
 // Server is the public-facing listener that targets interact with. It serves

@@ -3,7 +3,7 @@ package server
 import (
 	"strings"
 
-	"secdrill/internal/models"
+	"prophish/internal/models"
 )
 
 // parseHeaderLines turns a textarea of "Key: Value" lines into a header map.

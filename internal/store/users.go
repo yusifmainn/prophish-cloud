@@ -6,7 +6,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"secdrill/internal/models"
+	"prophish/internal/models"
 )
 
 var ErrNotFound = errors.New("not found")

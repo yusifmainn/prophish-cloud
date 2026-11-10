@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"secdrill/internal/auth"
+	"prophish/internal/auth"
 )
 
 // ---- Email templates ----
