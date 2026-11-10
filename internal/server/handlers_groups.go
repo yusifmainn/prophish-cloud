@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/csv"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -125,9 +124,9 @@ func (s *Server) handleTargetImport(w http.ResponseWriter, r *http.Request) {
 	}
 	if total > 0 {
 		if skipped := total - inserted; skipped > 0 {
-			s.flashOK(r, fmt.Sprintf("%d hədəf əlavə edildi, %d təkrar/dublikat ötürüldü.", inserted, skipped))
+			s.flashOK(r, s.tf(r, "flash.targets_added_dup", inserted, skipped))
 		} else {
-			s.flashOK(r, fmt.Sprintf("%d hədəf əlavə edildi.", inserted))
+			s.flashOK(r, s.tf(r, "flash.targets_added", inserted))
 		}
 	} else {
 		s.flashErr(r, "Heç bir sətir import olunmadı — formatı (email,first_name,last_name,position) yoxlayın.")

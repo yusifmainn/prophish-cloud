@@ -378,7 +378,7 @@
 
 {{define "targetpill"}}{{if eq . "submitted"}}<span class="pill crit">{{t "pill.submitted"}}</span>{{else if eq . "clicked"}}<span class="pill warn">{{t "pill.clicked"}}</span>{{else if eq . "opened"}}<span class="pill info">{{t "pill.opened"}}</span>{{else if eq . "sent"}}<span class="pill neutral">{{t "pill.sent"}}</span>{{else if eq . "scheduled"}}<span class="pill neutral">{{t "pill.pending"}}</span>{{else if eq . "error"}}<span class="pill crit">{{t "pill.failed"}}</span>{{else}}<span class="pill neutral">{{.}}</span>{{end}}{{end}}
 
-{{define "authbrand"}}<div class="authbrand"><span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" fill="#fff" opacity=".22"/><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" stroke="#fff" stroke-width="1.6"/><path d="M8.5 12l2.4 2.4 4.6-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><b>PROPhish</b><small>Awareness Platforması</small></span></div>{{end}}
+{{define "authbrand"}}<div class="authbrand"><span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" fill="#fff" opacity=".22"/><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" stroke="#fff" stroke-width="1.6"/><path d="M8.5 12l2.4 2.4 4.6-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><b>PROPhish</b><small>{{t "brand.tagline"}}</small></span></div>{{end}}
 
 {{define "foot"}}
 </div>

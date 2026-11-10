@@ -72,7 +72,7 @@ func (s *Server) handleCampaignSchedule(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	s.audit(r, "campaign.schedule", "campaign", id, launchAt.Format("2006-01-02 15:04"))
-	s.flashOK(r, "Kampaniya "+launchAt.Format("2006-01-02 15:04")+" tarixinə planlaşdırıldı.")
+	s.flashOK(r, s.tf(r, "flash.scheduled_at", launchAt.Format("2006-01-02 15:04")))
 	http.Redirect(w, r, "/campaigns/"+id, http.StatusSeeOther)
 }
 
@@ -120,7 +120,7 @@ func (s *Server) handleCampaignResend(w http.ResponseWriter, r *http.Request) {
 	if n > 0 {
 		_ = s.store.SetCampaignStatus(r.Context(), id, "scheduled")
 		s.audit(r, "campaign.resend", "campaign", id, fmt.Sprintf("%d non-openers re-queued", n))
-		s.flashOK(r, fmt.Sprintf("%d nəfər (emaili açmayanlar) yenidən növbəyə alındı.", n))
+		s.flashOK(r, s.tf(r, "flash.requeued_unopened", n))
 		go func() {
 			if err := s.launcher.Launch(context.Background(), id); err != nil {
 				fmt.Printf("resend %s aborted: %v\n", id, err)

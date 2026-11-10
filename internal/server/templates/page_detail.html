@@ -2,33 +2,33 @@
 {{template "nav" .}}
 <main>
   <h1>{{.P.Name}}</h1>
-  <p class="muted" style="margin:8px 0 18px"><a href="/pages">← Açılış səhifələri</a></p>
+  <p class="muted" style="margin:8px 0 18px"><a href="/pages">{{t "pgd.back"}}</a></p>
 
   <div class="card">
-    <h2>Səhifəni redaktə et</h2>
-    <p class="hint">Forma <code>action="{{"{{.SubmitURL}}"}}"</code> və <code>method="post"</code> olmalıdır — yoxsa “göndərdi” hadisəsi qeyd olunmaz. Dəyişənlər: <code>{{"{{.FirstName}}"}}</code>, <code>{{"{{.LastName}}"}}</code>, <code>{{"{{.Position}}"}}</code>, <code>{{"{{.SubmitURL}}"}}</code>.</p>
+    <h2>{{t "pgd.edit_title"}}</h2>
+    <p class="hint">{{t "pgd.edit_hint"}}</p>
     <form method="post" action="/pages/{{.P.ID}}/edit">
-      <label>Ad</label><input name="name" value="{{.P.Name}}" required>
-      <label>HTML məzmun</label>
+      <label>{{t "common.name"}}</label><input name="name" value="{{.P.Name}}" required>
+      <label>{{t "pgd.html_label"}}</label>
       <textarea name="html_body" rows="14" data-editor="landing" required>{{.P.HTMLBody}}</textarea>
-      <label>Yönləndirmə URL (opsional)</label>
+      <label>{{t "pgd.redirect_opt"}}</label>
       <input name="redirect_url" value="{{.P.RedirectURL}}" placeholder="https://musteri.az/tehlukesizlik-telimi">
-      <button type="submit">Yadda saxla</button>
+      <button type="submit">{{t "common.save"}}</button>
     </form>
   </div>
 
   <div class="card">
-    <h2>Önizləmə</h2>
-    <p class="hint">Nümunə işçi məlumatı ilə render olunur (Aysel Məmmədova · Mühasib). Dəyişiklikdən sonra yenilənir.</p>
-    <div class="preview"><iframe src="/pages/{{.P.ID}}/preview" style="height:460px" title="Landing önizləmə"></iframe></div>
+    <h2>{{t "pgd.preview_title"}}</h2>
+    <p class="hint">{{t "pgd.preview_hint"}}</p>
+    <div class="preview"><iframe src="/pages/{{.P.ID}}/preview" style="height:460px" title="{{t "pgd.preview_iframe"}}"></iframe></div>
   </div>
 
   <div class="card">
-    <h2>Təhlükəli zona</h2>
-    <p class="muted">Səhifəni bir kampaniya istifadə edirsə silinə bilməz (əvvəlcə həmin kampaniyaları silin).</p>
+    <h2>{{t "common.danger_zone"}}</h2>
+    <p class="muted">{{t "pgd.delete_note"}}</p>
     <form method="post" action="/pages/{{.P.ID}}/delete" style="display:inline-block"
-          data-confirm="'{{.P.Name}}' açılış səhifəsi həmişəlik silinsin?">
-      <button type="submit" class="danger">Səhifəni sil</button>
+          data-confirm="{{t "pgd.delete_confirm_pre"}}{{.P.Name}}{{t "pgd.delete_confirm_post"}}">
+      <button type="submit" class="danger">{{t "pgd.delete_btn"}}</button>
     </form>
   </div>
 </main>
