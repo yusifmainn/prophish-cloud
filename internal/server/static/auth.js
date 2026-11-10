@@ -20,18 +20,38 @@
     if (a === 'dark' || a === 'light') return a;
     return systemDark() ? 'dark' : 'light';
   }
+  function reduceMotion() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+  function flipTheme(next) {
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('prophish-theme', next); } catch (e) {}
+  }
   function wireTheme() {
     var btn = document.getElementById('theme-toggle');
     if (!btn) return;
     btn.addEventListener('click', function () {
       var next = effective() === 'dark' ? 'light' : 'dark';
-      // Smooth colour cross-fade during the switch (unless reduced-motion).
-      if (!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
-        root.classList.add('theme-anim');
-        window.setTimeout(function () { root.classList.remove('theme-anim'); }, 600);
+      // Circular reveal growing from the toggle (View Transitions API); fall back
+      // to a colour cross-fade, then an instant flip.
+      if (reduceMotion() || typeof document.startViewTransition !== 'function') {
+        if (!reduceMotion()) {
+          root.classList.add('theme-anim');
+          window.setTimeout(function () { root.classList.remove('theme-anim'); }, 600);
+        }
+        flipTheme(next);
+        return;
       }
-      root.setAttribute('data-theme', next);
-      try { localStorage.setItem('prophish-theme', next); } catch (e) {}
+      var r = btn.getBoundingClientRect();
+      var x = r.left + r.width / 2, y = r.top + r.height / 2;
+      var end = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+      var vt = document.startViewTransition(function () { flipTheme(next); });
+      vt.ready.then(function () {
+        root.animate(
+          { clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + end + 'px at ' + x + 'px ' + y + 'px)'] },
+          { duration: 540, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
+        );
+      }).catch(function () {});
     });
   }
   // Password reveal: a <button data-pw-toggle="<input id>"> flips that field

@@ -20,23 +20,49 @@
   if (saved === 'dark' || saved === 'light') root.setAttribute('data-theme', saved);
 
   // Theme toggle. The sun/moon icon is picked in CSS from the active theme, so
-  // this only flips data-theme (+ persists it). A short-lived <html class=
-  // "theme-anim"> turns on a smooth colour cross-fade across the whole UI for the
-  // duration of the switch (respecting prefers-reduced-motion).
-  function setTheme(next) {
-    if (!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
-      root.classList.add('theme-anim');
-      window.setTimeout(function () { root.classList.remove('theme-anim'); }, 600);
-    }
+  // this only flips data-theme (+ persists it).
+  function flipTheme(next) {
     root.setAttribute('data-theme', next);
     try { localStorage.setItem('prophish-theme', next); } catch (e) {}
+  }
+  function reduceMotion() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+  // setTheme animates the switch as a circular reveal that grows from the clicked
+  // control across the whole page (View Transitions API). Where that API or motion
+  // is unavailable, it falls back to a brief colour cross-fade, then an instant flip.
+  function setTheme(next, originEl) {
+    if (reduceMotion() || typeof document.startViewTransition !== 'function') {
+      if (!reduceMotion()) {
+        root.classList.add('theme-anim');
+        window.setTimeout(function () { root.classList.remove('theme-anim'); }, 600);
+      }
+      flipTheme(next);
+      return;
+    }
+    var x = window.innerWidth - 48, y = window.innerHeight - 96;
+    if (originEl && originEl.getBoundingClientRect) {
+      var r = originEl.getBoundingClientRect();
+      x = r.left + r.width / 2;
+      y = r.top + r.height / 2;
+    }
+    var end = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    var vt = document.startViewTransition(function () { flipTheme(next); });
+    vt.ready.then(function () {
+      root.animate(
+        { clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + end + 'px at ' + x + 'px ' + y + 'px)'] },
+        { duration: 540, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
+      );
+    }).catch(function () {});
   }
   function wireToggle() {
     var btns = document.querySelectorAll('#theme-toggle, [data-theme-toggle]');
     for (var i = 0; i < btns.length; i++) {
-      btns[i].addEventListener('click', function () {
-        setTheme(effective() === 'dark' ? 'light' : 'dark');
-      });
+      (function (btn) {
+        btn.addEventListener('click', function () {
+          setTheme(effective() === 'dark' ? 'light' : 'dark', btn);
+        });
+      })(btns[i]);
     }
   }
   function markActive() {
