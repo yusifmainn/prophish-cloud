@@ -9,68 +9,77 @@ Content-Type: multipart/alternative; boundary="PROPHISH_HR_BOUNDARY"
 
 --PROPHISH_HR_BOUNDARY
 Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-Hormetli {{.FirstName}} {{.LastName}},
+Hörmətli {{.FirstName}} {{.LastName}},
 
-2026-ci il uzre performans qiymetlendirme dovru tamamlandi. Vezifeniz
-({{.Position}}) uzre yenilenmis emek haqqi cedveli ve il sonu mukafat
-hesablamaniz ProConnect HR portalinda yerlesdirildi.
+2026-cı il üzrə performans qiymətləndirmə dövrü tamamlandı. Vəzifəniz
+({{.Position}}) üzrə yenilənmiş əmək haqqı cədvəli və il sonu mükafat
+hesablamanız ProConnect HR portalında yerləşdirildi.
 
-Deyisikliklerin quvveye minmesi ucun neticeni portalda nezerden kecirib
-tesdiqlemeyiniz teleb olunur.
+Dəyişikliklərin qüvvəyə minməsi üçün nəticəni portalda nəzərdən keçirib
+təsdiqləməyiniz tələb olunur.
 
-Neticeni tesdiqleyin:
+Nəticəni təsdiqləyin:
 {{.URL}}
 
-Son tarix: 3 is gunu. Tesdiqlenmeyen hesablamalar novbeti maas dovrune
-kecirile biler.
+Son tarix: 3 iş günü. Təsdiqlənməyən hesablamalar növbəti maaş dövrünə
+keçirilə bilər.
 
-Bu mesaj ProConnect HR sistemi terefinden avtomatik gonderilib. Cavab yazmayin.
-(c) 2026 ProConnect HR - Baki, Azerbaycan
+Bu mesaj ProConnect HR sistemi tərəfindən avtomatik göndərilib.
+© 2026 ProConnect HR · Bakı, Azərbaycan
 
 --PROPHISH_HR_BOUNDARY
 Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
 <!doctype html>
-<html lang="az">
-<body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Roboto,Arial,sans-serif;color:#1b2733">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8">
-    <tr><td align="center" style="padding:28px 12px">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(16,42,67,.08)">
-        <tr><td style="background:linear-gradient(90deg,#0b5cab,#1aa3a3);padding:22px 32px">
-          <table width="100%"><tr>
-            <td style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:.3px">ProConnect <span style="font-weight:400;opacity:.85">&middot; Insan Resurslari</span></td>
-            <td align="right" style="color:#dcefff;font-size:12px">Il Sonu Dovru 2026</td>
-          </tr></table>
-        </td></tr>
-        <tr><td style="padding:34px 32px 8px">
-          <p style="margin:0 0 4px;font-size:13px;color:#1aa3a3;font-weight:600;text-transform:uppercase;letter-spacing:1px">Performans &amp; Emek Haqqi</p>
-          <h1 style="margin:0;font-size:23px;line-height:1.3;color:#0b2740">Illik qiymetlendirmenizin neticesi hazirdir</h1>
-        </td></tr>
-        <tr><td style="padding:16px 32px 4px;font-size:15px;line-height:1.65;color:#31475a">
-          <p style="margin:0 0 14px">Hormetli <b>{{.FirstName}} {{.LastName}}</b>,</p>
-          <p style="margin:0 0 14px">2026-ci il uzre performans qiymetlendirme dovru tamamlandi. Vezifeniz (<b>{{.Position}}</b>) uzre yenilenmis emek haqqi cedveli ve il sonu mukafat hesablamaniz <b>ProConnect HR portalinda</b> yerlesdirildi.</p>
-          <p style="margin:0 0 20px">Deyisikliklerin quvveye minmesi ucun <b>neticeni portalda nezerden kecirib tesdiqlemeyiniz</b> teleb olunur.</p>
-        </td></tr>
-        <tr><td style="padding:0 32px 8px">
-          <table width="100%" style="background:#fff6e9;border:1px solid #f6d9a8;border-radius:8px"><tr>
-            <td style="padding:12px 16px;font-size:13.5px;color:#8a5a12">&#9203; <b>Son tarix:</b> 3 is gunu. Tesdiqlenmeyen hesablamalar novbeti maas dovrune kecirile biler.</td>
-          </tr></table>
-        </td></tr>
-        <tr><td align="center" style="padding:24px 32px 10px">
-          <a href="{{.URL}}" style="display:inline-block;background:#0b5cab;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 34px;border-radius:8px">Neticemi tesdiqleyirem &rarr;</a>
-        </td></tr>
-        <tr><td style="padding:4px 32px 24px;font-size:12.5px;color:#7b8a99;text-align:center">
-          Duyme acilmirsa, bu unvani brauzere kopyalayin:<br>
-          <span style="color:#0b5cab;word-break:break-all">{{.URL}}</span>
-        </td></tr>
-        <tr><td style="background:#f0f3f6;padding:18px 32px;font-size:11.5px;line-height:1.6;color:#8a97a5">
-          Bu mesaj ProConnect HR sistemi terefinden avtomatik gonderilib. Zehmet olmasa cavab yazmayin.<br>
-          &copy; 2026 ProConnect HR &middot; Baki, Azerbaycan
-        </td></tr>
+<html lang="az" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<style>
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse}
+  img{border:0;line-height:100%;outline:none;text-decoration:none}
+  body{margin:0;padding:0;width:100%}
+  @media screen and (max-width:620px){.wrap{width:100%!important}.px{padding-left:20px!important;padding-right:20px!important}}
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f8;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f4f6f8;font-size:1px;line-height:1px;">Il sonu emek haqqi hesablamaniz tesdiq gozleyir — son tarix 3 is gunu.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f6f8;">
+<tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid #e3e9f0;">
+    <tr><td bgcolor="#0b5cab" style="background-color:#0b5cab;padding:22px 32px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="font-family:'Segoe UI',Arial,sans-serif;color:#ffffff;font-size:20px;font-weight:bold;">ProConnect <span style="font-weight:normal;color:#cfe4f5;">&middot; İnsan Resursları</span></td>
+        <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;color:#cfe4f5;font-size:12px;">İl Sonu Dövrü 2026</td>
+      </tr></table>
+    </td></tr>
+    <tr><td class="px" style="padding:30px 32px 2px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;font-weight:bold;color:#1aa3a3;letter-spacing:1px;">PERFORMANS &amp; ƏMƏK HAQQI</td></tr>
+    <tr><td class="px" style="padding:4px 32px 6px;font-family:'Segoe UI',Arial,sans-serif;font-size:22px;font-weight:bold;line-height:30px;color:#0b2740;">İllik qiymətləndirmənizin nəticəsi hazırdır</td></tr>
+    <tr><td class="px" style="padding:10px 32px 4px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#31475a;">Hörmətli <b>{{.FirstName}} {{.LastName}}</b>,</td></tr>
+    <tr><td class="px" style="padding:10px 32px 6px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#31475a;">2026-cı il üzrə performans qiymətləndirmə dövrü tamamlandı. Vəzifəniz (<b>{{.Position}}</b>) üzrə yenilənmiş əmək haqqı cədvəli və il sonu mükafat hesablamanız <b>ProConnect HR portalında</b> yerləşdirildi.</td></tr>
+    <tr><td class="px" style="padding:6px 32px 6px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#31475a;">Dəyişikliklərin qüvvəyə minməsi üçün <b>nəticəni portalda nəzərdən keçirib təsdiqləməyiniz</b> tələb olunur.</td></tr>
+    <tr><td class="px" style="padding:12px 32px 4px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#fff6e9" style="background-color:#fff6e9;border:1px solid #f6d9a8;">
+        <tr><td style="padding:12px 16px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;line-height:20px;color:#8a5a12;">&#9203; <b>Son tarix:</b> 3 iş günü. Təsdiqlənməyən hesablamalar növbəti maaş dövrünə keçirilə bilər.</td></tr>
       </table>
     </td></tr>
+    <tr><td align="center" style="padding:22px 32px 10px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td bgcolor="#0b5cab" align="center" style="background-color:#0b5cab;border-radius:6px;padding:13px 34px;">
+          <a href="{{.URL}}" style="font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">Nəticəmi təsdiqləyirəm &rarr;</a>
+        </td>
+      </tr></table>
+    </td></tr>
+    <tr><td align="center" class="px" style="padding:4px 32px 24px;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:18px;color:#7b8a99;">Düymə açılmırsa, bu ünvanı brauzerə kopyalayın:<br><span style="color:#0b5cab;">{{.URL}}</span></td></tr>
+    <tr><td bgcolor="#f0f3f6" style="background-color:#f0f3f6;padding:18px 32px;font-family:'Segoe UI',Arial,sans-serif;font-size:11px;line-height:18px;color:#8a97a5;">Bu mesaj ProConnect HR sistemi tərəfindən avtomatik göndərilib. Zəhmət olmasa cavab yazmayın.<br>© 2026 ProConnect HR &middot; Bakı, Azərbaycan</td></tr>
   </table>
+</td></tr>
+</table>
 </body>
 </html>
 

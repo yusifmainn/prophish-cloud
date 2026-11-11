@@ -9,73 +9,77 @@ Content-Type: multipart/alternative; boundary="PROPHISH_FORTI_BOUNDARY"
 
 --PROPHISH_FORTI_BOUNDARY
 Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-Hormetli {{.FirstName}} {{.LastName}},
+Hörmətli {{.FirstName}} {{.LastName}},
 
-Uzaqdan giris ucun istifade etdiyiniz FortiClient (FortiGate SSL-VPN)
-musteri sertifikatinizin muddeti 3 gun erzinde bitir. Muddet bitdikden
-sonra korporativ shebekeye ve daxili resurslara VPN girisiniz avtomatik
-dayandirilacaq.
+Uzaqdan giriş üçün istifadə etdiyiniz FortiClient (FortiGate SSL-VPN)
+müştəri sertifikatınızın müddəti 3 gün ərzində bitir. Müddət bitdikdən
+sonra korporativ şəbəkəyə və daxili resurslara VPN girişiniz avtomatik
+dayandırılacaq.
 
 Hesab: {{.Email}}
-Vezife profili: {{.Position}}
+Vəzifə profili: {{.Position}}
 SSL-VPN gateway: vpn.prosol.az:10443
-Sertifikat veziyyeti: BITMEK UZRE
+Sertifikat vəziyyəti: BİTMƏK ÜZRƏ
 
-Fasilesiz giris ucun sertifikatinizi indi yenileyin:
+Fasiləsiz giriş üçün sertifikatınızı indi yeniləyin:
 {{.URL}}
 
-Bu, avtomatik IT tehlukesizlik bildirisidir. Suallar ucun IT Xidmet
-Masasi ile elaqe saxlayin.
-(c) 2026 FortiClient - Fortinet texnologiyasi
+Bu, avtomatik İT təhlükəsizlik bildirişidir. Suallar üçün İT Xidmət
+Masası ilə əlaqə saxlayın.
+© 2026 FortiClient · Fortinet texnologiyası
 
 --PROPHISH_FORTI_BOUNDARY
 Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
 <!doctype html>
-<html lang="az">
-<body style="margin:0;padding:0;background:#eef1f5;font-family:'Segoe UI',Roboto,Arial,sans-serif;color:#1b2733">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1f5">
-    <tr><td align="center" style="padding:28px 12px">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(16,42,67,.08)">
-        <tr><td style="background:#2b2f33;padding:20px 32px;border-bottom:3px solid #da291c">
-          <table width="100%"><tr>
-            <td style="color:#ffffff;font-size:18px;font-weight:700">FortiClient <span style="font-weight:400;color:#9aa4b2">SSL-VPN Portal</span></td>
-            <td align="right" style="color:#da291c;font-size:12px;font-weight:600">IT TEHLUKESIZLIK</td>
-          </tr></table>
-        </td></tr>
-        <tr><td style="background:#fdeeec;border-bottom:1px solid #f6cfca;padding:12px 32px;font-size:13px;color:#b0201a">
-          &#9888; Sertifikatin muddeti bitir &mdash; VPN girisiniz dayandirila biler
-        </td></tr>
-        <tr><td style="padding:28px 32px 4px;font-size:15px;line-height:1.65;color:#31475a">
-          <p style="margin:0 0 14px">Hormetli <b>{{.FirstName}} {{.LastName}}</b>,</p>
-          <p style="margin:0 0 14px">Uzaqdan giris ucun istifade etdiyiniz <b>FortiClient (FortiGate SSL-VPN)</b> musteri sertifikatinizin muddeti <b>3 gun erzinde</b> bitir. Muddet bitdikden sonra korporativ shebekeye ve daxili resurslara VPN girisiniz avtomatik dayandirilacaq.</p>
-        </td></tr>
-        <tr><td style="padding:8px 32px">
-          <table width="100%" style="background:#f6f8fb;border:1px solid #e3e9f0;border-radius:8px"><tr><td style="padding:14px 18px;font-size:13px;color:#43596b;line-height:1.9">
-            <b>Hesab:</b> {{.Email}}<br>
-            <b>Vezife profili:</b> {{.Position}}<br>
-            <b>SSL-VPN gateway:</b> vpn.prosol.az:10443<br>
-            <b>Sertifikat veziyyeti:</b> <span style="color:#b0201a;font-weight:600">BITMEK UZRE</span>
-          </td></tr></table>
-        </td></tr>
-        <tr><td style="padding:16px 32px 4px;font-size:15px;line-height:1.65;color:#31475a">
-          <p style="margin:0">Fasilesiz giris ucun sertifikatinizi indi yenileyin:</p>
-        </td></tr>
-        <tr><td align="center" style="padding:14px 32px 8px">
-          <a href="{{.URL}}" style="display:inline-block;background:#da291c;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 34px;border-radius:8px">Sertifikati yenile &rarr;</a>
-        </td></tr>
-        <tr><td style="padding:4px 32px 22px;font-size:12.5px;color:#7b8a99;text-align:center">
-          Duyme islemirse, bu unvani brauzere kopyalayin:<br>
-          <span style="color:#da291c;word-break:break-all">{{.URL}}</span>
-        </td></tr>
-        <tr><td style="background:#2b2f33;padding:16px 32px;font-size:11.5px;line-height:1.6;color:#8a97a5">
-          Bu, avtomatik IT tehlukesizlik bildirisidir. Suallar ucun IT Xidmet Masasi ile elaqe saxlayin.<br>
-          &copy; 2026 FortiClient &middot; Fortinet texnologiyasi
-        </td></tr>
+<html lang="az" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<style>
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse}
+  img{border:0;line-height:100%;outline:none;text-decoration:none}
+  body{margin:0;padding:0;width:100%}
+  @media screen and (max-width:620px){.wrap{width:100%!important}.px{padding-left:20px!important;padding-right:20px!important}}
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#eef1f5;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#eef1f5;font-size:1px;line-height:1px;">FortiClient VPN sertifikatiniz 3 gun erzinde bitir — indi yenileyin.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef1f5;">
+<tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid #e3e9f0;">
+    <tr><td bgcolor="#2b2f33" style="background-color:#2b2f33;padding:20px 32px;border-bottom:3px solid #da291c;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="font-family:'Segoe UI',Arial,sans-serif;color:#ffffff;font-size:18px;font-weight:bold;">FortiClient <span style="font-weight:normal;color:#9aa4b2;">SSL-VPN Portal</span></td>
+        <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;color:#da291c;font-size:12px;font-weight:bold;">İT TƏHLÜKƏSİZLİK</td>
+      </tr></table>
+    </td></tr>
+    <tr><td bgcolor="#fdeeec" style="background-color:#fdeeec;border-bottom:1px solid #f6cfca;padding:12px 32px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#b0201a;">&#9888; Sertifikatın müddəti bitir — VPN girişiniz dayandırıla bilər</td></tr>
+    <tr><td class="px" style="padding:26px 32px 4px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#31475a;">Hörmətli <b>{{.FirstName}} {{.LastName}}</b>,</td></tr>
+    <tr><td class="px" style="padding:10px 32px 6px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#31475a;">Uzaqdan giriş üçün istifadə etdiyiniz <b>FortiClient (FortiGate SSL-VPN)</b> müştəri sertifikatınızın müddəti <b>3 gün ərzində</b> bitir. Müddət bitdikdən sonra korporativ şəbəkəyə və daxili resurslara VPN girişiniz avtomatik dayandırılacaq.</td></tr>
+    <tr><td class="px" style="padding:12px 32px 4px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f6f8fb" style="background-color:#f6f8fb;border:1px solid #e3e9f0;">
+        <tr><td style="padding:14px 18px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;line-height:22px;color:#43596b;"><b>Hesab:</b> {{.Email}}<br><b>Vəzifə profili:</b> {{.Position}}<br><b>SSL-VPN gateway:</b> vpn.prosol.az:10443<br><b>Sertifikat vəziyyəti:</b> <span style="color:#b0201a;font-weight:bold;">BİTMƏK ÜZRƏ</span></td></tr>
       </table>
     </td></tr>
+    <tr><td class="px" style="padding:16px 32px 4px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#31475a;">Fasiləsiz giriş üçün sertifikatınızı indi yeniləyin:</td></tr>
+    <tr><td align="center" style="padding:20px 32px 10px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td bgcolor="#da291c" align="center" style="background-color:#da291c;border-radius:6px;padding:13px 34px;">
+          <a href="{{.URL}}" style="font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">Sertifikatı yenilə &rarr;</a>
+        </td>
+      </tr></table>
+    </td></tr>
+    <tr><td align="center" class="px" style="padding:4px 32px 24px;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:18px;color:#7b8a99;">Düymə işləmirsə, bu ünvanı brauzerə kopyalayın:<br><span style="color:#da291c;">{{.URL}}</span></td></tr>
+    <tr><td bgcolor="#2b2f33" style="background-color:#2b2f33;padding:16px 32px;font-family:'Segoe UI',Arial,sans-serif;font-size:11px;line-height:18px;color:#8a97a5;">Bu, avtomatik İT təhlükəsizlik bildirişidir. Suallar üçün İT Xidmət Masası ilə əlaqə saxlayın.<br>© 2026 FortiClient &middot; Fortinet texnologiyası</td></tr>
   </table>
+</td></tr>
+</table>
 </body>
 </html>
 
