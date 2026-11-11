@@ -550,7 +550,7 @@
         out += '<script>\ndocument.querySelectorAll("[data-pjs]").forEach(function(b){'
           + 'b.addEventListener("click",function(){window.__pb_el=b;'
           + 'var s=document.createElement("script");'
-          + 's.textContent="(function(el){try{\\n"+decodeURIComponent(escape(atob(b.getAttribute("data-pjs"))))+"\\n}catch(e){}})(window.__pb_el);";'
+          + 's.textContent="(function(el){try{\\n"+decodeURIComponent(escape(atob(b.getAttribute("data-pjs"))))+"\\n}catch(e){console.error(\\"[prophish] button #"+b.id+" JS error:\\",e);}})(window.__pb_el);";'
           + 'document.body.appendChild(s);s.parentNode.removeChild(s);});});\n</script>\n';
       }
       return out + '</body>\n</html>';
@@ -1134,6 +1134,48 @@
       i.addEventListener('input', function () { cb(i.value); });
       return i;
     }
+    // Kod redaktoru (düymə JS-i): çoxsətirli, monoşrift, spellcheck/ava-
+    // tamamlama sönülü, Tab girinti əlavə edir (Shift+Tab azaldır), seçili
+    // sətirləri toplu girintiləyir. Uzunluq limiti YOXDUR.
+    function codeIn(val, cb) {
+      var i = el('textarea', 'bcode');
+      i.rows = 10;
+      i.value = val == null ? '' : val;
+      i.spellcheck = false;
+      i.setAttribute('autocomplete', 'off');
+      i.setAttribute('autocapitalize', 'off');
+      i.setAttribute('autocorrect', 'off');
+      i.setAttribute('wrap', 'off');
+      i.addEventListener('input', function () { cb(i.value); });
+      i.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Tab') return;
+        ev.preventDefault();
+        var s = i.selectionStart, e = i.selectionEnd;
+        var v = i.value;
+        var ls = v.lastIndexOf('\n', s - 1) + 1; // seçimin ilk sətrinin əvvəli
+        if (ev.shiftKey) {
+          // Shift+Tab: seçilən hər sətrin əvvəlindən 2 boşluq/tab çıxar
+          var seg = v.slice(ls, e);
+          var outAll = seg.split('\n').map(function (ln) { return ln.replace(/^ {1,2}|^\t/, ''); }).join('\n');
+          var firstDelta = seg.split('\n')[0].length - outAll.split('\n')[0].length;
+          i.value = v.slice(0, ls) + outAll + v.slice(e);
+          i.selectionStart = Math.max(ls, s - firstDelta);
+          i.selectionEnd = i.selectionStart + outAll.length;
+        } else if (s === e) {
+          i.value = v.slice(0, s) + '  ' + v.slice(e);
+          i.selectionStart = i.selectionEnd = s + 2;
+        } else {
+          // seçili sətirləri toplu girintilə
+          var segIn = v.slice(ls, e);
+          var indented = segIn.split('\n').map(function (ln) { return '  ' + ln; }).join('\n');
+          i.value = v.slice(0, ls) + indented + v.slice(e);
+          i.selectionStart = s + 2;
+          i.selectionEnd = e + indented.length - segIn.length;
+        }
+        cb(i.value);
+      });
+      return i;
+    }
     function selIn(val, opts, cb) {
       var s = el('select');
       for (var k = 0; k < opts.length; k++) {
@@ -1340,7 +1382,7 @@
           if (!p.pageId || !popts.some(function (o) { return o[0] === p.pageId; })) p.pageId = popts.length ? popts[0][0] : '';
           sbEl.appendChild(field(t('page', 'Səhifə'), selIn(p.pageId, popts, function (v) { applyProp(el2, 'pageId', v); })));
         } else if (p.action === 'js') {
-          sbEl.appendChild(field(t('js_code', 'JS kodu'), areaIn(p.js, function (v) { applyProp(el2, 'js', v); }, 5)));
+          sbEl.appendChild(field(t('js_code', 'JS kodu'), codeIn(p.js, function (v) { applyProp(el2, 'js', v); })));
           sbEl.appendChild(el('p', 'hint', t('js_hint', 'Kod yalnız canlı səhifədə işləyir — redaktorda klik seçim üçündür. Kliklənən düyməyə “el” dəyişəni ilə müraciət edə bilərsiniz.')));
         }
       }
