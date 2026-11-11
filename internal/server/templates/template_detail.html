@@ -2,55 +2,55 @@
 {{template "nav" .}}
 <main>
   <h1>{{.T.Name}}</h1>
-  <p class="muted"><a href="/templates">← Şablonlar</a> · Mövzu: {{.T.Subject}}</p>
+  <p class="muted"><a href="/templates">← {{t "nav.templates"}}</a> · {{t "tpld.subject_label"}} {{.T.Subject}}</p>
 
   <div class="card">
-    <h2>Əlavələr (attachments)</h2>
+    <h2>{{t "tpld.attachments"}}</h2>
     <table>
-      <thead><tr><th>Fayl</th><th>Tip</th><th></th></tr></thead>
+      <thead><tr><th>{{t "tpld.col_file"}}</th><th>{{t "tpld.col_type"}}</th><th></th></tr></thead>
       <tbody>
         {{range .T.Attachments}}
         <tr><td>{{.Filename}}</td><td>{{.ContentType}}</td>
-            <td><div class="rowact"><form method="post" action="/templates/{{$.T.ID}}/attachments/{{.ID}}/delete" data-confirm="'{{.Filename}}' əlavəsi silinsin?">
-                  <button class="iconbtn danger" title="Sil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></form></div></td></tr>
-        {{else}}<tr><td colspan="3" class="muted">Əlavə yoxdur.</td></tr>{{end}}
+            <td><div class="rowact"><form method="post" action="/templates/{{$.T.ID}}/attachments/{{.ID}}/delete" data-confirm="{{tf "tpld.attach_delete_confirm" .Filename}}">
+                  <button class="iconbtn danger" title="{{t "common.delete"}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></form></div></td></tr>
+        {{else}}<tr><td colspan="3" class="muted">{{t "tpld.no_attachments"}}</td></tr>{{end}}
       </tbody>
     </table>
     <form method="post" action="/templates/{{.T.ID}}/attachments" enctype="multipart/form-data" style="margin-top:14px">
       <input type="file" name="file" required>
-      <button type="submit">Yüklə</button>
+      <button type="submit">{{t "tpld.upload"}}</button>
     </form>
   </div>
 
   <div class="card">
-    <h2>Şablonu redaktə et</h2>
-    <p class="muted">Dəyişənlər: <code>{{"{{.FirstName}}"}}</code>, <code>{{"{{.LastName}}"}}</code>, <code>{{"{{.Email}}"}}</code>, <code>{{"{{.Position}}"}}</code>, <code>{{"{{.URL}}"}}</code>, <code>{{"{{.TrackingPixel}}"}}</code>.</p>
+    <h2>{{t "tpld.edit_title"}}</h2>
+    <p class="muted">{{t "tpld.variables"}} <code>{{"{{.FirstName}}"}}</code>, <code>{{"{{.LastName}}"}}</code>, <code>{{"{{.Email}}"}}</code>, <code>{{"{{.Position}}"}}</code>, <code>{{"{{.URL}}"}}</code>, <code>{{"{{.TrackingPixel}}"}}</code>.</p>
     <form method="post" action="/templates/{{.T.ID}}/edit">
-      <label>Ad</label><input name="name" value="{{.T.Name}}" required>
-      <label>Mövzu (Subject)</label><input name="subject" value="{{.T.Subject}}" required>
-      <label>HTML məzmun</label>
+      <label>{{t "common.name"}}</label><input name="name" value="{{.T.Name}}" required>
+      <label>{{t "tpld.subject"}}</label><input name="subject" value="{{.T.Subject}}" required>
+      <label>{{t "tpld.html_content"}}</label>
       <textarea name="html_body" rows="10" data-editor="email" required>{{.T.HTMLBody}}</textarea>
-      <label>Mətn versiyası (opsional)</label>
+      <label>{{t "tpld.text_version"}}</label>
       <textarea name="text_body" rows="2">{{.T.TextBody}}</textarea>
-      <label>Xüsusi başlıqlar (opsional, hər sətir <code>Açar: Dəyər</code>)</label>
+      <label>{{t "tpld.custom_headers_pre"}} <code>{{t "tpld.key_value"}}</code>)</label>
       <textarea name="headers" rows="2">{{range $k,$v := .T.Headers}}{{$k}}: {{$v}}
 {{end}}</textarea>
-      <button type="submit">Yadda saxla</button>
+      <button type="submit">{{t "common.save"}}</button>
     </form>
   </div>
 
   <div class="card">
-    <h2>Önizləmə</h2>
-    <p class="muted">Nümunə işçi məlumatı ilə — dəyişənlər doldurulmuş halda göstərilir.</p>
-    <div class="preview"><iframe src="/templates/{{.T.ID}}/preview" style="height:460px" title="Email önizləmə"></iframe></div>
+    <h2>{{t "tpld.preview"}}</h2>
+    <p class="muted">{{t "tpld.preview_hint"}}</p>
+    <div class="preview"><iframe src="/templates/{{.T.ID}}/preview" style="height:460px" title="{{t "tpld.preview_title"}}"></iframe></div>
   </div>
 
   <div class="card">
-    <h2>Təhlükəli zona</h2>
-    <p class="muted">Şablonu bir kampaniya istifadə edirsə silinə bilməz (əvvəlcə həmin kampaniyanı silin).</p>
+    <h2>{{t "common.danger_zone"}}</h2>
+    <p class="muted">{{t "tpld.danger_hint"}}</p>
     <form method="post" action="/templates/{{.T.ID}}/delete" style="display:inline-block"
-          data-confirm="'{{.T.Name}}' şablonu həmişəlik silinsin?">
-      <button type="submit" class="danger">Şablonu sil</button>
+          data-confirm="{{tf "tpld.delete_confirm" .T.Name}}">
+      <button type="submit" class="danger">{{t "tpld.delete_btn"}}</button>
     </form>
   </div>
 </main>

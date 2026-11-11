@@ -51,7 +51,7 @@ func (s *Server) handlePageUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := validLandingHTML(htmlBody); err != nil {
-		s.flashErr(r, "HTML saxlanmadı — şablon xətası (ehtimal ki, mətndə artıq {{ }} var): "+err.Error())
+		s.flashErr(r, s.tf(r, "flash.html_save_tmpl_err", err.Error()))
 		http.Redirect(w, r, "/pages/"+id, http.StatusSeeOther)
 		return
 	}

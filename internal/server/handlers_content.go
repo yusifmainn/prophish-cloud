@@ -110,7 +110,7 @@ func (s *Server) handlePageCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := validLandingHTML(html); err != nil {
-		s.flashErr(r, "Səhifə saxlanmadı — şablon xətası (ehtimal ki, mətndə artıq {{ }} var): "+err.Error())
+		s.flashErr(r, s.tf(r, "flash.page_save_tmpl_err", err.Error()))
 		http.Redirect(w, r, "/pages", http.StatusSeeOther)
 		return
 	}

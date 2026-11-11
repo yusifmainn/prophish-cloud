@@ -19,24 +19,70 @@
   var saved = stored();
   if (saved === 'dark' || saved === 'light') root.setAttribute('data-theme', saved);
 
-  var SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/>';
-  var MOON = '<path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/>';
-
-  function paintIcon() {
-    var btn = document.getElementById('theme-toggle');
-    if (!btn) return;
-    var svg = btn.querySelector('svg');
-    if (svg) svg.innerHTML = effective() === 'dark' ? MOON : SUN;
+  // Theme toggle. The sun/moon icon is picked in CSS from the active theme, so
+  // this only flips data-theme (+ persists it).
+  function flipTheme(next) {
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('prophish-theme', next); } catch (e) {}
+  }
+  // overlayReveal animates the switch in ANY browser (no View Transitions needed):
+  // a circle of the NEW page colour grows from the control, then the theme flips
+  // as it completes. A plain <div> clip-path circle, GPU-composited and crisp.
+  function overlayReveal(next, x, y) {
+    var prev = root.getAttribute('data-theme');
+    root.setAttribute('data-theme', next);
+    var newBg = window.getComputedStyle(document.body).backgroundColor || '#ffffff';
+    if (prev === 'dark' || prev === 'light') root.setAttribute('data-theme', prev);
+    else root.removeAttribute('data-theme');
+    var end = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    var ov = document.createElement('div');
+    ov.setAttribute('aria-hidden', 'true');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:2147483647;pointer-events:none;background:' + newBg;
+    ov.style.clipPath = 'circle(0px at ' + x + 'px ' + y + 'px)';
+    document.body.appendChild(ov);
+    var done = false;
+    function finish() { if (done) return; done = true; flipTheme(next); if (ov.parentNode) ov.parentNode.removeChild(ov); }
+    try {
+      ov.animate(
+        { clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + end + 'px at ' + x + 'px ' + y + 'px)'] },
+        { duration: 440, easing: 'cubic-bezier(.22,.61,.36,1)' }
+      ).onfinish = finish;
+    } catch (e) { finish(); return; }
+    window.setTimeout(finish, 520);
+  }
+  // setTheme animates the switch as a circular reveal growing from the clicked
+  // control across the page — the View Transitions API (reveals the real new
+  // content) where it exists, otherwise the colour-circle overlay. It always
+  // animates, in every browser.
+  function setTheme(next, originEl) {
+    var x = window.innerWidth - 48, y = window.innerHeight - 96;
+    if (originEl && originEl.getBoundingClientRect) {
+      var r = originEl.getBoundingClientRect();
+      x = r.left + r.width / 2;
+      y = r.top + r.height / 2;
+    }
+    if (typeof document.startViewTransition === 'function') {
+      var end = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+      var vt = document.startViewTransition(function () { flipTheme(next); });
+      vt.ready.then(function () {
+        root.animate(
+          { clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + end + 'px at ' + x + 'px ' + y + 'px)'] },
+          { duration: 440, easing: 'cubic-bezier(.22,.61,.36,1)', pseudoElement: '::view-transition-new(root)' }
+        );
+      }).catch(function () {});
+      return;
+    }
+    overlayReveal(next, x, y);
   }
   function wireToggle() {
-    var btn = document.getElementById('theme-toggle');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      var next = effective() === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme', next);
-      try { localStorage.setItem('prophish-theme', next); } catch (e) {}
-      paintIcon();
-    });
+    var btns = document.querySelectorAll('#theme-toggle, [data-theme-toggle]');
+    for (var i = 0; i < btns.length; i++) {
+      (function (btn) {
+        btn.addEventListener('click', function () {
+          setTheme(effective() === 'dark' ? 'light' : 'dark', btn);
+        });
+      })(btns[i]);
+    }
   }
   function markActive() {
     var path = location.pathname;
@@ -203,11 +249,8 @@
     start();
   }
 
-  function init() { paintIcon(); wireToggle(); markActive(); wireConfirms(); wireFlash(); wireTabs(); wireCampaignForm(); wireLivePoll(); }
+  function init() { wireToggle(); markActive(); wireConfirms(); wireFlash(); wireTabs(); wireCampaignForm(); wireLivePoll(); }
 
-  if (window.matchMedia) {
-    try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintIcon); } catch (e) {}
-  }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {

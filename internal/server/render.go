@@ -42,11 +42,12 @@ var templateFuncs = template.FuncMap{
 	// parse; render() overrides each per request with a language-bound
 	// implementation (see langTemplateFuncs). The defaults resolve in the
 	// default language so the base template remains renderable on its own.
-	"t":        func(key string) template.HTML { return template.HTML(tr(defaultLang, key)) },
-	"tf":       func(key string, args ...any) template.HTML { return template.HTML(trf(defaultLang, key, args...)) },
-	"curlang":  func() string { return defaultLang },
-	"langs":    func() []string { return supportedLangs },
-	"langName": func(code string) string { return langNames[code] },
+	"t":            func(key string) template.HTML { return template.HTML(tr(defaultLang, key)) },
+	"tf":           func(key string, args ...any) template.HTML { return template.HTML(trf(defaultLang, key, args...)) },
+	"curlang":      func() string { return defaultLang },
+	"langs":        func() []string { return supportedLangs },
+	"langName":     func(code string) string { return langNames[code] },
+	"langFullName": func(code string) string { return langNamesFull[code] },
 	// eventlabel localizes a tracking-event type for the timeline (language-aware
 	// at render time; raw code fallback for unknown/future types).
 	"eventlabel": func(code string) string { return label(defaultLang, "event", code) },

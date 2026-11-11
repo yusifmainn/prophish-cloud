@@ -1,16 +1,15 @@
 {{template "head" .}}
 {{template "nav" .}}
 <main>
-  <h1>Audit jurnalı</h1>
+  <h1>{{t "nav.audit"}}</h1>
   <p class="muted" style="margin:8px 0 18px">
-    Operatorların təhlükəsizliyə təsir edən əməliyyatları — kim, nə vaxt, haradan.
-    Yalnız fakt qeyd olunur; <b>heç bir parol və ya gizli dəyər saxlanmır</b>. Son 300 qeyd.
+    {{t "audit.intro"}}
   </p>
 
   <div class="card">
-    <h2>Son hadisələr</h2>
+    <h2>{{t "audit.recent"}}</h2>
     <table>
-      <thead><tr><th>Vaxt</th><th>Operator</th><th>Əməliyyat</th><th>Obyekt</th><th>Təfərrüat</th><th>IP</th></tr></thead>
+      <thead><tr><th>{{t "audit.col_time"}}</th><th>{{t "nav.operator"}}</th><th>{{t "audit.col_action"}}</th><th>{{t "audit.col_object"}}</th><th>{{t "audit.col_detail"}}</th><th>{{t "audit.col_ip"}}</th></tr></thead>
       <tbody>
         {{range .Rows}}
         <tr>
@@ -22,7 +21,7 @@
           <td class="muted" style="white-space:nowrap">{{.IP}}</td>
         </tr>
         {{else}}
-        <tr><td colspan="6" class="muted">Hələ audit qeydi yoxdur.</td></tr>
+        <tr><td colspan="6" class="muted">{{t "audit.empty"}}</td></tr>
         {{end}}
       </tbody>
     </table>

@@ -1,19 +1,208 @@
-{{template "head" .}}
-<main>
-  <div class="center">
-    {{template "authbrand" .}}
-    <div class="card">
+<!doctype html>
+<html lang="{{curlang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROPhish · {{t "login.title"}}</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script src="/static/auth.js?v=4"></script>
+<style>
+  @font-face{font-family:'Inter';font-style:normal;font-weight:100 900;font-display:swap;src:url(/static/fonts/inter-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+  @font-face{font-family:'Inter';font-style:normal;font-weight:100 900;font-display:swap;src:url(/static/fonts/inter-latinext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116,U+1E00-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+  @font-face{font-family:'Plex Mono';font-style:normal;font-weight:500;font-display:swap;src:url(/static/fonts/plexmono-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+2074,U+20AC,U+2122,U+2212,U+FEFF,U+FFFD}
+  @font-face{font-family:'Plex Mono';font-style:normal;font-weight:500;font-display:swap;src:url(/static/fonts/plexmono-latinext.woff2) format('woff2');unicode-range:U+0100-02BA,U+0400-045F,U+1E00-1EFF,U+2113,U+2C60-2C7F,U+A720-A7FF}
+
+  :root{
+    --page:#f1f0f9; --ink:#171226; --fg:#413a54; --muted:#736a86; --faint:#a09ab0;
+    --field:#ffffff; --field-bd:#dcdaec; --field-bd-focus:#b4a3ef;
+    --accent:#7c3aed; --accent-ink:#ffffff; --grad-a:#8b5cf6; --grad-b:#7c3aed; --ring:#7c3aed38;
+    --cyan:#22d3ee;
+    --err-bg:#fdeaef; --err-bd:#f6c4d1; --err-ink:#d11d47;
+    --card:#ffffff; --card-bd:#e8e7f3;
+    --pill-bg:#ffffff; --pill-bd:#dcdaec; --pill-hover:#f4f3fb;
+    --pill-on-bg:#f1ecfe; --pill-on-ink:#171226; --pill-on-bd:#e0d6fb;
+    --eyebrow:#9a7b43; --glow-1:rgba(124,58,237,.10); --glow-2:rgba(34,211,238,.08);
+    /* hero framing: one zoom, per-theme position so the PROSOL wordmark sits in
+       the SAME place in light and dark (only the colours change with the theme). */
+    --hero-size:auto 110%; --hero-pos:33% 66%;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme:dark){html:not([data-theme="light"]){
+    --page:#09080f; --ink:#f4f2fb; --fg:#cbc5da; --muted:#8d85a4; --faint:#6b6482;
+    --field:#141121; --field-bd:#372f4b; --field-bd-focus:#6a58a4;
+    --accent:#a78bfa; --accent-ink:#ffffff; --grad-a:#8b5cf6; --grad-b:#7c3aed; --ring:#a78bfa42;
+    --cyan:#22d3ee;
+    --err-bg:#2c1420; --err-bd:#5a2438; --err-ink:#fb6f8e;
+    --card:#120f1e; --card-bd:#272235;
+    --pill-bg:#141121; --pill-bd:#2d2740; --pill-hover:#1b1729;
+    --pill-on-bg:#201a37; --pill-on-ink:#f4f2fb; --pill-on-bd:#3a3159;
+    --eyebrow:#d9a86a; --glow-1:rgba(139,92,246,.16); --glow-2:rgba(34,211,238,.10);
+    --hero-pos:33% 66%;
+    color-scheme:dark;
+  }}
+  html[data-theme="dark"]{
+    --page:#09080f; --ink:#f4f2fb; --fg:#cbc5da; --muted:#8d85a4; --faint:#6b6482;
+    --field:#141121; --field-bd:#372f4b; --field-bd-focus:#6a58a4;
+    --accent:#a78bfa; --accent-ink:#ffffff; --grad-a:#8b5cf6; --grad-b:#7c3aed; --ring:#a78bfa42;
+    --cyan:#22d3ee;
+    --err-bg:#2c1420; --err-bd:#5a2438; --err-ink:#fb6f8e;
+    --card:#120f1e; --card-bd:#272235;
+    --pill-bg:#141121; --pill-bd:#2d2740; --pill-hover:#1b1729;
+    --pill-on-bg:#201a37; --pill-on-ink:#f4f2fb; --pill-on-bd:#3a3159;
+    --eyebrow:#d9a86a; --glow-1:rgba(139,92,246,.16); --glow-2:rgba(34,211,238,.10);
+    --hero-pos:33% 66%;
+    color-scheme:dark;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--page);color:var(--fg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14.5px;line-height:1.55;-webkit-font-smoothing:antialiased;letter-spacing:-.011em;position:relative}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(760px 540px at 12% -6%,var(--glow-1),transparent 60%),radial-gradient(680px 520px at 36% 112%,var(--glow-2),transparent 62%)}
+  svg{display:block}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:'Plex Mono',ui-monospace,SFMono-Regular,Consolas,monospace}
+
+  .auth{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);min-height:100vh;min-height:100dvh}
+
+  /* ---------- Left (form) ---------- */
+  .auth-left{display:flex;flex-direction:column;padding:34px clamp(26px,5vw,74px) 26px;min-height:100vh;min-height:100dvh;overflow:auto}
+  .auth-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+  .lockup{display:flex;align-items:center;gap:13px}
+  .lockup .mk{width:44px;height:44px;flex:none;display:inline-flex;align-items:center;justify-content:center;padding:8px;background:var(--field);border:1px solid color-mix(in srgb,var(--accent) 22%,var(--field-bd));border-radius:13px;box-shadow:0 1px 2px rgba(23,18,38,.05)}
+  .lockup .mk img{width:100%;height:100%;display:block}
+  .lockup .mk .logo-dark{display:none}
+  .lockup .mk .logo-light{display:block}
+  @media (prefers-color-scheme:dark){html:not([data-theme="light"]) .lockup .mk .logo-dark{display:block}html:not([data-theme="light"]) .lockup .mk .logo-light{display:none}}
+  html[data-theme="dark"] .lockup .mk .logo-dark{display:block}
+  html[data-theme="dark"] .lockup .mk .logo-light{display:none}
+  html[data-theme="light"] .lockup .mk .logo-dark{display:none}
+  html[data-theme="light"] .lockup .mk .logo-light{display:block}
+  .lockup .wm{line-height:1}
+  .lockup .wm b{display:block;font-size:19px;font-weight:800;letter-spacing:.12em;background:linear-gradient(100deg,var(--accent) 24%,var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lockup .wm small{display:block;margin-top:5px;font-family:'Plex Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+
+  .themebtn{width:40px;height:40px;flex:none;border-radius:11px;border:1px solid var(--field-bd);background:var(--field);color:var(--muted);display:grid;place-items:center;cursor:pointer;padding:0;transition:color .14s,border-color .14s,background .14s}
+  .themebtn:hover{color:var(--ink);border-color:var(--field-bd-focus)}
+  .themebtn svg{width:18px;height:18px}
+  .themebtn .ico-sun{display:none}
+  .themebtn .ico-moon{display:block}
+  @media (prefers-color-scheme:dark){html:not([data-theme="light"]) .themebtn .ico-sun{display:block}html:not([data-theme="light"]) .themebtn .ico-moon{display:none}}
+  html[data-theme="dark"] .themebtn .ico-sun{display:block}
+  html[data-theme="dark"] .themebtn .ico-moon{display:none}
+  html[data-theme="light"] .themebtn .ico-sun{display:none}
+  html[data-theme="light"] .themebtn .ico-moon{display:block}
+
+  .auth-mid{flex:1;display:flex;flex-direction:column;justify-content:center;width:100%;max-width:400px;margin:0 auto;padding:40px 0}
+  .eyebrow-top{font-family:'Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin:0 0 14px;font-weight:600}
+  .auth-mid h1{margin:0;font-size:34px;font-weight:800;letter-spacing:-.035em;color:var(--ink)}
+  .auth-mid .sub{margin:11px 0 0;color:var(--muted);font-size:14.5px;max-width:34ch}
+
+  form{margin:30px 0 0}
+  label{display:block;font-family:'Plex Mono',monospace;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:0 0 9px}
+  .field{margin-bottom:18px}
+  input{width:100%;padding:13px 15px;border-radius:12px;border:1px solid var(--field-bd);background:var(--field);color:var(--ink);font-size:15px;font-family:inherit;transition:border-color .12s,box-shadow .12s}
+  input::placeholder{color:var(--faint)}
+  input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
+  .pw{position:relative}
+  .pw input{padding-right:48px}
+  .pw-eye{position:absolute;top:0;right:0;height:100%;width:46px;display:grid;place-items:center;background:none;border:0;color:var(--faint);cursor:pointer;padding:0}
+  .pw-eye:hover{color:var(--fg)}
+  .pw-eye svg{width:19px;height:19px}
+  .pw-eye .eye-off{display:none}
+  .pw-eye.on .eye{display:none}
+  .pw-eye.on .eye-off{display:block}
+
+  .signin{width:100%;margin-top:6px;padding:14px 16px;border:0;border-radius:12px;background:linear-gradient(180deg,var(--grad-a),var(--grad-b));color:var(--accent-ink);font-family:'Plex Mono',monospace;font-size:12.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;box-shadow:0 2px 4px rgba(76,29,149,.2),0 10px 24px -8px rgba(124,58,237,.5),inset 0 1px 0 rgba(255,255,255,.22);transition:filter .14s,transform .06s,box-shadow .14s}
+  .signin:hover{filter:brightness(1.07)}
+  .signin:active{transform:translateY(1px)}
+  .auditnote{margin:16px 0 0;text-align:center;font-family:'Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:var(--faint)}
+  .hint{margin:9px 0 0;font-family:'Plex Mono',monospace;font-size:10.5px;letter-spacing:.05em;color:var(--faint)}
+
+  .err{margin:20px 0 0;padding:12px 15px;border-radius:11px;background:var(--err-bg);border:1px solid var(--err-bd);color:var(--err-ink);font-size:13.5px;font-weight:550}
+
+  .langpick{display:flex;gap:8px;margin-top:34px;flex-wrap:wrap}
+  .langpick a{display:inline-flex;align-items:center;gap:9px;padding:8px 13px 8px 9px;border-radius:10px;border:1px solid var(--pill-bd);background:var(--pill-bg);transition:background .12s,border-color .12s}
+  .langpick a:hover{background:var(--pill-hover)}
+  .langpick a .code{font-family:'Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);border-radius:5px;padding:3px 6px;line-height:1}
+  .langpick a .full{font-size:12.5px;font-weight:550;color:var(--muted)}
+  .langpick a.on{background:var(--pill-on-bg);border-color:var(--pill-on-bd)}
+  .langpick a.on .full{color:var(--pill-on-ink)}
+
+  .auth-foot{margin-top:26px;font-family:'Plex Mono',monospace;font-size:10px;letter-spacing:.04em;color:var(--faint)}
+
+  /* ---------- Right (hero) ---------- */
+  /* The supplied company brand asset, shown complete — one image per theme.
+     Per-theme position so the PROSOL wordmark sits in the SAME place in light and
+     dark; switching theme changes only the colours, not the wordmark's position. */
+  .auth-right{position:relative;overflow:hidden;margin:12px 12px 12px 0;border-radius:22px;background:var(--card) url(/static/hero/dark.webp) var(--hero-pos)/var(--hero-size) no-repeat;border:1px solid var(--card-bd);box-shadow:0 20px 44px -22px rgba(23,18,38,.4)}
+  @media (prefers-color-scheme:light){html:not([data-theme="dark"]) .auth-right{background-image:url(/static/hero/light.webp)}}
+  html[data-theme="light"] .auth-right{background-image:url(/static/hero/light.webp)}
+  html[data-theme="dark"] .auth-right{background-image:url(/static/hero/dark.webp)}
+  .hero-foot{position:absolute;left:clamp(34px,6%,72px);bottom:clamp(30px,5vh,52px);right:clamp(34px,6%,72px);max-width:60%;z-index:2}
+  .hero-foot::before{content:"";position:absolute;z-index:-1;left:-70px;right:-140px;top:-50px;bottom:-72px;background:radial-gradient(145% 155% at 11% 80%,var(--card) 50%,transparent 82%)}
+  .hero-foot .eyebrow{font-family:'Plex Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--eyebrow);margin-bottom:12px}
+  .hero-foot p{margin:0;color:var(--fg);font-size:15px;line-height:1.55;max-width:46ch}
+
+  @media (max-width:900px){
+    .auth{grid-template-columns:1fr}
+    .auth-right{display:none}
+    .auth-mid{padding:30px 0}
+  }
+  /* Animated theme transition: smooth colour cross-fade while switching. */
+  @media (prefers-reduced-motion:no-preference){
+    :root.theme-anim,:root.theme-anim *,:root.theme-anim *::before,:root.theme-anim *::after{
+      transition:background-color .5s ease,color .5s ease,border-color .5s ease,fill .5s ease,box-shadow .5s ease,background-image .5s ease!important;
+    }
+  }
+  ::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+  ::view-transition-new(root){z-index:1}
+  ::view-transition-old(root){z-index:0}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="auth">
+  <section class="auth-left">
+    <div class="auth-top">
+      <div class="lockup"><span class="mk"><img class="logo-light" src="/static/logo-mark.svg" alt="PROPhish"><img class="logo-dark" src="/static/logo-mark-dark-bg.svg" alt="PROPhish"></span><span class="wm"><b>PROPhish</b><small>{{t "brand.tagline"}}</small></span></div>
+      <button type="button" id="theme-toggle" class="themebtn" aria-label="{{t "nav.theme"}}" title="{{t "nav.theme"}}"><svg class="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg><svg class="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg></button>
+    </div>
+
+    <div class="auth-mid">
+      <div class="eyebrow-top">PROPhish · Secure Console</div>
       <h1>{{t "login.title"}}</h1>
-      <p class="muted">{{t "login.subtitle"}}</p>
+      <p class="sub">{{t "login.subtitle"}}</p>
       {{if .Error}}<div class="err">{{.Error}}</div>{{end}}
       <form method="post" action="/login">
-        <label for="email">Email</label>
-        <input id="email" type="email" name="email" required autofocus autocomplete="username">
-        <label for="password">{{t "login.password"}}</label>
-        <input id="password" type="password" name="password" required autocomplete="current-password">
-        <button type="submit">{{t "login.submit"}}</button>
+        <div class="field">
+          <label for="email">{{t "login.email"}}</label>
+          <input id="email" name="email" type="email" required autofocus autocomplete="username">
+        </div>
+        <div class="field">
+          <label for="password">{{t "login.password"}}</label>
+          <div class="pw">
+            <input id="password" name="password" type="password" required autocomplete="current-password">
+            <button type="button" class="pw-eye" data-pw-toggle="password" aria-label="{{t "login.show_password"}}" aria-pressed="false"><svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.9 10.9 0 0112 5c6.5 0 10.5 7 10.5 7a18.5 18.5 0 01-3.1 3.9M6.2 6.2A18.5 18.5 0 001.5 12S5.5 19 12 19a10.8 10.8 0 004.8-1.1"/><path d="M9.9 9.9a3 3 0 004.2 4.2"/></svg></button>
+          </div>
+        </div>
+        <button type="submit" class="signin">{{t "login.submit"}}</button>
+        <p class="auditnote">{{t "login.audit_note"}}</p>
       </form>
+
+      <nav class="langpick" aria-label="{{t "login.lang_label"}}">{{$cur := curlang}}{{range langs}}<a href="/lang/{{.}}" class="{{if eq . $cur}}on{{end}}"{{if eq . $cur}} aria-current="true"{{end}}><span class="code">{{langName .}}</span><span class="full">{{langFullName .}}</span></a>{{end}}</nav>
     </div>
-  </div>
-</main>
-{{template "foot" .}}
+
+    <div class="auth-foot">{{t "login.footer"}}</div>
+  </section>
+
+  <section class="auth-right" aria-hidden="true">
+    <div class="hero-foot">
+      <div class="eyebrow">PROSOL · Cyber Powerhouse</div>
+      <p>{{t "login.hero_tagline"}}</p>
+    </div>
+  </section>
+</div>
+</body>
+</html>

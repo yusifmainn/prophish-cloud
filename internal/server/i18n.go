@@ -32,8 +32,12 @@ const langCookie = "prophish_lang"
 // supportedLangs is the switcher order (left → right).
 var supportedLangs = []string{langAZ, langEN, langRU}
 
-// langNames are the short labels shown on the switcher buttons.
+// langNames are the short code labels shown on the switcher buttons.
 var langNames = map[string]string{langAZ: "AZ", langEN: "EN", langRU: "RU"}
+
+// langNamesFull are the endonyms (each language's own name), used by the
+// full-width language picker on the login screen. They are language-independent.
+var langNamesFull = map[string]string{langAZ: "Azərbaycanca", langEN: "English", langRU: "Русский"}
 
 func isSupportedLang(code string) bool {
 	switch code {

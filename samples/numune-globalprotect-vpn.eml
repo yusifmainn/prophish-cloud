@@ -1,0 +1,86 @@
+From: GlobalProtect VPN Portal <noreply@prosol-secure.com>
+To: {{.Email}}
+Subject: Fealiyyet teleb olunur: GlobalProtect VPN sertifikatiniz 3 gun erzinde bitir
+Date: Wed, 12 Nov 2026 08:40:00 +0400
+MIME-Version: 1.0
+X-Mailer: GlobalProtect Notification Service
+Reply-To: it-security@prosol-secure.com
+Content-Type: multipart/alternative; boundary="PROPHISH_VPN_BOUNDARY"
+
+--PROPHISH_VPN_BOUNDARY
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Hörmətli {{.FirstName}} {{.LastName}},
+
+Uzaqdan giriş üçün istifadə etdiyiniz GlobalProtect VPN müştəri
+sertifikatınızın müddəti 3 gün ərzində bitir. Müddət bitdikdən sonra
+korporativ şəbəkəyə və daxili resurslara VPN girişiniz avtomatik
+dayandırılacaq.
+
+Hesab: {{.Email}}
+Vəzifə profili: {{.Position}}
+Portal: vpn.prosol.az
+Sertifikat vəziyyəti: BİTMƏK ÜZRƏ
+
+Fasiləsiz giriş üçün sertifikatınızı indi yeniləyin:
+{{.URL}}
+
+Bu, avtomatik İT təhlükəsizlik bildirişidir. Suallar üçün İT Xidmət
+Masası ilə əlaqə saxlayın.
+© 2026 GlobalProtect · Palo Alto Networks texnologiyası
+
+--PROPHISH_VPN_BOUNDARY
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<!doctype html>
+<html lang="az" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<style>
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse}
+  img{border:0;line-height:100%;outline:none;text-decoration:none}
+  body{margin:0;padding:0;width:100%}
+  @media screen and (max-width:620px){.wrap{width:100%!important}.px{padding-left:20px!important;padding-right:20px!important}}
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#eef1f5;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#eef1f5;font-size:1px;line-height:1px;">GlobalProtect VPN sertifikatiniz 3 gun erzinde bitir — indi yenileyin.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef1f5;">
+<tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid #e3e9f0;">
+    <tr><td bgcolor="#1a1d29" style="background-color:#1a1d29;padding:20px 32px;border-bottom:3px solid #fa582d;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="font-family:'Segoe UI',Arial,sans-serif;color:#ffffff;font-size:18px;font-weight:bold;">GlobalProtect <span style="font-weight:normal;color:#9aa4b2;">VPN Portal</span></td>
+        <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;color:#fa582d;font-size:12px;font-weight:bold;">İT TƏHLÜKƏSİZLİK</td>
+      </tr></table>
+    </td></tr>
+    <tr><td bgcolor="#fff3ef" style="background-color:#fff3ef;border-bottom:1px solid #ffd9cc;padding:12px 32px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#b23c1a;">&#9888; Sertifikatın müddəti bitir — VPN girişiniz dayandırıla bilər</td></tr>
+    <tr><td class="px" style="padding:26px 32px 4px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#31475a;">Hörmətli <b>{{.FirstName}} {{.LastName}}</b>,</td></tr>
+    <tr><td class="px" style="padding:10px 32px 6px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#31475a;">Uzaqdan giriş üçün istifadə etdiyiniz <b>GlobalProtect VPN</b> müştəri sertifikatınızın müddəti <b>3 gün ərzində</b> bitir. Müddət bitdikdən sonra korporativ şəbəkəyə və daxili resurslara VPN girişiniz avtomatik dayandırılacaq.</td></tr>
+    <tr><td class="px" style="padding:12px 32px 4px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f6f8fb" style="background-color:#f6f8fb;border:1px solid #e3e9f0;">
+        <tr><td style="padding:14px 18px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;line-height:22px;color:#43596b;"><b>Hesab:</b> {{.Email}}<br><b>Vəzifə profili:</b> {{.Position}}<br><b>Portal:</b> vpn.prosol.az<br><b>Sertifikat vəziyyəti:</b> <span style="color:#b23c1a;font-weight:bold;">BİTMƏK ÜZRƏ</span></td></tr>
+      </table>
+    </td></tr>
+    <tr><td class="px" style="padding:16px 32px 4px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#31475a;">Fasiləsiz giriş üçün sertifikatınızı indi yeniləyin:</td></tr>
+    <tr><td align="center" style="padding:20px 32px 10px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td bgcolor="#fa582d" align="center" style="background-color:#fa582d;border-radius:6px;padding:13px 34px;">
+          <a href="{{.URL}}" style="font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">Sertifikatı yenilə &rarr;</a>
+        </td>
+      </tr></table>
+    </td></tr>
+    <tr><td align="center" class="px" style="padding:4px 32px 24px;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:18px;color:#7b8a99;">Düymə işləmirsə, bu ünvanı brauzerə kopyalayın:<br><span style="color:#fa582d;">{{.URL}}</span></td></tr>
+    <tr><td bgcolor="#1a1d29" style="background-color:#1a1d29;padding:16px 32px;font-family:'Segoe UI',Arial,sans-serif;font-size:11px;line-height:18px;color:#8a97a5;">Bu, avtomatik İT təhlükəsizlik bildirişidir. Suallar üçün İT Xidmət Masası ilə əlaqə saxlayın.<br>© 2026 GlobalProtect &middot; Palo Alto Networks texnologiyası</td></tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>
+
+--PROPHISH_VPN_BOUNDARY--

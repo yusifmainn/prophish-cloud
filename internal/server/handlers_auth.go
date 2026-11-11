@@ -35,7 +35,7 @@ func (s *Server) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 	email := strings.TrimSpace(strings.ToLower(r.FormValue("email")))
 	password := r.FormValue("password")
 	if email == "" {
-		s.render(w, r, http.StatusBadRequest, "setup.html", map[string]any{"Error": "Email is required"})
+		s.render(w, r, http.StatusBadRequest, "setup.html", map[string]any{"Error": s.t(r, "err.email_required")})
 		return
 	}
 	hash, err := auth.HashPassword(password)
@@ -45,7 +45,7 @@ func (s *Server) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	uid, err := s.store.CreateUser(r.Context(), email, hash, "admin")
 	if err != nil {
-		s.render(w, r, http.StatusInternalServerError, "setup.html", map[string]any{"Error": "could not create user"})
+		s.render(w, r, http.StatusInternalServerError, "setup.html", map[string]any{"Error": s.t(r, "err.create_user")})
 		return
 	}
 	_ = s.sessions.RenewToken(r.Context())
@@ -74,7 +74,7 @@ func (s *Server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	acctKey := "acct:" + email
 	if loginLockRemaining(key, loginMaxFails) > 0 || loginLockRemaining(acctKey, loginAccountMaxFails) > 0 {
 		s.render(w, r, http.StatusTooManyRequests, "login.html", map[string]any{
-			"Error": "Çox sayda uğursuz cəhd. Bir az sonra yenidən cəhd edin."})
+			"Error": s.t(r, "err.too_many_attempts")})
 		return
 	}
 
@@ -86,7 +86,7 @@ func (s *Server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		loginFail(key)
 		loginFail(acctKey)
 		_ = s.store.RecordAudit(r.Context(), "", email, "auth.login_failed", "user", "", "no such account", auditIP(r))
-		s.render(w, r, http.StatusUnauthorized, "login.html", map[string]any{"Error": "Invalid credentials"})
+		s.render(w, r, http.StatusUnauthorized, "login.html", map[string]any{"Error": s.t(r, "err.invalid_credentials")})
 		return
 	}
 	if err != nil {
@@ -102,7 +102,7 @@ func (s *Server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 			reason = "account disabled"
 		}
 		_ = s.store.RecordAudit(r.Context(), "", email, "auth.login_failed", "user", u.ID, reason, auditIP(r))
-		s.render(w, r, http.StatusUnauthorized, "login.html", map[string]any{"Error": "Invalid credentials"})
+		s.render(w, r, http.StatusUnauthorized, "login.html", map[string]any{"Error": s.t(r, "err.invalid_credentials")})
 		return
 	}
 

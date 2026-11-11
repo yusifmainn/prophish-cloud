@@ -106,8 +106,8 @@ func TestRenderLangs(t *testing.T) {
 		if !strings.Contains(out, phrase) {
 			t.Errorf("login (%s) missing expected phrase %q", lang, phrase)
 		}
-		if !strings.Contains(out, `class="langsw"`) {
-			t.Errorf("login (%s) missing language switcher", lang)
+		if !strings.Contains(out, `class="langpick"`) {
+			t.Errorf("login (%s) missing language picker", lang)
 		}
 		if !strings.Contains(out, `href="/lang/`+lang+`"`) {
 			t.Errorf("login (%s) missing switcher link for %s", lang, lang)

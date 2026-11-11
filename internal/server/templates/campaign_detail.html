@@ -39,8 +39,9 @@
       <h2>{{t "campd.risk_score"}}</h2>
       <div class="riskbig" style="color:var(--{{.RiskClass}})">{{.RiskLabel}}</div>
       <p class="muted" style="margin:0">{{t "campd.click"}} {{.Pct.Clicked}}% · {{t "campd.submission"}} {{.Pct.Submitted}}%</p>
+      <div class="donut" style="--v:{{.Pct.Reported}}"><div class="dval"><b>{{.Pct.Reported}}%</b><span>{{t "campd.reported"}}</span></div></div>
       <div class="statline"><span class="muted" style="display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2" style="width:15px;height:15px;flex:none"><path d="M20 6L9 17l-5-5"/></svg>{{t "campd.reported_as_phishing"}}</span><span class="bignum" style="color:var(--ok)">{{.Stats.Reported}}</span></div>
-      <div class="muted" style="font-size:11.5px;margin-top:2px">{{.Pct.Reported}}% — {{t "campd.positive_indicator"}}</div>
+      <div class="muted" style="font-size:11.5px;margin-top:2px">{{t "campd.positive_indicator"}}</div>
     </div>
   </div>
 

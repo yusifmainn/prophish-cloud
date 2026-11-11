@@ -58,6 +58,13 @@ func (s *Server) AdminRouter() http.Handler {
 	r.Get("/static/editor.js", s.handleStaticEditorJS)
 	r.Get("/static/builder.js", s.handleStaticBuilderJS)
 	r.Get("/static/shahdag.json", s.handleStaticShahdag)
+	r.Get("/static/auth.js", s.handleStaticAuthJS)
+	r.Get("/static/hero/{name}", s.handleStaticHero)
+	r.Get("/static/logo-mark.svg", s.handleStaticLogo)
+	r.Get("/static/logo-mark-dark-bg.svg", s.handleStaticLogo)
+	r.Get("/favicon.ico", s.handleBrandIcon)
+	r.Get("/favicon.svg", s.handleBrandIcon)
+	r.Get("/apple-touch-icon.png", s.handleBrandIcon)
 	r.Get("/static/fonts/{name}", s.handleStaticFont)
 
 	// Authenticated routes. checkOrigin adds CSRF defense-in-depth on top of the

@@ -1,47 +1,47 @@
 {{template "head" .}}
 {{template "nav" .}}
 <main>
-  <div class="pghead"><div class="tt"><h1>Email şablonları</h1><p class="sub">Hədəf işçilərə göndərilən simulyasiya emailləri. Vizual redaktor və ya .eml import.</p></div></div>
-  {{if eq .Import "ok"}}<div class="note ok">Email import olundu.</div>{{end}}
-  {{if eq .Import "err"}}<div class="err">Email oxuna bilmədi — formatı yoxlayın.</div>{{end}}
-  {{if eq .Err "inuse"}}<div class="err">Şablon silinmədi — onu bir və ya bir neçə kampaniya istifadə edir. Əvvəlcə həmin kampaniyaları silin.</div>{{end}}
+  <div class="pghead"><div class="tt"><h1>{{t "tpl.title"}}</h1><p class="sub">{{t "tpl.subtitle"}}</p></div></div>
+  {{if eq .Import "ok"}}<div class="note ok">{{t "tpl.import_ok"}}</div>{{end}}
+  {{if eq .Import "err"}}<div class="err">{{t "tpl.import_err"}}</div>{{end}}
+  {{if eq .Err "inuse"}}<div class="err">{{t "tpl.err_inuse"}}</div>{{end}}
 
   <div class="card">
-    <h2>Yeni şablon</h2>
-    <p class="muted">Dəyişənlər: <code>{{"{{.FirstName}}"}}</code>, <code>{{"{{.LastName}}"}}</code>, <code>{{"{{.Email}}"}}</code>, <code>{{"{{.Position}}"}}</code>, <code>{{"{{.URL}}"}}</code>, <code>{{"{{.TrackingPixel}}"}}</code>.</p>
+    <h2>{{t "tpl.new"}}</h2>
+    <p class="muted">{{t "tpl.variables"}} <code>{{"{{.FirstName}}"}}</code>, <code>{{"{{.LastName}}"}}</code>, <code>{{"{{.Email}}"}}</code>, <code>{{"{{.Position}}"}}</code>, <code>{{"{{.URL}}"}}</code>, <code>{{"{{.TrackingPixel}}"}}</code>.</p>
     <form method="post" action="/templates">
-      <label>Ad</label><input name="name" required>
-      <label>Mövzu (Subject)</label><input name="subject" required>
-      <label>HTML məzmun</label>
-      <textarea name="html_body" rows="8" data-editor="email" required>&lt;p&gt;Salam {{"{{.FirstName}}"}},&lt;/p&gt;&lt;p&gt;Hesabınızı təsdiqləyin: &lt;a href="{{"{{.URL}}"}}"&gt;buraya klikləyin&lt;/a&gt;.&lt;/p&gt;</textarea>
-      <label>Mətn versiyası (opsional)</label>
+      <label>{{t "common.name"}}</label><input name="name" required>
+      <label>{{t "tpl.subject"}}</label><input name="subject" required>
+      <label>{{t "tpl.html_content"}}</label>
+      <textarea name="html_body" rows="8" data-editor="email" required>&lt;p&gt;{{t "tpl.sample_greeting"}} {{"{{.FirstName}}"}},&lt;/p&gt;&lt;p&gt;{{t "tpl.sample_confirm"}} &lt;a href="{{"{{.URL}}"}}"&gt;{{t "tpl.sample_click"}}&lt;/a&gt;.&lt;/p&gt;</textarea>
+      <label>{{t "tpl.text_version"}}</label>
       <textarea name="text_body" rows="2"></textarea>
-      <label>Xüsusi başlıqlar (opsional, hər sətir <code>Açar: Dəyər</code>)</label>
+      <label>{{t "tpl.custom_headers_pre"}} <code>{{t "tpl.key_value"}}</code>)</label>
       <textarea name="headers" rows="2" placeholder="X-Mailer: Outlook"></textarea>
-      <button type="submit">Yarat</button>
+      <button type="submit">{{t "common.create"}}</button>
     </form>
   </div>
 
   <div class="card">
-    <h2>Email import (.eml / xam mətn)</h2>
-    <p class="muted">Mövcud bir emaili olduğu kimi yapışdırın — mövzu və HTML/mətn avtomatik çıxarılacaq.</p>
+    <h2>{{t "tpl.import_title"}}</h2>
+    <p class="muted">{{t "tpl.import_hint"}}</p>
     <form method="post" action="/templates/import">
-      <label>Ad</label><input name="name" required>
-      <label>Xam email mətni</label>
+      <label>{{t "common.name"}}</label><input name="name" required>
+      <label>{{t "tpl.raw_email"}}</label>
       <textarea name="raw" rows="6" required placeholder="From: ...&#10;Subject: ...&#10;Content-Type: text/html&#10;&#10;<html>..."></textarea>
-      <button type="submit">Import et</button>
+      <button type="submit">{{t "tpl.import_btn"}}</button>
     </form>
   </div>
 
   <div class="card">
-    <h2>Siyahı</h2>
+    <h2>{{t "common.list"}}</h2>
     <table>
-      <thead><tr><th>Ad</th><th>Mövzu</th><th>Yaradılıb</th><th></th></tr></thead>
+      <thead><tr><th>{{t "common.name"}}</th><th>{{t "tpl.col_subject"}}</th><th>{{t "common.created"}}</th><th></th></tr></thead>
       <tbody>
         {{range .Templates}}
         <tr><td><a href="/templates/{{.ID}}" class="tlink">{{.Name}}</a></td><td>{{.Subject}}</td><td>{{.CreatedAt.Format "2006-01-02"}}</td>
-            <td><a href="/templates/{{.ID}}">Aç →</a></td></tr>
-        {{else}}<tr><td colspan="4" class="muted">Hələ şablon yoxdur.</td></tr>{{end}}
+            <td><a href="/templates/{{.ID}}">{{t "common.open_arrow"}}</a></td></tr>
+        {{else}}<tr><td colspan="4" class="muted">{{t "tpl.empty"}}</td></tr>{{end}}
       </tbody>
     </table>
   </div>

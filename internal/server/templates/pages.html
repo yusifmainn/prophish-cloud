@@ -1,47 +1,47 @@
 {{template "head" .}}
 {{template "nav" .}}
 <main>
-  <div class="pghead"><div class="tt"><h1>Açılış səhifələri</h1><p class="sub">İşçi linkə klikləyəndən sonra gördüyü səhifə. Dəyərlər saxlanmır.</p></div>
-  <div class="act"><a class="btn" href="/pages/builder">Vizual redaktorla yarat</a></div></div>
-  {{if eq .Import "ok"}}<div class="note ok">Sayt klonlandı.</div>{{end}}
-  {{if eq .Import "err"}}<div class="err">Sayt yüklənə bilmədi — URL-i yoxlayın.</div>{{end}}
+  <div class="pghead"><div class="tt"><h1>{{t "pg.title"}}</h1><p class="sub">{{t "pg.subtitle"}}</p></div>
+  <div class="act"><a class="btn" href="/pages/builder">{{t "pg.builder_link"}}</a></div></div>
+  {{if eq .Import "ok"}}<div class="note ok">{{t "pg.import_ok"}}</div>{{end}}
+  {{if eq .Import "err"}}<div class="err">{{t "pg.import_err"}}</div>{{end}}
 
   <div class="card">
-    <h2>URL-dən klonla</h2>
-    <p class="muted">Mövcud bir səhifəni çəkib açılış səhifəsinə çevirir. Formalar avtomatik <code>{{"{{.SubmitURL}}"}}</code>-ə yönəldilir; dəyərlər saxlanmır.</p>
+    <h2>{{t "pg.clone_title"}}</h2>
+    <p class="muted">{{t "pg.clone_desc"}}</p>
     <form method="post" action="/pages/import">
-      <label>Ad</label><input name="name" required>
+      <label>{{t "common.name"}}</label><input name="name" required>
       <label>URL</label><input name="url" required placeholder="https://login.microsoftonline.com">
-      <label>Yönləndirmə URL (opsional)</label><input name="redirect_url">
-      <button type="submit">Klonla</button>
+      <label>{{t "pg.redirect_opt"}}</label><input name="redirect_url">
+      <button type="submit">{{t "pg.clone_btn"}}</button>
     </form>
   </div>
 
   <div class="card">
-    <h2>Yeni səhifə (əl ilə)</h2>
-    <p class="muted">HTML bilmədən yığmaq üçün <a href="/pages/builder">vizual redaktoru</a> açın. Forma <code>action="{{"{{.SubmitURL}}"}}"</code> və <code>method="post"</code> olmalıdır. Dəyərlər <strong>saxlanılmır</strong>.</p>
+    <h2>{{t "pg.manual_title"}}</h2>
+    <p class="muted">{{t "pg.manual_desc"}} {{t "pg.builder_hint_pre"}} <a href="/pages/builder">{{t "pg.builder_link2"}}</a>.</p>
     <form method="post" action="/pages">
-      <label>Ad</label><input name="name" required>
-      <label>HTML məzmun</label>
+      <label>{{t "common.name"}}</label><input name="name" required>
+      <label>{{t "pg.html_label"}}</label>
       <textarea name="html_body" rows="8" data-editor="landing" required>&lt;form method="post" action="{{"{{.SubmitURL}}"}}"&gt;
   &lt;input name="username" placeholder="İstifadəçi adı"&gt;
   &lt;input name="password" type="password" placeholder="Parol"&gt;
   &lt;button&gt;Daxil ol&lt;/button&gt;
 &lt;/form&gt;</textarea>
-      <label>Yönləndirmə URL (opsional)</label>
+      <label>{{t "pg.redirect_opt"}}</label>
       <input name="redirect_url" placeholder="https://musteri.az/tehlukesizlik-telimi">
-      <button type="submit">Yarat</button>
+      <button type="submit">{{t "common.create"}}</button>
     </form>
   </div>
 
   <div class="card">
-    <h2>Siyahı</h2>
+    <h2>{{t "common.list"}}</h2>
     <table>
-      <thead><tr><th>Ad</th><th>Yönləndirmə</th><th>Yaradılıb</th><th></th></tr></thead>
+      <thead><tr><th>{{t "common.name"}}</th><th>{{t "pg.redirect_col"}}</th><th>{{t "common.created"}}</th><th></th></tr></thead>
       <tbody>
         {{range .Pages}}
-        <tr><td><a href="/pages/{{.ID}}">{{.Name}}</a></td><td>{{.RedirectURL}}</td><td>{{.CreatedAt.Format "2006-01-02"}}</td><td><a href="/pages/{{.ID}}">Aç →</a></td></tr>
-        {{else}}<tr><td colspan="4" class="muted">Hələ səhifə yoxdur.</td></tr>{{end}}
+        <tr><td><a href="/pages/{{.ID}}">{{.Name}}</a></td><td>{{.RedirectURL}}</td><td>{{.CreatedAt.Format "2006-01-02"}}</td><td><a href="/pages/{{.ID}}">{{t "common.open_arrow"}}</a></td></tr>
+        {{else}}<tr><td colspan="4" class="muted">{{t "pg.empty"}}</td></tr>{{end}}
       </tbody>
     </table>
   </div>
