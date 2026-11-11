@@ -1,0 +1,157 @@
+{{template "head" .}}
+{{template "nav" .}}
+<main class="bmain">
+  <style>
+    /* Vizual qurucu — tam-ekran üçzonalı düzən (inline style CSP-də icazəlidir). */
+    main.bmain{max-width:100%;padding:0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+    #builder{flex:1;display:flex;flex-direction:column;min-height:0}
+    #builder-form{flex:1;display:flex;flex-direction:column;min-height:0}
+    .btop{display:flex;align-items:center;gap:10px;padding:10px 130px 10px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex:none;flex-wrap:wrap}
+    .btop .bname{width:220px;margin:0;padding:8px 11px;font-size:13.5px}
+    .btop button{margin:0}
+    .btop .bsnap{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg);margin:0;cursor:pointer;user-select:none}
+    .btop .bsnap input{width:auto;margin:0;box-shadow:none}
+    .bspacer{flex:1}
+    .bwrap{flex:1;display:grid;grid-template-columns:86px minmax(0,1fr) 320px;min-height:0}
+    .btools{display:flex;flex-direction:column;gap:4px;padding:10px 8px;background:var(--surface);border-right:1px solid var(--border);overflow:auto}
+    .btools button{margin:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px;font-size:16px;line-height:1;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:9px;cursor:pointer;box-shadow:var(--shadow-sm)}
+    .btools button span{font-size:10.5px;font-weight:600;color:var(--muted)}
+    .btools button:hover{border-color:var(--border-strong);transform:none}
+    .btools button.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line)}
+    .btools button.on span{color:var(--accent)}
+    .bwork{overflow:auto;background:var(--sunken);padding:44px;display:flex;justify-content:center;align-items:flex-start}
+    #canvas{position:relative;flex:none;box-shadow:0 2px 6px rgba(10,20,40,.12),0 18px 44px -12px rgba(10,20,40,.25);overflow:hidden}
+    #canvas .elb{position:absolute;box-sizing:border-box;cursor:move}
+    #canvas .elb *{pointer-events:none}
+    #canvas .elb.editing *{pointer-events:auto}
+    #canvas .elb.editing{cursor:text}
+    #canvas .elb .fill{width:100%;height:100%;box-sizing:border-box}
+    #canvas .elb .editable{outline:none;min-width:1px}
+    .selbox{position:absolute;pointer-events:none;outline:1.5px solid var(--accent);z-index:9999}
+    .selbox .hdl{position:absolute;width:10px;height:10px;background:#fff;border:1.5px solid var(--accent);border-radius:2px;pointer-events:auto;box-sizing:border-box}
+    .hdl-nw{left:0;top:0;transform:translate(-50%,-50%);cursor:nwse-resize}
+    .hdl-n{left:50%;top:0;transform:translate(-50%,-50%);cursor:ns-resize}
+    .hdl-ne{left:100%;top:0;transform:translate(-50%,-50%);cursor:nesw-resize}
+    .hdl-e{left:100%;top:50%;transform:translate(-50%,-50%);cursor:ew-resize}
+    .hdl-se{left:100%;top:100%;transform:translate(-50%,-50%);cursor:nwse-resize}
+    .hdl-s{left:50%;top:100%;transform:translate(-50%,-50%);cursor:ns-resize}
+    .hdl-sw{left:0;top:100%;transform:translate(-50%,-50%);cursor:nesw-resize}
+    .hdl-w{left:0;top:50%;transform:translate(-50%,-50%);cursor:ew-resize}
+    .bside{background:var(--surface);border-left:1px solid var(--border);overflow:auto;padding:16px 18px}
+    .bside-h{font-size:13px;margin:0 0 12px;color:var(--ink);font-weight:650}
+    .bfield label{margin:10px 0 5px;font-size:12.5px}
+    .bfield input,.bfield select,.bfield textarea{padding:8px 10px;font-size:13.5px}
+    .bfield input[type=color]{padding:3px;height:38px;cursor:pointer}
+    .bfield textarea{font-family:var(--mono);font-size:12.5px}
+    .bgrid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+    .bgrid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0 8px}
+    .bchk{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--fg);margin:14px 0 4px;cursor:pointer;font-weight:500}
+    .bchk input{width:auto;margin:0;box-shadow:none}
+    .bzrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+    .bzbtn{margin:0;padding:7px 10px;font-size:12px}
+    .bdel{width:100%;margin-top:14px}
+    #builder-notice{margin:0 0 12px}
+    #builder-notice[hidden]{display:none}
+    /* Səhifə zolağı (çoxsəhifəli ssenarilər) */
+    .pstrip{display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--surface-2);border-bottom:1px solid var(--border);flex:none;overflow-x:auto}
+    .ptab{margin:0;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;font-size:12.5px;font-weight:600;background:var(--surface);color:var(--fg);border:1px solid var(--border-strong);border-radius:8px;cursor:pointer;box-shadow:var(--shadow-sm);white-space:nowrap}
+    .ptab:hover{transform:none;border-color:var(--accent)}
+    .ptab.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line)}
+    .ptab .px{font-size:12px;color:var(--faint);padding:0 2px}
+    .ptab .px:hover{color:var(--crit)}
+    .padd{margin:0;padding:6px 10px;font-size:12.5px;font-weight:600;background:none;color:var(--accent);border:1px dashed var(--border-strong);border-radius:8px;cursor:pointer;white-space:nowrap}
+    .padd:hover{transform:none;border-color:var(--accent)}
+    /* Şablon qalereyası örtüyü */
+    .bgallery{position:fixed;inset:0;z-index:90;background:rgba(6,14,26,.55);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:5vh 20px}
+    .bgallery[hidden]{display:none}
+    .bgallery-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);max-width:1020px;width:100%;padding:24px 26px 28px}
+    .bgallery-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px}
+    .bgallery-head h2{margin:0}
+    .bgallery-head p{margin:6px 0 0}
+    .bgallery-head button{margin:0 0 0 auto;flex:none}
+    .bgallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    @media (max-width:900px){.bgallery-grid{grid-template-columns:repeat(2,1fr)}}
+    .bgcard{margin:0;padding:10px;background:var(--surface);border:1px solid var(--border-strong);border-radius:12px;cursor:pointer;text-align:center;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:8px;align-items:stretch}
+    .bgcard:hover{border-color:var(--accent);box-shadow:var(--shadow);transform:none}
+    .bthumb{position:relative;width:100%;aspect-ratio:96/70;overflow:hidden;border-radius:8px;border:1px solid var(--border);background:#fff;pointer-events:none}
+    .bthumb-inner{position:absolute;left:0;top:0;transform-origin:0 0}
+    .bgcard .bname{font-size:13px;font-weight:600;color:var(--ink)}
+    .bgcard .bdesc{font-size:11px;color:var(--faint)}
+    /* Təkliflər paneli */
+    #sb-tips{margin-bottom:16px}
+    #sb-tips:empty{display:none}
+    .btip{display:flex;align-items:center;gap:8px;width:100%;margin:0 0 6px;padding:9px 12px;font-size:12.5px;font-weight:600;text-align:left;background:var(--surface);color:var(--ink);border:1px solid var(--border-strong);border-radius:9px;cursor:pointer;box-shadow:var(--shadow-sm)}
+    .btip:hover{border-color:var(--accent);transform:none}
+    .btip::before{content:"✦";color:var(--accent);flex:none}
+    .btips-h{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);margin:0 0 8px}
+    .btips-sub{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);margin:12px 0 6px}
+    @media (max-width:1100px){.bwrap{grid-template-columns:76px minmax(0,1fr) 280px}}
+    /* Responsiv redaktor düzənləmələri */
+    #canvas-scale{transform-origin:top center;flex:none}
+    @media (max-width:1200px){
+      .btools button span{display:none}
+      .bwrap{grid-template-columns:56px minmax(0,1fr) 320px}
+      .btop .bname{width:160px}
+    }
+    @media (max-width:1100px){
+      .bwrap{grid-template-columns:56px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+      .bside{grid-column:1/-1;border-left:0;border-top:1px solid var(--border);max-height:320px}
+    }
+    .bgallery-grid{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  </style>
+
+  <div id="builder">
+    <form method="post" id="builder-form" action="{{if .Edit}}/pages/{{.P.ID}}/edit{{else}}/pages{{end}}">
+      <textarea name="html_body" id="builder-html" hidden></textarea>
+      <input type="hidden" name="redirect_url" id="f-redirect" value="{{if .Edit}}{{.P.RedirectURL}}{{end}}">
+
+      <div class="btop">
+        <a class="btn secondary" href="{{if .Edit}}/pages/{{.P.ID}}{{else}}/pages{{end}}">{{t "builder.back"}}</a>
+        <input class="bname" name="name" value="{{if .Edit}}{{.P.Name}}{{end}}" required placeholder="{{t "builder.name_ph"}}">
+        <label class="bsnap"><input type="checkbox" id="f-snap" checked> {{t "builder.snap"}}</label>
+        <button type="button" class="iconbtn" id="b-undo" title="{{t "builder.undo_tip"}}">↶</button>
+        <button type="button" class="iconbtn" id="b-redo" title="{{t "builder.redo_tip"}}">↷</button>
+        <span class="bspacer"></span>
+        <button type="button" class="secondary" id="b-gallery">{{t "builder.gallery"}}</button>
+        <button type="button" class="secondary" id="b-preview" title="{{t "builder.preview_tip"}}">{{t "builder.preview"}}</button>
+        <button type="submit">{{if .Edit}}{{t "common.save"}}{{else}}{{t "builder.create"}}{{end}}</button>
+      </div>
+
+      <div class="pstrip" id="pstrip"></div>
+      <div class="bwrap">
+        <div class="btools">
+          <button type="button" title="{{t "builder.tool.select"}}" data-tool="select" class="on">↖<span>{{t "builder.tool.select"}}</span></button>
+          <button type="button" title="{{t "builder.tool.rect"}}" data-tool="rect">▭<span>{{t "builder.tool.rect"}}</span></button>
+          <button type="button" title="{{t "builder.tool.text"}}" data-tool="text">T<span>{{t "builder.tool.text"}}</span></button>
+          <button type="button" title="{{t "builder.tool.button"}}" data-tool="button">▢<span>{{t "builder.tool.button"}}</span></button>
+          <button type="button" title="{{t "builder.tool.image"}}" data-tool="image">▦<span>{{t "builder.tool.image"}}</span></button>
+          <button type="button" title="{{t "builder.tool.form"}}" data-tool="form">⌗<span>{{t "builder.tool.form"}}</span></button>
+          <button type="button" title="{{t "builder.tool.line"}}" data-tool="line">―<span>{{t "builder.tool.line"}}</span></button>
+          <button type="button" title="{{t "builder.tool.video"}}" data-tool="video">▶<span>{{t "builder.tool.video"}}</span></button>
+        </div>
+        <div class="bwork" id="workspace">
+          <div id="canvas-scale"><div id="canvas"></div></div>
+        </div>
+        <div class="bside">
+          <div class="note" id="builder-notice" hidden>{{t "builder.notice"}}</div>
+          <div id="sb-tips"></div>
+          <div id="sb-page"></div>
+          <div id="sb-el"></div>
+        </div>
+      </div>
+    </form>
+    <form id="builder-preview-form" method="post" action="/pages/builder/preview" target="_blank" hidden><textarea name="html_body"></textarea></form>
+    <div class="bgallery" id="gallery" hidden>
+      <div class="bgallery-box">
+        <div class="bgallery-head">
+          <div><h2>{{t "builder.gallery_title"}}</h2><p class="muted">{{t "builder.gallery_sub"}}</p></div>
+          <button type="button" class="secondary" id="gallery-close">{{t "common.cancel"}}</button>
+        </div>
+        <div class="bgallery-grid" id="gallery-grid"></div>
+      </div>
+    </div>
+    {{if .Edit}}<textarea id="builder-stored" hidden>{{.P.HTMLBody}}</textarea>{{end}}
+    <textarea id="builder-i18n" hidden>{{toJSON .JSStrings}}</textarea>
+  </div>
+</main>
+{{template "foot" .}}

@@ -1,7 +1,8 @@
 {{template "head" .}}
 {{template "nav" .}}
 <main>
-  <div class="pghead"><div class="tt"><h1>Açılış səhifələri</h1><p class="sub">İşçi linkə klikləyəndən sonra gördüyü səhifə. Dəyərlər saxlanmır.</p></div></div>
+  <div class="pghead"><div class="tt"><h1>Açılış səhifələri</h1><p class="sub">İşçi linkə klikləyəndən sonra gördüyü səhifə. Dəyərlər saxlanmır.</p></div>
+  <div class="act"><a class="btn" href="/pages/builder">Vizual redaktorla yarat</a></div></div>
   {{if eq .Import "ok"}}<div class="note ok">Sayt klonlandı.</div>{{end}}
   {{if eq .Import "err"}}<div class="err">Sayt yüklənə bilmədi — URL-i yoxlayın.</div>{{end}}
 
@@ -18,7 +19,7 @@
 
   <div class="card">
     <h2>Yeni səhifə (əl ilə)</h2>
-    <p class="muted">Forma <code>action="{{"{{.SubmitURL}}"}}"</code> və <code>method="post"</code> olmalıdır. Dəyərlər <strong>saxlanılmır</strong>.</p>
+    <p class="muted">HTML bilmədən yığmaq üçün <a href="/pages/builder">vizual redaktoru</a> açın. Forma <code>action="{{"{{.SubmitURL}}"}}"</code> və <code>method="post"</code> olmalıdır. Dəyərlər <strong>saxlanılmır</strong>.</p>
     <form method="post" action="/pages">
       <label>Ad</label><input name="name" required>
       <label>HTML məzmun</label>

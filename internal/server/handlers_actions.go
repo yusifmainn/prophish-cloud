@@ -98,6 +98,9 @@ func (s *Server) handleCampaignArchive(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleCampaignDelete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	if s.tunnels != nil {
+		s.tunnels.Stop(id)
+	}
 	// Capture the name before the cascading delete so the audit entry is meaningful.
 	name := id
 	if camp, err := s.store.GetCampaign(r.Context(), id); err == nil && camp != nil {

@@ -6,12 +6,12 @@ import (
 	"prophish/internal/models"
 )
 
-func (s *Store) CreateCampaign(c ctx, clientID, authID, name, templateID, pageID, profileID, createdBy string) (string, error) {
+func (s *Store) CreateCampaign(c ctx, clientID, authID, name, templateID, pageID, profileID, createdBy, publicBaseURL string, tunnelManaged bool) (string, error) {
 	var id string
 	err := s.db.QueryRow(c,
-		`INSERT INTO campaigns (client_id, authorization_id, name, template_id, landing_page_id, sending_profile_id, created_by)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-		clientID, authID, name, templateID, pageID, profileID, nullIfEmpty(createdBy)).Scan(&id)
+		`INSERT INTO campaigns (client_id, authorization_id, name, template_id, landing_page_id, sending_profile_id, created_by, public_base_url, tunnel_managed)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+		clientID, authID, name, templateID, pageID, profileID, nullIfEmpty(createdBy), publicBaseURL, tunnelManaged).Scan(&id)
 	return id, err
 }
 
@@ -43,10 +43,11 @@ func (s *Store) GetCampaign(c ctx, id string) (*models.Campaign, error) {
 	var m models.Campaign
 	err := s.db.QueryRow(c,
 		`SELECT id, client_id, authorization_id, name, template_id, landing_page_id, sending_profile_id,
-		        status, launch_at, send_by, completed_at, archived, created_at
+		        status, launch_at, send_by, completed_at, archived, created_at, public_base_url, tunnel_managed
 		   FROM campaigns WHERE id=$1`, id).
 		Scan(&m.ID, &m.ClientID, &m.AuthorizationID, &m.Name, &m.TemplateID, &m.LandingPageID,
-			&m.SendingProfileID, &m.Status, &m.LaunchAt, &m.SendBy, &m.CompletedAt, &m.Archived, &m.CreatedAt)
+			&m.SendingProfileID, &m.Status, &m.LaunchAt, &m.SendBy, &m.CompletedAt, &m.Archived, &m.CreatedAt,
+			&m.PublicBaseURL, &m.TunnelManaged)
 	if err != nil {
 		return nil, err
 	}
@@ -138,11 +139,11 @@ func (s *Store) DeleteCampaign(c ctx, id string) error {
 // a launched campaign's record stays faithful to what was actually sent. Returns
 // true only if a draft was updated. Target groups are regenerated separately via
 // DeleteResultsForCampaign + CreateResults.
-func (s *Store) UpdateCampaignConfig(c ctx, id, name, authID, templateID, pageID, profileID string) (bool, error) {
+func (s *Store) UpdateCampaignConfig(c ctx, id, name, authID, templateID, pageID, profileID, publicBaseURL string) (bool, error) {
 	tag, err := s.db.Exec(c,
-		`UPDATE campaigns SET name=$2, authorization_id=$3, template_id=$4, landing_page_id=$5, sending_profile_id=$6
+		`UPDATE campaigns SET name=$2, authorization_id=$3, template_id=$4, landing_page_id=$5, sending_profile_id=$6, public_base_url=$7
 		   WHERE id=$1 AND status='draft'`,
-		id, name, authID, templateID, pageID, profileID)
+		id, name, authID, templateID, pageID, profileID, publicBaseURL)
 	if err != nil {
 		return false, err
 	}
@@ -217,4 +218,33 @@ type CampaignRow struct {
 	ClientName string
 	Status     string
 	CreatedAt  time.Time
+}
+
+// SetCampaignTunnel records a managed campaign's current tunnel URL (called by
+// the tunnel manager every time cloudflared (re)starts and prints a new URL).
+func (s *Store) SetCampaignTunnel(c ctx, id, url string) error {
+	_, err := s.db.Exec(c,
+		`UPDATE campaigns SET public_base_url=$2, tunnel_managed=true WHERE id=$1`, id, url)
+	return err
+}
+
+// ListTunnelManagedCampaigns returns ids whose tunnels must be restarted on
+// boot. Archived campaigns keep their stored URL but get no live tunnel — they
+// no longer send, so a dead link there is harmless.
+func (s *Store) ListTunnelManagedCampaigns(c ctx) ([]string, error) {
+	rows, err := s.db.Query(c,
+		`SELECT id FROM campaigns WHERE tunnel_managed=true AND archived=false`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
 }

@@ -148,6 +148,14 @@ func (l *Launcher) Launch(ctx context.Context, campaignID string) error {
 		}
 	}
 
+	// Per-campaign public base URL override: tracking links use the campaign's
+	// own URL when set (e.g. a tunnel URL that was current at creation time),
+	// otherwise the global default.
+	baseURL := l.publicBaseURL
+	if camp.PublicBaseURL != "" {
+		baseURL = camp.PublicBaseURL
+	}
+
 	// writeCtx records what HAS happened (a result marked sent, an event logged)
 	// and MUST NOT be the cancellable runCtx: an operator Stop can land while a
 	// message is being delivered by Send(), and if the follow-up MarkResultSent
@@ -183,8 +191,8 @@ func (l *Launcher) Launch(ctx context.Context, campaignID string) error {
 			LastName:      it.Last,
 			Email:         it.Email,
 			Position:      it.Position,
-			URL:           clickURL(l.publicBaseURL, it.Token),
-			TrackingPixel: pixelTag(l.publicBaseURL, it.Token),
+			URL:           clickURL(baseURL, it.Token),
+			TrackingPixel: pixelTag(baseURL, it.Token),
 		}
 
 		subject, e1 := renderText(tmpl.Subject, data)

@@ -39,9 +39,9 @@ func (s *Server) Router() http.Handler {
 	r.Use(middleware.Throttle(128))
 	r.Use(s.rateLimit)
 
-	r.Get("/p/{token}.png", s.handleOpen)   // open-tracking pixel
-	r.Get("/t/{token}", s.handleClick)       // landing page (click)
-	r.Post("/s/{token}", s.handleSubmit)     // form submission (fact only)
+	r.Get("/p/{token}.png", s.handleOpen) // open-tracking pixel
+	r.Get("/t/{token}", s.handleClick)    // landing page (click)
+	r.Post("/s/{token}", s.handleSubmit)  // form submission (fact only)
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok")) })
 	return r
 }

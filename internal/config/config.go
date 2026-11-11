@@ -17,12 +17,12 @@ import (
 
 // Config holds all runtime configuration, loaded from environment variables.
 type Config struct {
-	DatabaseURL   string
-	AdminAddr     string
-	PublicAddr    string // listen address for the public landing-page/tracking server
-	PublicBaseURL string // external base URL targets reach, e.g. https://mail-check.example.com
-	SessionKey     []byte       // 32 bytes, used ONLY for session-cookie signing (scs)
-	EncryptionKey  []byte       // 32 bytes, derived from SessionKey via HKDF; used ONLY to encrypt SMTP/IMAP secrets
+	DatabaseURL    string
+	AdminAddr      string
+	PublicAddr     string // listen address for the public landing-page/tracking server
+	PublicBaseURL  string // external base URL targets reach, e.g. https://mail-check.example.com
+	SessionKey     []byte // 32 bytes, used ONLY for session-cookie signing (scs)
+	EncryptionKey  []byte // 32 bytes, derived from SessionKey via HKDF; used ONLY to encrypt SMTP/IMAP secrets
 	SecureCookies  bool
 	TrustedProxies []*net.IPNet   // CIDRs whose X-Forwarded-For is trusted on the public listener
 	Location       *time.Location // display/scheduling time zone (PROPHISH_TIMEZONE), defaults to UTC
@@ -34,10 +34,10 @@ func Load() (*Config, error) {
 	_ = loadDotEnv(".env")
 
 	c := &Config{
-		DatabaseURL:   getenv("PROPHISH_DB_URL", ""),
-		AdminAddr:     getenv("PROPHISH_ADMIN_ADDR", "127.0.0.1:8443"),
-		PublicAddr:    getenv("PROPHISH_PUBLIC_ADDR", "127.0.0.1:8080"),
-		PublicBaseURL: strings.TrimRight(getenv("PROPHISH_PUBLIC_BASE_URL", "http://127.0.0.1:8080"), "/"),
+		DatabaseURL:    getenv("PROPHISH_DB_URL", ""),
+		AdminAddr:      getenv("PROPHISH_ADMIN_ADDR", "127.0.0.1:8443"),
+		PublicAddr:     getenv("PROPHISH_PUBLIC_ADDR", "127.0.0.1:8080"),
+		PublicBaseURL:  strings.TrimRight(getenv("PROPHISH_PUBLIC_BASE_URL", "http://127.0.0.1:8080"), "/"),
 		SecureCookies:  strings.EqualFold(getenv("PROPHISH_SECURE_COOKIES", "false"), "true"),
 		TrustedProxies: parseCIDRs(getenv("PROPHISH_TRUSTED_PROXIES", "")),
 	}

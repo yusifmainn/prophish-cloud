@@ -65,6 +65,21 @@
         </div>
       </div>
 
+      <div class="sectlbl">{{t "camp.sect_delivery"}}</div>
+      {{if .TunnelManaged}}
+      <label>{{t "camp.public_url_label"}}</label>
+      <p class="note">{{t "camp.tunnel_managed_note"}}</p>
+      {{else}}
+      <label for="c-puburl">{{t "camp.public_url_label"}}</label>
+      <input id="c-puburl" name="public_base_url" value="{{if $sel}}{{$sel.PublicBaseURL}}{{end}}" placeholder="{{.GlobalPublicURL}}">
+      <p class="hint">{{tf "camp.public_url_hint" .GlobalPublicURL}}</p>
+      <label class="pick" style="margin-top:10px;max-width:520px">
+        <input type="checkbox" name="tunnel_managed" value="1" {{if not .EditID}}checked{{end}}>
+        <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span>
+        <span style="min-width:0"><span class="t">{{t "camp.tunnel_label"}}</span><span class="s">{{t "camp.tunnel_hint"}}</span></span>
+      </label>
+      {{end}}
+
       <div style="display:flex;gap:10px;justify-content:flex-end;border-top:1px solid var(--border);padding-top:16px;margin-top:20px">
         {{if .EditID}}<a class="btn secondary" href="/campaigns/{{.EditID}}">{{t "common.cancel"}}</a>{{end}}
         <button type="submit">{{if .EditID}}{{t "common.save_changes"}}{{else}}{{t "camp.create_draft"}}{{end}}</button>

@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"embed"
+	"encoding/json"
 	"html/template"
 	"net/http"
 	"strings"
@@ -41,11 +42,11 @@ var templateFuncs = template.FuncMap{
 	// parse; render() overrides each per request with a language-bound
 	// implementation (see langTemplateFuncs). The defaults resolve in the
 	// default language so the base template remains renderable on its own.
-	"t":           func(key string) template.HTML { return template.HTML(tr(defaultLang, key)) },
-	"tf":          func(key string, args ...any) template.HTML { return template.HTML(trf(defaultLang, key, args...)) },
-	"curlang":     func() string { return defaultLang },
-	"langs":       func() []string { return supportedLangs },
-	"langName":    func(code string) string { return langNames[code] },
+	"t":        func(key string) template.HTML { return template.HTML(tr(defaultLang, key)) },
+	"tf":       func(key string, args ...any) template.HTML { return template.HTML(trf(defaultLang, key, args...)) },
+	"curlang":  func() string { return defaultLang },
+	"langs":    func() []string { return supportedLangs },
+	"langName": func(code string) string { return langNames[code] },
 	// eventlabel localizes a tracking-event type for the timeline (language-aware
 	// at render time; raw code fallback for unknown/future types).
 	"eventlabel": func(code string) string { return label(defaultLang, "event", code) },
@@ -83,6 +84,16 @@ var templateFuncs = template.FuncMap{
 	},
 	// pct exposes the shared rounding helper to templates: {{pct .Clicked .Total}}.
 	"pct": models.Pct,
+	// toJSON serializes a value for embedding into a hidden element's text
+	// (e.g. the builder's JS translation map). html/template context-escapes
+	// the string; the browser decodes it back when the element is read.
+	"toJSON": func(v any) string {
+		b, err := json.Marshal(v)
+		if err != nil {
+			return "{}"
+		}
+		return string(b)
+	},
 }
 
 func parseTemplates() (*template.Template, error) {

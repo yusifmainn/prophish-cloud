@@ -141,6 +141,19 @@ func safeReturnTo(r *http.Request) string {
 	return p
 }
 
+// messagesForPrefix returns all catalog entries under a key prefix (e.g.
+// "builder.js.") translated into lang, for handing a whole screen's strings to
+// client-side code. The prefix is kept in the returned keys.
+func messagesForPrefix(lang, prefix string) map[string]string {
+	out := map[string]string{}
+	for key := range messages {
+		if strings.HasPrefix(key, prefix) {
+			out[key] = tr(lang, key)
+		}
+	}
+	return out
+}
+
 // langTemplateFuncs returns the per-request template helpers bound to lang.
 // render() layers these over the parsed templates via Clone so every template —
 // including sub-templates invoked with scalar data like {{template "statuspill"
