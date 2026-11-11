@@ -1,5 +1,5 @@
 // Package imappoll polls a mailbox for employee-reported phishing emails and
-// records them (the equivalent of Gophish's IMAP "reported email" monitor).
+// records them — the IMAP "reported email" monitor.
 package imappoll
 
 import (

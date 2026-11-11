@@ -3,7 +3,7 @@
 **Öz serverində işləyən, təhlükəsizlik-prioritetli phishing məlumatlandırma (awareness) simulyasiya platforması.**
 Müqavilə bağladığınız müştəri təşkilatlarda, yazılı icazə əsasında, işçilərin sosial mühəndislik hücumlarına həssaslığını ölçmək və keçməyənlərə təlim vermək üçün nəzərdə tutulub.
 
-> Bu alət Gophish-ə bənzər funksiyalar verir, amma tamamilə sizin infrastrukturunuzda qalır — müştəri məlumatları heç bir üçüncü tərəf buluduna çıxmır.
+> Bu alət tam funksional phishing simulyasiya imkanları verir, amma tamamilə sizin infrastrukturunuzda qalır — müştəri məlumatları heç bir üçüncü tərəf buluduna çıxmır.
 
 ---
 
@@ -17,11 +17,11 @@ Müqavilə bağladığınız müştəri təşkilatlarda, yazılı icazə əsası
 
 ---
 
-## Funksiyalar (Gophish pariteti)
+## Funksiyalar
 
 | Funksiya | Status |
 |---|---|
-| Müştərilər (multi-tenant) + icazə/RoE şərti | ✅ (Gophish-də yoxdur) |
+| Müştərilər (multi-tenant) + icazə/RoE şərti | ✅ |
 | Hədəf qrupları + CSV import | ✅ |
 | Email şablonları (dəyişənlər, HTML+mətn) | ✅ |
 | **Email import (.eml / xam mətn)** | ✅ |
@@ -29,7 +29,7 @@ Müqavilə bağladığınız müştəri təşkilatlarda, yazılı icazə əsası
 | **Xüsusi email başlıqları** (şablon + profil) | ✅ |
 | Landing səhifələri | ✅ |
 | **Sayt klonlama (URL-dən import)** | ✅ |
-| **Hazır şablon kitabxanası** (real brend login səhifələri + Outlook email-ləri) | ✅ (Gophish-də hazır gəlmir) |
+| **Hazır şablon kitabxanası** (real brend login səhifələri + Outlook email-ləri) | ✅ |
 | SMTP profilləri (şifrəli parol) | ✅ |
 | **Test email göndər** | ✅ |
 | Kampaniya yaratma + işə salma (təkrar işə salma qorunur) | ✅ |

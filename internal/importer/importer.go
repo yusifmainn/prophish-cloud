@@ -1,5 +1,5 @@
 // Package importer clones a web page into a landing page and parses raw emails
-// into templates — the equivalents of Gophish's "Import Site" and "Import Email".
+// into templates — the "Import Site" and "Import Email" features.
 package importer
 
 import (
