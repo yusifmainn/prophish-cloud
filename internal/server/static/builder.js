@@ -1925,6 +1925,7 @@
       if (!galleryGrid) return;
       galleryGrid.innerHTML = '';
       templatesList().forEach(function (tpl) {
+        if (tpl.lazy && shahdagTpl) tpl = shahdagTpl; // yüklənibsə, real mini-kanvası göstər
         var card = document.createElement('button');
         card.type = 'button';
         card.className = 'bgcard';
