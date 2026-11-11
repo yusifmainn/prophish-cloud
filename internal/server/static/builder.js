@@ -121,7 +121,7 @@
         case 'text': return { text: t('def_text', 'Mətn'), color: '#111827', fontSize: '16', fontFamily: '0', fontWeight: '400', align: 'left', opacity: '100', grad: '', hover: '', anim: '', shadowLvl: '' };
         case 'button': return { text: t('def_button', 'Düymə'), bg: '#0067b8', color: '#ffffff', radius: '8', shadow: false, fontSize: '15', fontWeight: '600', action: 'none', href: '', newTab: false, js: '', opacity: '100', grad: '', hover: '', anim: '', shadowLvl: '' };
         case 'image': return { url: '', alt: '', radius: '0', borderW: '0', borderC: '#d0d5dd', opacity: '100', grad: '', hover: '', anim: '', shadowLvl: '' };
-        case 'form': return { title: t('def_form_title', 'Hesabınıza daxil olun'), titleSize: '18', titleWeight: '700', subtitle: '', links: '', linkColor: '', inputStyle: 'box', btnPill: false, shadow: true, fontFamily: '0', userPh: t('def_user_ph', 'İstifadəçi adı'), passPh: t('def_pass_ph', 'Parol'), btnText: t('def_btn', 'Daxil ol'), bg: '#ffffff', btnBg: '#0067b8', btnColor: '#ffffff', inputBg: '#ffffff', inputBorder: '#d0d5dd', radius: '12', inputRadius: '8', opacity: '100', grad: '', hover: '', anim: '', shadowLvl: '' };
+        case 'form': return { title: t('def_form_title', 'Hesabınıza daxil olun'), titleSize: '18', titleWeight: '700', subtitle: '', links: '', linkColor: '', inputStyle: 'box', btnPill: false, shadow: true, fontFamily: '0', userPh: t('def_user_ph', 'İstifadəçi adı'), passPh: t('def_pass_ph', 'Parol'), btnText: t('def_btn', 'Daxil ol'), bg: '#ffffff', btnBg: '#0067b8', btnColor: '#ffffff', inputBg: '#ffffff', inputBorder: '#d0d5dd', radius: '12', inputRadius: '8', opacity: '100', grad: '', hover: '', anim: '', shadowLvl: '', twoStep: false, nextText: '', links2: '' };
         case 'line': return { color: '#c9cfd8', opacity: '100', grad: '', hover: '', anim: '', shadowLvl: '' };
         case 'video': return { src: '', poster: '', loop: false, muted: true, radius: '8', opacity: '100', grad: '', hover: '', anim: '', shadowLvl: '' };
       }
@@ -369,26 +369,54 @@
           if (p.title) h += '<div style="font-size:' + num(p.titleSize, 12, 48, 18) + 'px;font-weight:' + (p.titleWeight === '400' ? '400' : p.titleWeight === '600' ? '600' : '700') + ';margin:0 0 14px;color:#111827">' + tplSafe(p.title) + '</div>';
           if (p.subtitle) h += '<div style="font-size:14px;color:#5f6368;margin:-8px 0 14px">' + tplSafe(p.subtitle) + '</div>';
           var usedNames = {};
-          h += '<form method="post" action="' + SUBMIT + '">';
-          formFields(p).forEach(function (f) { h += fieldHTML(f, inp, usedNames); });
-          h += '<button class="fbtn" type="submit" style="width:100%;box-sizing:border-box;padding:12px;border:0;border-radius:' + btnR + ';background:' + p.btnBg + ';color:' + p.btnColor + ';font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">' + tplSafe(p.btnText) + '</button>'
-            + '</form>';
+          var flds = formFields(p);
+          // İki mərhələli (Microsoft tərzi): 1-ci sahə + "İrəli" düyməsi, sonra
+          // daxil edilmiş dəyər (düzəliş üçün klik) + qalan sahələr + son submit.
+          // Addım keçidi tamamilə klientdədir — "İrəli" şəbəkə sorğusu atmır; son
+          // submit hər iki addımın sahələrini BİR POST-da göndərir (1-ci addımın
+          // inputları DOM-da gizli qalır, heç vaxt silinmir).
+          var two = !!(p.twoStep && flds.length >= 2);
+          var btnCss = 'width:100%;box-sizing:border-box;padding:12px;border:0;border-radius:' + btnR + ';background:' + p.btnBg + ';color:' + p.btnColor + ';font-size:15px;font-weight:600;cursor:pointer;font-family:inherit';
           // Köməkçi linklər: hər sətir "Mətn" və ya "Mətn|https://real-url".
           // Yalnız http/https URL-lər linkə çevrilir (javascript: bloklanır).
           var lc = safeColor(p.linkColor || p.btnBg, '#0067b8');
-          (p.links || '').split('\n').forEach(function (ln) {
-            ln = ln.trim();
-            if (!ln) return;
-            var pipe = ln.indexOf('|');
-            var label = ln, url = '';
-            if (pipe > 0) { label = ln.slice(0, pipe).trim(); url = ln.slice(pipe + 1).trim(); }
-            if (url && /^https?:\/\//i.test(url)) {
-              h += '<div style="margin:8px 0 0;font-size:13px;line-height:1.4"><a class="flink" href="' + tplSafe(url) + '" target="_blank" rel="noopener noreferrer" style="color:' + lc + ';text-decoration:none">' + tplSafe(label) + '</a></div>';
-            } else {
-              // Keçərsiz sxemli (javascript: və s.) URL-i tam at — yalnız etiket qalır.
-              h += '<div style="margin:8px 0 0;font-size:13px;line-height:1.4;color:' + lc + '">' + tplSafe(label) + '</div>';
-            }
-          });
+          var linksHtml = function (rows) {
+            var lh = '';
+            (rows || '').split('\n').forEach(function (ln) {
+              ln = ln.trim();
+              if (!ln) return;
+              var pipe = ln.indexOf('|');
+              var label = ln, url = '';
+              if (pipe > 0) { label = ln.slice(0, pipe).trim(); url = ln.slice(pipe + 1).trim(); }
+              if (url && /^https?:\/\//i.test(url)) {
+                lh += '<div style="margin:8px 0 0;font-size:13px;line-height:1.4"><a class="flink" href="' + tplSafe(url) + '" target="_blank" rel="noopener noreferrer" style="color:' + lc + ';text-decoration:none">' + tplSafe(label) + '</a></div>';
+              } else {
+                // Keçərsiz sxemli (javascript: və s.) URL-i tam at — yalnız etiket qalır.
+                lh += '<div style="margin:8px 0 0;font-size:13px;line-height:1.4;color:' + lc + '">' + tplSafe(label) + '</div>';
+              }
+            });
+            return lh;
+          };
+          h += '<form method="post" action="' + SUBMIT + '"' + (two ? ' data-2step' : '') + '>';
+          if (two) {
+            h += '<div class="fclip">'
+              + '<div class="fstep fs1">'
+              + fieldHTML(flds[0], inp, usedNames)
+              + linksHtml(p.links)
+              + '<button class="fbtn fnext" type="button" style="' + btnCss + '">' + tplSafe(p.nextText || 'Next') + '</button>'
+              + '</div>'
+              + '<div class="fstep fs2" hidden>'
+              + '<button class="fback" type="button"><span class="farr">&#8592;</span><span class="fval"></span></button>';
+            flds.slice(1).forEach(function (f) { h += fieldHTML(f, inp, usedNames); });
+            h += linksHtml(p.links2)
+              + '<button class="fbtn" type="submit" style="' + btnCss + '">' + tplSafe(p.btnText) + '</button>'
+              + '</div></div>';
+          } else {
+            flds.forEach(function (f) { h += fieldHTML(f, inp, usedNames); });
+            h += '<button class="fbtn" type="submit" style="' + btnCss + '">' + tplSafe(p.btnText) + '</button>';
+          }
+          h += '</form>';
+          if (!two) h += linksHtml(p.links);
           return h + '</div>';
         }
         case 'line':
@@ -404,6 +432,7 @@
     }
 
     var hasJS = false;
+    var has2Step = false;
 
     function allElements() {
       var all = [];
@@ -454,6 +483,22 @@
         else headCss += '#' + e2.id + ' .fin:focus{outline:none;border-color:' + acc + '}\n';
         headCss += '#' + e2.id + ' .fbtn:hover{filter:brightness(.94)}\n#' + e2.id + ' .flink:hover{text-decoration:underline}\n';
       });
+      // İki mərhələli form animasiyası: çıxan addım −24px/opacity 0-a, gələn
+      // +24px-dən sürüşür (~270ms ease, real Microsoft axını kimi); geri
+      // keçid istiqaməti tərsinə çevirir. .fclip overflow:hidden olduğundan
+      // animasiya zamanı üfüqi daşma (xüsusən mobil) olmur.
+      has2Step = all.some(function (e2) { return e2.type === 'form' && e2.props.twoStep && formFields(e2.props).length >= 2; });
+      if (has2Step) headCss += '.fclip{overflow:hidden;position:relative}\n'
+        + '.fstep[hidden]{display:none!important}\n'
+        + '.fback{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;background:none;border:0;padding:0;margin:0 0 14px;font:inherit;font-size:14.5px;color:#1b1b1b;cursor:pointer;text-align:left;word-break:break-all}\n'
+        + '.farr{flex:none}\n'
+        + '@keyframes fInR{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}\n'
+        + '@keyframes fInL{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}\n'
+        + '@keyframes fOutL{to{opacity:0;transform:translateX(-24px)}}\n'
+        + '@keyframes fOutR{to{opacity:0;transform:translateX(24px)}}\n'
+        + '.fin-r{animation:fInR .27s ease both}.fin-l{animation:fInL .27s ease both}\n'
+        + '.fout-l{animation:fOutL .27s ease both}.fout-r{animation:fOutR .27s ease both}\n'
+        + '@media (prefers-reduced-motion:reduce){.fin-r,.fin-l,.fout-l,.fout-r{animation:none}}\n';
       if (all.some(function (e2) { return e2.props.hover || e2.props.anim; })) headCss += FXCSS + '\n';
       if (state.css) headCss += tplSafeCSS(state.css) + '\n';
       var out = '<!doctype html>\n<html lang="az">\n<head>\n<meta charset="utf-8">\n'
@@ -482,6 +527,22 @@
           + 'function fh(){var h=location.hash.replace(/^#\\/?/,"");if(h&&document.querySelector(\'[data-pg="\'+h+\'"]\'))sh(h);}\n'
           + 'document.querySelectorAll("[data-pglink]").forEach(function(a){a.addEventListener("click",function(ev){ev.preventDefault();var t=a.getAttribute("data-pglink");if(document.querySelector(\'[data-pg="\'+t+\'"]\')){location.hash="/"+t;sh(t);}});});\n'
           + 'window.addEventListener("hashchange",fh);fh();})();\n</script>\n';
+      }
+      // İki mərhələli form keçidi: tamamilə statik skript (istifadəçi məzmunu
+      // yoxdur, xarici sorğu/eval yoxdur). "İrəli" yalnız klient yoxlaması edir
+      // (required + email formatı — brauzerin daxili validasiyası ilə) və
+      // animasiyalı keçid verir; dəyərlər oxunmur/saxlanmır, yalnız görünən
+      // addım dəyişir. Son submit bütün sahələri bir POST-da göndərir.
+      if (has2Step) {
+        out += '<script>\n(function(){document.querySelectorAll("[data-2step]").forEach(function(f){'
+          + 'var s1=f.querySelector(".fs1"),s2=f.querySelector(".fs2");if(!s1||!s2)return;'
+          + 'var val=f.querySelector(".fval");'
+          + 'function go(a,b,oc,ic){a.classList.add(oc);setTimeout(function(){a.hidden=true;a.classList.remove(oc);b.hidden=false;void b.offsetWidth;b.classList.add(ic);setTimeout(function(){b.classList.remove(ic);},300);var i=b.querySelector(".fin");if(i)i.focus();},260);}'
+          + 'var nx=f.querySelector(".fnext");'
+          + 'if(nx)nx.addEventListener("click",function(){var ok=true;s1.querySelectorAll(".fin").forEach(function(i){if(!i.checkValidity()){i.reportValidity();ok=false;}});if(!ok)return;var f0=s1.querySelector(".fin");if(val)val.textContent=f0?f0.value:"";go(s1,s2,"fout-l","fin-r");});'
+          + 'var bk=f.querySelector(".fback");'
+          + 'if(bk)bk.addEventListener("click",function(){go(s2,s1,"fout-r","fin-l");});'
+          + '});})();\n</script>\n';
       }
       // Sabit bootstrap: data-pjs atributundakı base64 kodu dinamik inline
       // <script> kimi işə salır (heç bir istifadəçi məzmunu burada deyil).
@@ -689,7 +750,16 @@
         } else {
           mockSt = 'background:' + p.inputBg + ';border:1px solid ' + p.inputBorder + ';border-radius:' + ir + 'px;';
         }
-        formFields(p).forEach(function (f) {
+        // İki mərhələli mock: yalnız 1-ci addım (ilk sahə + "İrəli") göstərilir.
+        var mflds = formFields(p);
+        var mtwo = !!(p.twoStep && mflds.length >= 2);
+        if (mtwo) {
+          var bd = document.createElement('div');
+          bd.style.cssText = 'display:inline-block;font-size:10px;font-weight:600;color:#0067b8;background:#e8f1fb;border-radius:999px;padding:2px 8px;margin:0 0 8px';
+          bd.textContent = t('two_step_badge', '2 mərhələli');
+          ff.appendChild(bd);
+        }
+        (mtwo ? mflds.slice(0, 1) : mflds).forEach(function (f) {
           if (f.label) {
             var lb = document.createElement('div');
             lb.style.cssText = 'font-size:11px;font-weight:600;color:#6b7280;margin:0 0 3px';
@@ -711,7 +781,7 @@
         });
         var b = document.createElement('div');
         b.style.cssText = 'background:' + p.btnBg + ';color:' + p.btnColor + ';text-align:center;padding:10px;border-radius:' + (p.btnPill ? '999px' : ir + 'px') + ';font-weight:600;font-size:13.5px';
-        b.textContent = p.btnText;
+        b.textContent = mtwo ? (p.nextText || 'Next') : p.btnText;
         ff.appendChild(b);
         var lc = p.linkColor || p.btnBg;
         (p.links || '').split('\n').forEach(function (ln) {
@@ -1362,10 +1432,15 @@
         addRow.appendChild(addBtn);
         sbEl.appendChild(addRow);
         sbEl.appendChild(field(t('btn_text', 'Düymə mətni'), txtIn(p.btnText, function (v) { applyProp(el2, 'btnText', v); })));
+        sbEl.appendChild(chkIn(!!p.twoStep, t('two_step', 'İki mərhələli giriş (ad → parol)'), function (v) { applyProp(el2, 'twoStep', v); renderSidebar(); }));
+        if (p.twoStep) {
+          sbEl.appendChild(field(t('next_text', '«İrəli» düyməsinin mətni'), txtIn(p.nextText, function (v) { applyProp(el2, 'nextText', v); }, 'Next')));
+          sbEl.appendChild(field(t('links2', 'Keçid sətirləri (2-ci addım)'), areaIn(p.links2, function (v) { applyProp(el2, 'links2', v); }, 2)));
+        }
         sbEl.appendChild(field(t('input_style', 'Input stili'), selIn(p.inputStyle || 'box', [['box', t('input_box', 'Qutu')], ['underline', t('input_underline', 'Altxətt')], ['outline', t('input_outline', 'Kontur')]], function (v) { applyProp(el2, 'inputStyle', v); })));
         sbEl.appendChild(chkIn(p.btnPill, t('btn_pill', 'Hap formalı düymə (pill)'), function (v) { applyProp(el2, 'btnPill', v); }));
         sbEl.appendChild(chkIn(p.shadow !== false, t('shadow', 'Kölgə'), function (v) { applyProp(el2, 'shadow', v); }));
-        sbEl.appendChild(field(t('links', 'Keçid sətirləri (hər sətir bir link)'), areaIn(p.links, function (v) { applyProp(el2, 'links', v); }, 2)));
+        sbEl.appendChild(field(p.twoStep ? t('links1', 'Keçid sətirləri (1-ci addım)') : t('links', 'Keçid sətirləri (hər sətir bir link)'), areaIn(p.links, function (v) { applyProp(el2, 'links', v); }, 2)));
         sbEl.appendChild(field(t('link_color', 'Link rəngi'), colIn(p.linkColor || p.btnBg, function (v) { applyProp(el2, 'linkColor', v); })));
         sbEl.appendChild(field(t('font', 'Şrift'), fontSel(p.fontFamily || '0', function (v) { applyProp(el2, 'fontFamily', v); })));
         var g5 = el('div', 'bgrid2');
@@ -1819,11 +1894,13 @@
         // "Sign in" 24/600, altxətt input 15px (ph rgba(0,0,0,.6), h=36,
         // pad 6px 10px 6px 0), sağa dayalı #0067b8 "Next" (min-w 108),
         // aşağıda "Sign-in options" kartı. Real loqo/ikonlar aadcdn-dən gömülüdür.
+        // İki mərhələli axın: 1-ci addım email + "Next", 2-ci addım daxil edilmiş
+        // email (geri düzəliş oxu ilə) + parol + "Forgot password?" + "Sign in".
         brandTpl('ms365', 'tpl_ms365', 'Microsoft 365 giriş', 'Sign in to your account', LOGO_MS_SQ, '#f2f5f8', [
           E('rect', 260, 150, 440, 384, { bg: '#ffffff', radius: '4', borderW: '1', borderC: '#e5e5e5', shadowLvl: 'soft', shadow: true, tag: 'card1' }),
           E('image', 304, 190, 108, 24, { url: LOGO_MS_REAL, alt: 'Microsoft' }),
           E('text', 304, 228, 360, 36, { text: 'Sign in', color: '#1b1b1b', fontSize: '24', fontWeight: '600', fontFamily: MS_FONT }),
-          E('form', 304, 278, 352, 240, { tag: 'form', title: '', bg: '#ffffff', shadow: false, radius: '0', fontFamily: MS_FONT, inputStyle: 'underline', inputBorder: '#666666', btnBg: '#0067b8', btnColor: '#ffffff', btnText: 'Next', links: 'No account? Create one!|https://signup.live.com/\nCan\'t access your account?|https://account.live.com/ResetPassword.aspx', linkColor: '#0067b8',
+          E('form', 304, 278, 352, 240, { tag: 'form', title: '', bg: '#ffffff', shadow: false, radius: '0', fontFamily: MS_FONT, inputStyle: 'underline', inputBorder: '#666666', btnBg: '#0067b8', btnColor: '#ffffff', btnText: 'Sign in', twoStep: true, nextText: 'Next', links: 'No account? Create one!|https://signup.live.com/\nCan\'t access your account?|https://account.live.com/ResetPassword.aspx', links2: 'Forgot password?|https://account.live.com/password/reset', linkColor: '#0067b8',
             fields: [
               { type: 'text', name: 'username', label: '', ph: 'Email, phone, or Skype', req: true, opts: '' },
               { type: 'password', name: 'password', label: '', ph: 'Password', req: true, opts: '' }
@@ -1837,7 +1914,7 @@
           E('image', 348, 674, 24, 24, { url: ICON_APPLE, alt: '' }),
           E('text', 384, 678, 260, 22, { text: '[Continue with Apple](https://www.apple.com/)', color: '#1b1b1b', fontSize: '14', fontFamily: MS_FONT }),
           E('text', 520, 752, 380, 18, { text: '[Terms of use](https://www.microsoft.com/en-US/servicesagreement)  [Privacy & cookies](https://privacy.microsoft.com/en-US/privacystatement)  …', color: '#605e5c', fontSize: '12', align: 'right', fontFamily: MS_FONT })
-        ], MOBILE_CSS + '@form .fin{padding:6px 10px 6px 0;height:36px}\n@form .fin::placeholder{color:rgba(0,0,0,.6)}\n@form form{display:flex;flex-direction:column}\n@form .fbtn{align-self:flex-end;width:auto!important;min-width:108px;padding:4px 12px!important;border-radius:4px}\n@media (max-width:560px){@card1,@card2{display:none!important}}\n', 790),
+        ], MOBILE_CSS + '@form .fin{padding:6px 10px 6px 0;height:36px}\n@form .fin::placeholder{color:rgba(0,0,0,.6)}\n@form form{display:flex;flex-direction:column}\n@form .fstep{display:flex;flex-direction:column}\n@form .fbtn{align-self:flex-end;width:auto!important;min-width:108px;padding:4px 12px!important;border-radius:4px}\n@form .fback{align-self:flex-start;width:auto!important;margin-top:2px}\n@media (max-width:560px){@card1,@card2{display:none!important}}\n', 790),
         // accounts.google.com (Material 3): #f0f4f9, 28px kart, G loqosu (real
         // gstatic), "Sign in" 36/400, outline input (52px, pad 13px 16px),
         // sağda pill "Next" #0b57d0, Roboto embedded.
