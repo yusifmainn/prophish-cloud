@@ -246,8 +246,125 @@
       return 'position:absolute;left:' + el.x + 'px;top:' + el.y + 'px;width:' + el.w + 'px;height:' + el.h + 'px;box-sizing:border-box;'
         + (num(p.opacity, 0, 100, 100) < 100 ? 'opacity:' + (num(p.opacity, 0, 100, 100) / 100) + ';' : '');
     }
-    function fontCss(p) {
-      return 'font-family:' + font(p.fontFamily) + ';font-size:' + num(p.fontSize, 8, 120, 15) + 'px;font-weight:' + (p.fontWeight === '700' ? '700' : p.fontWeight === '600' ? '600' : '400') + ';';
+    function fontCss(p, fsOv) {
+      return 'font-family:' + font(p.fontFamily) + ';font-size:' + num(fsOv != null ? fsOv : p.fontSize, 8, 120, 15) + 'px;font-weight:' + (p.fontWeight === '700' ? '700' : p.fontWeight === '600' ? '600' : '400') + ';';
+    }
+
+    // ---------- Per-viewport (planşet/mobil) layoutlar ----------
+    // Vəziyyət formatı (geriyə-uyğun): el.o = { tab: {...}, mob: {...} } — yalnız
+    // DƏYİŞƏN sahələr saxlanır (x/y/w/h/hide/fs); page.hTab/page.hMob — həmin
+    // görünüşün artboard hündürlüyü; page.mobMode: undefined/'real' (default) =
+    // həqiqi layout, 'scale' = köhnə fit-zoom davranışı.
+    function vpWidth(vp) { return vp === 'tab' ? 768 : 390; }
+    // Törəmə (derived) layout: elementlər (y,x) sırası ilə şaquli düzülür,
+    // 16px kənar boşluq; mətn bloklarına dar endə əlavə hündürlük verilir;
+    // başqa elementləri saxlayan rect-lər "kart" sayılır və içindəkilər
+    // REKURSIV olaraq kartla birlikdə düzülür (login kartı / tur kartları
+    // vahid kimi qorunur; iç-içə kartlar öz məzmunu ilə hərəkət edir).
+    function deriveLayout(pg, vp) {
+      var vw = vpWidth(vp);
+      var cw = vp === 'tab' ? Math.min(vw - 32, 560) : vw - 32;
+      var mx = Math.round((vw - cw) / 2);
+      var pgW = num(state.w, 200, 4000, 960), pgH = num(state.h, 200, 4000, 700);
+      function isHidden(e2) { var o = e2.o && e2.o[vp]; return !!(o && o.hide); }
+      // Mətn ehtiva edən elementin dar endə real hündürlük ehtiyacı.
+      function textH(e2, w) {
+        if (e2.type !== 'text' && e2.type !== 'rect' && e2.type !== 'button') return e2.h;
+        var txt = String(e2.props.text || '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
+        if (!txt) return e2.h;
+        var fs = num(e2.props.fontSize, 8, 120, 15);
+        var pad = e2.type === 'rect' ? 16 : 0;
+        var iw = Math.max(40, w - pad);
+        var cpl = Math.max(4, Math.floor(iw / (fs * 0.52)));
+        var lines = 0;
+        txt.split('\n').forEach(function (ln) { lines += Math.max(1, Math.ceil(ln.length / cpl)); });
+        return Math.max(e2.h, Math.ceil(lines * fs * 1.45) + pad + 4);
+      }
+      var rects = pg.elements.filter(function (e2) { return e2.type === 'rect'; });
+      function contains(c, e2) {
+        return e2 !== c && e2.x >= c.x - 1 && e2.y >= c.y - 1 && e2.x + e2.w <= c.x + c.w + 1 && e2.y + e2.h <= c.y + c.h + 1;
+      }
+      // Kart: nəsə saxlayan, səhifənin 85%-dən azını tutan rect (tam-səhifə
+      // fon rect-ləri kart deyil). İç-içəlik icazəlidir.
+      var cards = rects.filter(function (r) {
+        if (r.w * r.h > pgW * pgH * 0.85) return false;
+        return pg.elements.some(function (e2) { return contains(r, e2); });
+      });
+      // Ən kiçik saxlayan kart — birbaşa valideyn budur.
+      function cardOf(e2) {
+        var best = null;
+        for (var i = 0; i < cards.length; i++) {
+          if (contains(cards[i], e2) && (!best || cards[i].w * cards[i].h < best.w * best.h)) best = cards[i];
+        }
+        return best;
+      }
+      var out = {};
+      // Kartın BİRBAŞA içindəkilərini şaquli düzür; iç-içə kartlar öz
+      // məzmunu ilə rekursiv hərəkət edir. Karta düşən hündürlüyü qaytarır.
+      function layoutCard(u, ux, uy, uw) {
+        var k = uw / u.w;
+        var inner = pg.elements.filter(function (e2) { return !isHidden(e2) && cardOf(e2) === u; });
+        inner.sort(function (a, b) { return a.y - b.y || a.x - b.x; });
+        var iy = 12;
+        inner.forEach(function (e2) {
+          var iw, ix, ih;
+          if (cards.indexOf(e2) >= 0) {
+            // İç-içə kart: eni qorunur (k ilə kiçilmir), mərkəzlə düzülür.
+            iw = Math.min(e2.w, uw - 24);
+            ix = Math.round((uw - iw) / 2);
+            ih = layoutCard(e2, ux + ix, uy + iy, iw);
+          } else {
+            iw = Math.min(Math.round(e2.w * k), uw - 24);
+            ix = Math.max(12, Math.min(Math.round((e2.x - u.x) * k), uw - iw - 12));
+            ih = textH(e2, iw);
+            out[e2.id] = { x: ux + ix, y: uy + iy, w: iw, h: ih };
+          }
+          iy += ih + 10;
+        });
+        var uh = Math.max(u.h, iy + 2);
+        out[u.id] = { x: ux, y: uy, w: uw, h: uh };
+        return uh;
+      }
+      var units = pg.elements.filter(function (e2) { return !isHidden(e2) && !cardOf(e2); });
+      units.sort(function (a, b) { return a.y - b.y || a.x - b.x; });
+      var y = 16;
+      units.forEach(function (u) {
+        if (cards.indexOf(u) >= 0) {
+          var uw = Math.min(u.w, vw);
+          y += layoutCard(u, Math.round((vw - uw) / 2), y, uw) + 14;
+        } else {
+          var w2 = Math.min(u.w, cw);
+          var h2 = textH(u, w2);
+          var x2 = w2 >= cw - 2 ? mx : Math.round((vw - w2) / 2);
+          out[u.id] = { x: x2, y: y, w: w2, h: h2 };
+          y += h2 + 14;
+        }
+      });
+      return { rect: out, h: Math.max(200, y + 2) };
+    }
+    // Effektiv düzbucaqlı: törəmə + override birləşməsi (dmap = deriveLayout nəticəsi).
+    function vpRect(e2, vp, dmap) {
+      var r = (dmap && dmap.rect[e2.id]) || { x: e2.x, y: e2.y, w: e2.w, h: e2.h };
+      var o = vp && e2.o && e2.o[vp];
+      if (o) r = { x: o.x != null ? o.x : r.x, y: o.y != null ? o.y : r.y, w: o.w != null ? o.w : r.w, h: o.h != null ? o.h : r.h };
+      return r;
+    }
+    var curVp = '';      // '', 'tab' və ya 'mob'
+    var curLayout = null; // cari səhifə × cari viewport üçün törəmə layout
+    function effRect(e2) { return curVp ? vpRect(e2, curVp, curLayout) : { x: e2.x, y: e2.y, w: e2.w, h: e2.h }; }
+    function effHide(e2) { var o = curVp && e2.o && e2.o[curVp]; return !!(o && o.hide); }
+    function effFs(e2) { var o = curVp && e2.o && e2.o[curVp]; return o && o.fs != null ? o.fs : null; }
+    // Dəyişiklik ya baza geometryə (desktop), ya viewport override-ına yazılır.
+    function vpSet(e2, key, val) {
+      if (!curVp) { e2[key] = val; return; }
+      if (!e2.o) e2.o = {};
+      var o = e2.o[curVp] || (e2.o[curVp] = {});
+      o[key] = val;
+    }
+    function vpClear(el2, vp) {
+      if (!el2.o || !el2.o[vp]) return;
+      delete el2.o[vp];
+      if (!Object.keys(el2.o).length) delete el2.o;
     }
 
     // ---- Form sahələri (sərbəst data-field modeli) ----
@@ -500,6 +617,37 @@
         + '.fout-l{animation:fOutL .27s ease both}.fout-r{animation:fOutR .27s ease both}\n'
         + '@media (prefers-reduced-motion:reduce){.fin-r,.fin-l,.fout-l,.fout-r{animation:none}}\n';
       if (all.some(function (e2) { return e2.props.hover || e2.props.anim; })) headCss += FXCSS + '\n';
+      // Per-viewport REAL layout: planşet (≤1024px) və mobil (≤560px) media
+      // bloklarında hər elementin effektiv koordinatı (törəmə + override) və
+      // səhifə hündürlüyü !important ilə yazılır — məzmun heç vaxt scale
+      // olunmur, mətn real ölçüdə qalır. Operatorun öz @media CSS-i (brand
+      // şablonların əl ilə yonulmuş mobil reflow-u) varsa, generik bloklar
+      // YAZILMIR — xüsusi CSS qalib gəlir. mobMode:'scale' səhifələri köhnə
+      // fit-zoom davranışında qalır.
+      var customMobCss = !!(state.css && state.css.indexOf('@media') >= 0);
+      if (state.resp !== false && !customMobCss) {
+        var mobCss = '';
+        state.pages.forEach(function (pg) {
+          if (pg.mobMode === 'scale') return;
+          ['tab', 'mob'].forEach(function (vp) {
+            var vw = vpWidth(vp);
+            var d = deriveLayout(pg, vp);
+            var ph = num(vp === 'tab' ? pg.hTab : pg.hMob, 200, 4000, d.h);
+            var rules = '#pgfit{width:' + vw + 'px!important}'
+              + '[data-pg="' + pg.id + '"]{width:' + vw + 'px!important;max-width:' + vw + 'px!important;height:' + ph + 'px!important}';
+            pg.elements.forEach(function (e2) {
+              var o = e2.o && e2.o[vp];
+              if (o && o.hide) { rules += '#' + e2.id + '{display:none!important}'; return; }
+              var r = vpRect(e2, vp, d);
+              rules += '#' + e2.id + '{left:' + r.x + 'px!important;top:' + r.y + 'px!important;width:' + r.w + 'px!important;height:' + r.h + 'px!important}';
+              if (o && o.fs != null && (e2.type === 'text' || e2.type === 'rect' || e2.type === 'button')) rules += '#' + e2.id + '{font-size:' + num(o.fs, 8, 120, 15) + 'px!important}';
+            });
+            rules += '[data-pg="' + pg.id + '"] img,[data-pg="' + pg.id + '"] video{max-width:100%!important}';
+            mobCss += '@media (max-width:' + (vp === 'tab' ? 1024 : 560) + 'px){' + rules + '}\n';
+          });
+        });
+        headCss += mobCss;
+      }
       if (state.css) headCss += tplSafeCSS(state.css) + '\n';
       var out = '<!doctype html>\n<html lang="az">\n<head>\n<meta charset="utf-8">\n'
         + '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
@@ -515,11 +663,22 @@
       state.pages.forEach(function (pg, pi) {
         var body = '';
         for (var j = 0; j < pg.elements.length; j++) body += elementHTML(pg.elements[j], j) + '\n';
-        out += '<div data-pg="' + pg.id + '" style="position:relative;width:' + num(state.w, 200, 4000, 960) + 'px;max-width:100%;height:' + num(state.h, 200, 4000, 700) + 'px;margin:0 auto;' + bgCss(pg.bg, pg.grad) + 'overflow:hidden'
+        // data-mob="real": fit skripti bu səhifəni kiçik ekranlarda scale
+        // ETMƏSİN deyə işarədir (real layout media blokları ilə gəlir).
+        var pgReal = state.resp !== false && !customMobCss && pg.mobMode !== 'scale';
+        out += '<div data-pg="' + pg.id + '"' + (pgReal ? ' data-mob="real"' : '') + ' style="position:relative;width:' + num(state.w, 200, 4000, 960) + 'px;max-width:100%;height:' + num(state.h, 200, 4000, 700) + 'px;margin:0 auto;' + bgCss(pg.bg, pg.grad) + 'overflow:hidden'
           + (pi > 0 ? ';display:none' : '') + '">\n' + body + '</div>\n';
       });
       if (state.resp !== false) {
-        out += '</div>\n<script>\n(function(){var f=document.getElementById("pgfit");if(!f)return;var W=' + num(state.w, 200, 4000, 960) + ';function fit(){var k=Math.min(1,document.documentElement.clientWidth/W);f.style.zoom=k<1?k:"";}window.addEventListener("resize",fit);fit();})();\n</script>\n';
+        // Fit skripti: real-layout səhifələrdə kiçik ekranlarda (≤1024px) scale
+        // YOXDUR — artboard-un özü 768/390px olur (media blokları). Yalnız
+        // ekran artboard-dan DA dardırsa qoruyucu zoom tətbiq olunur.
+        out += '</div>\n<script>\n(function(){var f=document.getElementById("pgfit");if(!f)return;var W=' + num(state.w, 200, 4000, 960) + ';'
+          + 'function fit(){var cw=document.documentElement.clientWidth;'
+          + 'var ps=f.querySelectorAll("[data-pg]"),vis=null;for(var i=0;i<ps.length;i++)if(ps[i].style.display!=="none"){vis=ps[i];break;}'
+          + 'if(vis&&vis.getAttribute("data-mob")==="real"&&cw<=1024){var aw=cw<=560?390:768;f.style.zoom=cw<aw?String(cw/aw):"";return;}'
+          + 'var k=Math.min(1,cw/W);f.style.zoom=k<1?String(k):"";}'
+          + 'window.addEventListener("resize",fit);window.addEventListener("hashchange",fit);fit();})();\n</script>\n';
       }
       out += (state.attrib ? '<!--' + state.attrib + '-->\n' : '') + '<!--' + MARKER + b64 + '-->\n';
       if (state.pages.length > 1) {
@@ -604,29 +763,37 @@
     }
     function sel() { return selId ? byId(selId) : null; }
     function snapN(v) { return snapEl && snapEl.checked ? Math.round(v / 5) * 5 : Math.round(v); }
-    // Kanvas miqyası: eni kiçik ekranlarda artboard scale ilə sığdırılır.
-    // Cihaz rejimi (deviceW=768/390): kanvas DƏqiq generasiya olunmuş səhifənin
-    // həmin eninə görə göründüyü kimi göstərilir — eyni fit riyaziyyatı.
+    // Kanvas miqyası: artboard hər zaman REAL enində qurulur (desktop =
+    // state.w, cihaz rejimində 768/390). Zoom-to-fit yalnız BÜTÖV çərçivəni
+    // admin pəncərəsinə sığdırır (transform #canvas-da, origin 0 0, wrapper
+    // dəqiq scaled ölçüdə — mərkəzləmə heç vaxt sürüşmür). Məzmun kiçilmir.
     // Koordinat çevirməsi hər zaman cari scaleK-ya bölünür (canvasPos).
     var scaleWrap = document.getElementById('canvas-scale');
     var workspace = document.getElementById('workspace');
     var scaleK = 1;
     var deviceW = 0;
     try { deviceW = parseInt(window.sessionStorage.getItem('builder-vp') || '0', 10) || 0; } catch (e) {}
+    curVp = deviceW === 768 ? 'tab' : deviceW === 390 ? 'mob' : '';
+    function vpPageH() {
+      if (!curVp) return num(state.h, 200, 4000, 700);
+      var pg = P();
+      var key = curVp === 'tab' ? 'hTab' : 'hMob';
+      return num(pg[key], 200, 4000, curLayout ? curLayout.h : num(state.h, 200, 4000, 700));
+    }
     function applyZoom() {
       if (!scaleWrap || !workspace) return;
       var frame = deviceW || num(state.w, 200, 4000, 960);
       var avail = workspace.clientWidth - 88;
-      var availK = avail > 0 ? Math.min(1, avail / frame) : 1; // jsdom/guard: ölçü yoxdursa 1:1
-      scaleK = Math.max(0.2, Math.min(1, frame / num(state.w, 200, 4000, 960)) * availK);
-      scaleWrap.style.transform = scaleK < 1 ? 'scale(' + scaleK + ')' : '';
+      scaleK = avail > 0 ? Math.max(0.2, Math.min(1, avail / frame)) : 1; // jsdom/guard: ölçü yoxdursa 1:1
+      canvas.style.transform = scaleK < 1 ? 'scale(' + scaleK + ')' : '';
       scaleWrap.style.width = Math.round(frame * scaleK) + 'px';
-      scaleWrap.style.height = Math.round(num(state.h, 200, 4000, 700) * scaleK) + 'px';
+      scaleWrap.style.height = Math.round(vpPageH() * scaleK) + 'px';
       scaleWrap.classList.toggle('devframe', deviceW > 0);
     }
     if (window.addEventListener) window.addEventListener('resize', applyZoom);
 
     // Cihaz keçidi (yalnız sessiya üçün saxlanır — vəziyyət formatı dəyişmir).
+    // Keçid zamanı kanvas həmin cihazın layoutunu (törəmə + override) göstərir.
     var vpsw = document.getElementById('vpsw');
     if (vpsw) {
       var vpBtns = vpsw.querySelectorAll('[data-vp]');
@@ -638,9 +805,11 @@
           b.addEventListener('click', function (e) {
             e.preventDefault();
             deviceW = parseInt(b.getAttribute('data-vp'), 10) || 0;
+            curVp = deviceW === 768 ? 'tab' : deviceW === 390 ? 'mob' : '';
             try { window.sessionStorage.setItem('builder-vp', String(deviceW)); } catch (e2) {}
             syncVp();
-            applyZoom();
+            renderCanvas();
+            renderSidebar();
           });
         })(vpBtns[vi]);
       }
@@ -682,12 +851,13 @@
     function elNode(el) {
       var p = el.props;
       var d = document.createElement('div');
-      d.className = 'elb' + (el.id === selId ? ' sel' : '');
+      d.className = 'elb' + (el.id === selId ? ' sel' : '') + (effHide(el) ? ' hidvp' : '');
       d.setAttribute('data-id', el.id);
-      d.style.left = el.x + 'px';
-      d.style.top = el.y + 'px';
-      d.style.width = el.w + 'px';
-      d.style.height = el.h + 'px';
+      var er = effRect(el);
+      d.style.left = er.x + 'px';
+      d.style.top = er.y + 'px';
+      d.style.width = er.w + 'px';
+      d.style.height = er.h + 'px';
       var op = num(p.opacity, 0, 100, 100);
       if (op < 100) d.style.opacity = String(op / 100);
 
@@ -705,7 +875,7 @@
         } else {
           st = 'line-height:1.45;';
         }
-        st += fontCss(p) + 'color:' + p.color + ';text-align:' + p.align + ';white-space:pre-wrap;word-break:break-word;overflow:hidden';
+        st += fontCss(p, effFs(el)) + 'color:' + p.color + ';text-align:' + p.align + ';white-space:pre-wrap;word-break:break-word;overflow:hidden';
         var f = fillDiv(st);
         var ed = document.createElement('div');
         ed.className = 'editable';
@@ -821,12 +991,13 @@
       if (old) old.parentNode.removeChild(old);
       var el = sel();
       if (!el) return;
+      var r = effRect(el);
       var box = document.createElement('div');
       box.className = 'selbox';
-      box.style.left = el.x + 'px';
-      box.style.top = el.y + 'px';
-      box.style.width = el.w + 'px';
-      box.style.height = el.h + 'px';
+      box.style.left = r.x + 'px';
+      box.style.top = r.y + 'px';
+      box.style.width = r.w + 'px';
+      box.style.height = r.h + 'px';
       for (var i = 0; i < HANDLE_DIRS.length; i++) {
         var h = document.createElement('div');
         h.className = 'hdl hdl-' + HANDLE_DIRS[i];
@@ -837,8 +1008,9 @@
     }
 
     function renderCanvas() {
-      canvas.style.width = num(state.w, 200, 4000, 960) + 'px';
-      canvas.style.height = num(state.h, 200, 4000, 700) + 'px';
+      curLayout = curVp ? deriveLayout(P(), curVp) : null;
+      canvas.style.width = (deviceW || num(state.w, 200, 4000, 960)) + 'px';
+      canvas.style.height = vpPageH() + 'px';
       canvas.style.background = gradCss(P().grad) || P().bg;
       canvas.innerHTML = '';
       for (var i = 0; i < ELS().length; i++) canvas.appendChild(elNode(ELS()[i]));
@@ -849,19 +1021,20 @@
     }
 
     function updateNodeLive(el) {
+      var r = effRect(el);
       var n = nodeOf(el);
       if (n) {
-        n.style.left = el.x + 'px';
-        n.style.top = el.y + 'px';
-        n.style.width = el.w + 'px';
-        n.style.height = el.h + 'px';
+        n.style.left = r.x + 'px';
+        n.style.top = r.y + 'px';
+        n.style.width = r.w + 'px';
+        n.style.height = r.h + 'px';
       }
       var box = canvas.querySelector('.selbox');
       if (box && sel() === el) {
-        box.style.left = el.x + 'px';
-        box.style.top = el.y + 'px';
-        box.style.width = el.w + 'px';
-        box.style.height = el.h + 'px';
+        box.style.left = r.x + 'px';
+        box.style.top = r.y + 'px';
+        box.style.width = r.w + 'px';
+        box.style.height = r.h + 'px';
       }
     }
 
@@ -892,20 +1065,29 @@
       start.x = snapN(start.x); start.y = snapN(start.y);
       var pre = JSON.stringify(state);
       var el = { id: 'el-' + (++state.seq), type: type, x: start.x, y: start.y, w: 0, h: 0, props: defaultProps(type) };
+      // Cihaz rejimində yerləşmə həmin görünüşə override kimi yazılır ki,
+      // element törəmə layout slotuna tullanmasın; desktop bazası eyni
+      // koordinatdan başlayır (sonra ayrıca düzəldilə bilər).
+      if (curVp) { vpSet(el, 'x', start.x); vpSet(el, 'y', start.y); }
       ELS().push(el);
       selId = el.id;
       renderCanvas();
       onDrag(function (cur) {
-        el.x = Math.min(start.x, snapN(cur.x));
-        el.y = Math.min(start.y, snapN(cur.y));
-        el.w = Math.abs(snapN(cur.x) - start.x);
-        el.h = Math.abs(snapN(cur.y) - start.y);
+        var nx = Math.min(start.x, snapN(cur.x)), ny = Math.min(start.y, snapN(cur.y));
+        var nw = Math.abs(snapN(cur.x) - start.x), nh = Math.abs(snapN(cur.y) - start.y);
+        if (curVp) { vpSet(el, 'x', nx); vpSet(el, 'y', ny); vpSet(el, 'w', nw); vpSet(el, 'h', nh); }
+        else { el.x = nx; el.y = ny; el.w = nw; el.h = nh; }
         updateNodeLive(el);
       }, function () {
-        if (el.w < minW(el) && el.h < minH(el)) {
+        var rr = effRect(el);
+        if (rr.w < minW(el) && rr.h < minH(el)) {
           // Sürüşdürmədən sadə klik: standart ölçülü element yerləşir.
           var ds = defaultSize(type);
           el.x = start.x; el.y = start.y; el.w = ds[0]; el.h = ds[1];
+          if (curVp) { vpSet(el, 'x', start.x); vpSet(el, 'y', start.y); vpSet(el, 'w', ds[0]); vpSet(el, 'h', ds[1]); }
+        } else if (curVp) {
+          vpSet(el, 'w', Math.max(minW(el), rr.w));
+          vpSet(el, 'h', Math.max(minH(el), rr.h));
         } else {
           el.w = Math.max(minW(el), el.w);
           el.h = Math.max(minH(el), el.h);
@@ -922,10 +1104,11 @@
     function startMove(el, e) {
       var pre = JSON.stringify(state);
       var start = canvasPos(e);
-      var ox = el.x, oy = el.y;
+      var r0 = effRect(el);
+      var ox = r0.x, oy = r0.y;
       onDrag(function (cur) {
-        el.x = snapN(ox + cur.x - start.x);
-        el.y = snapN(oy + cur.y - start.y);
+        vpSet(el, 'x', snapN(ox + cur.x - start.x));
+        vpSet(el, 'y', snapN(oy + cur.y - start.y));
         updateNodeLive(el);
       }, function () {
         commitIfChanged(pre);
@@ -938,13 +1121,15 @@
       if (!el) return;
       var pre = JSON.stringify(state);
       var start = canvasPos(e);
-      var o = { x: el.x, y: el.y, w: el.w, h: el.h };
+      var o = effRect(el);
       onDrag(function (cur) {
         var dx = snapN(cur.x - start.x), dy = snapN(cur.y - start.y);
-        if (dir.indexOf('e') >= 0) el.w = Math.max(minW(el), o.w + dx);
-        if (dir.indexOf('s') >= 0) el.h = Math.max(minH(el), o.h + dy);
-        if (dir.indexOf('w') >= 0) { el.w = Math.max(minW(el), o.w - dx); el.x = o.x + o.w - el.w; }
-        if (dir.indexOf('n') >= 0) { el.h = Math.max(minH(el), o.h - dy); el.y = o.y + o.h - el.h; }
+        var w = o.w, h = o.h, x = o.x, y = o.y;
+        if (dir.indexOf('e') >= 0) w = Math.max(minW(el), o.w + dx);
+        if (dir.indexOf('s') >= 0) h = Math.max(minH(el), o.h + dy);
+        if (dir.indexOf('w') >= 0) { w = Math.max(minW(el), o.w - dx); x = o.x + o.w - w; }
+        if (dir.indexOf('n') >= 0) { h = Math.max(minH(el), o.h - dy); y = o.y + o.h - h; }
+        vpSet(el, 'x', x); vpSet(el, 'y', y); vpSet(el, 'w', w); vpSet(el, 'h', h);
         updateNodeLive(el);
       }, function () {
         commitIfChanged(pre);
@@ -1037,10 +1222,11 @@
         if (!el) return;
         pushHistory();
         var d = e.shiftKey ? 10 : 1;
-        if (e.key === 'ArrowLeft') el.x -= d;
-        if (e.key === 'ArrowRight') el.x += d;
-        if (e.key === 'ArrowUp') el.y -= d;
-        if (e.key === 'ArrowDown') el.y += d;
+        var er0 = effRect(el);
+        if (e.key === 'ArrowLeft') vpSet(el, 'x', er0.x - d);
+        if (e.key === 'ArrowRight') vpSet(el, 'x', er0.x + d);
+        if (e.key === 'ArrowUp') vpSet(el, 'y', er0.y - d);
+        if (e.key === 'ArrowDown') vpSet(el, 'y', er0.y + d);
         renderCanvas();
         renderSidebar();
       }
@@ -1050,6 +1236,14 @@
       var el = sel();
       if (!el) return;
       pushHistory();
+      // Cihaz rejimində "sil" = yalnız bu görünüşdə gizlət (desktop toxunulmur).
+      if (curVp) {
+        vpSet(el, 'hide', true);
+        selId = null;
+        renderCanvas();
+        renderSidebar();
+        return;
+      }
       P().elements = ELS().filter(function (x) { return x.id !== el.id; });
       selId = null;
       renderCanvas();
@@ -1061,7 +1255,9 @@
       pushHistory();
       var copy = JSON.parse(JSON.stringify(el));
       copy.id = 'el-' + (++state.seq);
-      copy.x += 12; copy.y += 12;
+      var cr = effRect(el);
+      copy.x = el.x + 12; copy.y = el.y + 12;
+      if (curVp) { vpSet(copy, 'x', cr.x + 12); vpSet(copy, 'y', cr.y + 12); }
       ELS().push(copy);
       selId = copy.id;
       renderCanvas();
@@ -1310,6 +1506,26 @@
       sbPage.appendChild(field(t('page_bg', 'Fon rəngi'), colIn(P().bg, function (v) { P().bg = v; renderCanvas(); })));
       sbPage.appendChild(field(t('grad', 'Qradyent fon'), gradField(P().grad, function (v) { P().grad = v; renderCanvas(); })));
       sbPage.appendChild(chkIn(state.resp !== false, t('resp', 'Responsiv miqyas (mobil)'), function (v) { state.resp = v; syncOutput(); }));
+      sbPage.appendChild(field(t('mob_mode', 'Mobil rejim'), selIn(P().mobMode === 'scale' ? 'scale' : 'real', [['real', t('mob_real', 'Real layout (cihaza uyğun)')], ['scale', t('mob_scale', 'Miqyasla (köhnə üsul)')]], function (v) { P().mobMode = v === 'scale' ? 'scale' : 'real'; syncOutput(); })));
+      // Cihaz rejimi: hansı görünüşün düzəldildiyi + override göstəricisi/sıfırla.
+      if (curVp) {
+        sbPage.appendChild(el('p', 'hint', t(curVp === 'tab' ? 'vp_edit_tab' : 'vp_edit_mob', 'Düzəlişlər yalnız bu cihaz görünüşünə yazılır — desktop toxunulmur.')));
+        var hKey = curVp === 'tab' ? 'hTab' : 'hMob';
+        var hasOv = P()[hKey] != null || ELS().some(function (e2) { return e2.o && e2.o[curVp]; });
+        if (hasOv) {
+          sbPage.appendChild(el('p', 'hint', t('vp_edits', 'Bu cihaz üçün düzəlişlər var.')));
+          var rb = el('button', 'secondary', t('vp_reset', 'Sıfırla'));
+          rb.type = 'button';
+          rb.addEventListener('click', function () {
+            pushHistory();
+            ELS().forEach(function (e2) { vpClear(e2, curVp); });
+            delete P()[hKey];
+            renderCanvas();
+            renderSidebar();
+          });
+          sbPage.appendChild(rb);
+        }
+      }
       sbPage.appendChild(field(t('custom_css', 'Xüsusi CSS (təkmil)'), areaIn(state.css, function (v) { state.css = v; syncOutput(); }, 4)));
       sbPage.appendChild(field(t('redirect', 'Yönləndirmə URL (opsional)'), txtIn(redirEl.value, function (v) { redirEl.value = v; }, 'https://musteri.az/tehlukesizlik-telimi')));
       sbPage.appendChild(el('p', 'hint', t('form_hint', 'Form elementi avtomatik olaraq {{.SubmitURL}} ünvanına post edir — “göndərdi” hadisəsi qeyd olunur, dəyərlər saxlanmır.')));
@@ -1323,11 +1539,37 @@
       var p = el2.props;
       sbEl.appendChild(el('h3', 'bside-h', typeName(el2.type)));
 
+      // Cihaz rejimi: gizlədilmiş element üçün qeyd + "Göstər"; əks halda
+      // "Bu cihazda gizlət" seçimi (desktop-dan silinmir).
+      if (curVp) {
+        if (effHide(el2)) {
+          sbEl.appendChild(el('p', 'hint', t('vp_hidden', 'Bu cihaz görünüşündə gizlədilib.')));
+          var showB = el('button', 'secondary', t('vp_show', 'Göstər'));
+          showB.type = 'button';
+          showB.addEventListener('click', function () {
+            pushHistory();
+            if (el2.o && el2.o[curVp]) delete el2.o[curVp].hide;
+            renderCanvas();
+            renderSidebar();
+          });
+          sbEl.appendChild(showB);
+          return;
+        }
+        sbEl.appendChild(chkIn(false, t('vp_hide', 'Bu cihazda gizlət'), function () {
+          pushHistory();
+          vpSet(el2, 'hide', true);
+          selId = null;
+          renderCanvas();
+          renderSidebar();
+        }));
+      }
+
+      var er0 = effRect(el2);
       var dim = el('div', 'bgrid4');
-      dim.appendChild(field('X', numIn(el2.x, function (v) { el2.x = v; renderCanvas(); })));
-      dim.appendChild(field('Y', numIn(el2.y, function (v) { el2.y = v; renderCanvas(); })));
-      dim.appendChild(field(t('dim_w', 'En'), numIn(el2.w, function (v) { el2.w = Math.max(minW(el2), v); renderCanvas(); }, 1)));
-      dim.appendChild(field(t('dim_h', 'Hünd.'), numIn(el2.h, function (v) { el2.h = Math.max(minH(el2), v); renderCanvas(); }, 1)));
+      dim.appendChild(field('X', numIn(er0.x, function (v) { vpSet(el2, 'x', v); renderCanvas(); })));
+      dim.appendChild(field('Y', numIn(er0.y, function (v) { vpSet(el2, 'y', v); renderCanvas(); })));
+      dim.appendChild(field(t('dim_w', 'En'), numIn(er0.w, function (v) { vpSet(el2, 'w', Math.max(minW(el2), v)); renderCanvas(); }, 1)));
+      dim.appendChild(field(t('dim_h', 'Hünd.'), numIn(er0.h, function (v) { vpSet(el2, 'h', Math.max(minH(el2), v)); renderCanvas(); }, 1)));
       sbEl.appendChild(dim);
 
       if (el2.type === 'rect' || el2.type === 'text' || el2.type === 'button') {
@@ -1353,7 +1595,12 @@
       }
       if (el2.type === 'rect' || el2.type === 'text' || el2.type === 'button') {
         var g3 = el('div', 'bgrid2');
-        g3.appendChild(field(t('font_size', 'Şrift ölçüsü'), numIn(p.fontSize, function (v) { applyProp(el2, 'fontSize', String(num(v, 8, 120, 15))); }, 8, 120)));
+        // Cihaz rejimində şrift ölçüsü yalnız həmin görünüşün override-ına yazılır.
+        var fsCur = effFs(el2);
+        g3.appendChild(field(t('font_size', 'Şrift ölçüsü'), numIn(fsCur != null ? fsCur : p.fontSize, function (v) {
+          if (curVp) { vpSet(el2, 'fs', num(v, 8, 120, 15)); renderCanvas(); }
+          else applyProp(el2, 'fontSize', String(num(v, 8, 120, 15)));
+        }, 8, 120)));
         g3.appendChild(field(t('font_weight', 'Qalınlıq'), selIn(p.fontWeight, [['400', t('weight_400', 'Adi')], ['600', t('weight_600', 'Yarımqalın')], ['700', t('weight_700', 'Qalın')]], function (v) { applyProp(el2, 'fontWeight', v); })));
         sbEl.appendChild(g3);
         sbEl.appendChild(field(t('font', 'Şrift'), fontSel(p.fontFamily, function (v) { applyProp(el2, 'fontFamily', v); })));
@@ -1817,6 +2064,7 @@
     function renderTips() {
       if (!sbTips) return;
       sbTips.innerHTML = '';
+      if (curVp) return; // dizayn təklifləri desktop layout üçündür
       var tips = computeTips();
       if (!tips.length && !ELS().length) return;
       sbTips.appendChild(el('div', 'btips-h', t('tips', 'Təkliflər')));
