@@ -216,6 +216,8 @@ func init() {
 		"builder.js.vp_hide":         {"az": "Bu cihazda gizlət", "en": "Hide on this device", "ru": "Скрыть на этом устройстве"},
 		"builder.js.vp_hidden":       {"az": "Bu cihaz görünüşündə gizlədilib.", "en": "Hidden in this device view.", "ru": "Скрыто в виде этого устройства."},
 		"builder.js.vp_show":         {"az": "Göstər", "en": "Show", "ru": "Показать"},
+		"builder.js.sel_hud":         {"az": "element seçilib", "en": "elements selected", "ru": "элементов выбрано"},
+		"builder.js.sel_clear":       {"az": "Seçimi təmizlə", "en": "Clear selection", "ru": "Снять выделение"},
 		"builder.js.subtitle":        {"az": "Alt başlıq", "en": "Subtitle", "ru": "Подзаголовок"},
 		"builder.js.links":           {"az": "Keçid sətirləri (hər sətir: Mətn və ya Mətn|https://…)", "en": "Link rows (one per line: Text or Text|https://…)", "ru": "Строки-ссылки (по одной: Текст или Текст|https://…)"},
 		"builder.js.link_color":      {"az": "Link rəngi", "en": "Link color", "ru": "Цвет ссылок"},

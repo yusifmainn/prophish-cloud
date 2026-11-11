@@ -101,7 +101,10 @@
     function fontLabel(fd) { return fd.label || t(fd.labelKey || 'font_system', 'Sistem'); }
 
     var tool = 'select';
-    var selId = null;
+    var selId = null;   // son seçilmiş element (sidebar buna görə işləyir)
+    var selIds = [];    // tam seçim dəsti — çoxlu seçim (Ctrl/Shift+click, marquee)
+    var clipboard = null;  // daxili bufer: dərin klonlanmış elementlər (OS buferinə toxunmur)
+    var pasteBump = 0;     // ardıcıl paste-lərdə ofset artır (+16 hər dəfə)
     var editing = false;
     var undoStack = [], redoStack = [];
 
@@ -299,27 +302,94 @@
         return best;
       }
       var out = {};
-      // Kartın BİRBAŞA içindəkilərini şaquli düzür; iç-içə kartlar öz
-      // məzmunu ilə rekursiv hərəkət edir. Karta düşən hündürlüyü qaytarır.
+      // Kartın BİRBAŞA içindəkiləri əvvəlcə desktop y-zolaqlarına qruplaşır;
+      // zolaq daxilində 24px-dən böyük üfüqi boşluq alt-sətir ayırır
+      // (logo | nav kimi). Bir sıraya sığan alt-sətir yan-yana qalır (nav
+      // zolağı), sığmayan hər element öz sətrinə düşür. Tək-sətir etiketlər
+      // (düymələr, qısa başlıqlar) heç vaxt mətnindən dar enə MINMMUR —
+      // letter-soup wrap qadağandır; abzaslar üçün ən uzun söz kifayətdir.
+      // İç-içə kartlar öz məzmunu ilə rekursiv hərəkət edir; funksiya karta
+      // düşən hündürlüyü qaytarır.
       function layoutCard(u, ux, uy, uw) {
         var k = uw / u.w;
         var inner = pg.elements.filter(function (e2) { return !isHidden(e2) && cardOf(e2) === u; });
         inner.sort(function (a, b) { return a.y - b.y || a.x - b.x; });
-        var iy = 12;
-        inner.forEach(function (e2) {
-          var iw, ix, ih;
-          if (cards.indexOf(e2) >= 0) {
-            // İç-içə kart: eni qorunur (k ilə kiçilmir), mərkəzlə düzülür.
-            iw = Math.min(e2.w, uw - 24);
-            ix = Math.round((uw - iw) / 2);
-            ih = layoutCard(e2, ux + ix, uy + iy, iw);
+        function needW(e2) {
+          if (cards.indexOf(e2) >= 0) return Math.min(e2.w, uw - 24);
+          var scaled = Math.min(Math.round(e2.w * k), uw - 24);
+          var txt = String(e2.props.text || '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
+          if (!txt) return scaled;
+          var fs = num(e2.props.fontSize, 8, 120, 15);
+          var pad = e2.type === 'rect' ? 20 : e2.type === 'button' ? 20 : 4;
+          var lines = txt.split('\n');
+          var isLabel = e2.type === 'button' || (lines.length === 1 && txt.length <= 40);
+          var minPx;
+          if (isLabel) {
+            minPx = Math.ceil(txt.length * fs * 0.52) + pad;
           } else {
-            iw = Math.min(Math.round(e2.w * k), uw - 24);
-            ix = Math.max(12, Math.min(Math.round((e2.x - u.x) * k), uw - iw - 12));
-            ih = textH(e2, iw);
-            out[e2.id] = { x: ux + ix, y: uy + iy, w: iw, h: ih };
+            var wlong = 0;
+            txt.split(/\s+/).forEach(function (wd) { wlong = Math.max(wlong, wd.length); });
+            minPx = Math.ceil(wlong * fs * 0.52) + pad;
           }
-          iy += ih + 10;
+          return Math.max(scaled, Math.min(minPx, uw - 24));
+        }
+        // y-zolaqları (intervalları kəsişən elementlər eyni zolaqda)
+        var bands = [];
+        inner.forEach(function (e2) {
+          var last = bands[bands.length - 1];
+          if (last && e2.y < last.bottom - 2) {
+            last.items.push(e2);
+            last.bottom = Math.max(last.bottom, e2.y + e2.h);
+          } else {
+            bands.push({ items: [e2], bottom: e2.y + e2.h });
+          }
+        });
+        var iy = 12;
+        bands.forEach(function (bd) {
+          bd.items.sort(function (a, b) { return a.x - b.x; });
+          var subs = [[]];
+          bd.items.forEach(function (e2) {
+            var s = subs[subs.length - 1];
+            if (s.length && e2.x - (s[s.length - 1].x + s[s.length - 1].w) > 24) subs.push([e2]);
+            else s.push(e2);
+          });
+          subs.forEach(function (row) {
+            var availW = uw - 24;
+            var widths = row.map(needW);
+            var total = widths.reduce(function (a, b) { return a + b; }, 0) + 8 * (row.length - 1);
+            if (row.length > 1 && total <= availW) {
+              // Yan-yana bir sətir — nav zolağı kimi.
+              var cx = 12, rowH = 0;
+              row.forEach(function (e2, i2) {
+                var ih;
+                if (cards.indexOf(e2) >= 0) {
+                  ih = layoutCard(e2, ux + cx, uy + iy, widths[i2]);
+                } else {
+                  ih = textH(e2, widths[i2]);
+                  out[e2.id] = { x: ux + cx, y: uy + iy, w: widths[i2], h: ih };
+                }
+                rowH = Math.max(rowH, ih);
+                cx += widths[i2] + 8;
+              });
+              iy += rowH + 10;
+            } else {
+              // Öz sətrində: tək elementdə nisbi x qorunur, sığmayan çoxlu
+              // sətir mərkəzlənir.
+              row.forEach(function (e2, i2) {
+                var iw = widths[i2];
+                if (cards.indexOf(e2) >= 0) {
+                  iy += layoutCard(e2, ux + Math.round((uw - iw) / 2), uy + iy, iw) + 10;
+                } else {
+                  var ih = textH(e2, iw);
+                  var ix = row.length === 1
+                    ? Math.max(12, Math.min(Math.round((e2.x - u.x) * k), uw - iw - 12))
+                    : Math.round((uw - iw) / 2);
+                  out[e2.id] = { x: ux + ix, y: uy + iy, w: iw, h: ih };
+                  iy += ih + 10;
+                }
+              });
+            }
+          });
         });
         var uh = Math.max(u.h, iy + 2);
         out[u.id] = { x: ux, y: uy, w: uw, h: uh };
@@ -746,7 +816,8 @@
       afterRestore();
     }
     function afterRestore() {
-      if (selId && !byId(selId)) selId = null;
+      selIds = selIds.filter(function (id) { return byId(id); });
+      if (selId && !byId(selId)) selId = selIds.length ? selIds[selIds.length - 1] : null;
       editing = false;
       renderAll();
       updateUndoBtns();
@@ -875,7 +946,8 @@
         } else {
           st = 'line-height:1.45;';
         }
-        st += fontCss(p, effFs(el)) + 'color:' + p.color + ';text-align:' + p.align + ';white-space:pre-wrap;word-break:break-word;overflow:hidden';
+        st += fontCss(p, effFs(el)) + 'color:' + p.color + ';text-align:' + p.align + ';white-space:pre-wrap;word-break:break-word;overflow:hidden'
+          + (el.type === 'button' ? ';white-space:nowrap;text-overflow:ellipsis' : '');
         var f = fillDiv(st);
         var ed = document.createElement('div');
         ed.className = 'editable';
@@ -986,25 +1058,45 @@
     }
 
     var HANDLE_DIRS = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
-    function renderSelection() {
-      var old = canvas.querySelector('.selbox');
-      if (old) old.parentNode.removeChild(old);
-      var el = sel();
-      if (!el) return;
-      var r = effRect(el);
-      var box = document.createElement('div');
-      box.className = 'selbox';
-      box.style.left = r.x + 'px';
-      box.style.top = r.y + 'px';
-      box.style.width = r.w + 'px';
-      box.style.height = r.h + 'px';
-      for (var i = 0; i < HANDLE_DIRS.length; i++) {
-        var h = document.createElement('div');
-        h.className = 'hdl hdl-' + HANDLE_DIRS[i];
-        h.setAttribute('data-h', HANDLE_DIRS[i]);
-        box.appendChild(h);
+    var selHud = document.getElementById('selhud');
+    if (selHud) {
+      var selHudX = selHud.querySelector('#selhud-x');
+      if (selHudX) selHudX.addEventListener('click', function () { select(null); });
+    }
+    function syncSelHud() {
+      if (!selHud) return;
+      selHud.hidden = selIds.length < 2;
+      if (selIds.length > 1) {
+        var n = selHud.querySelector('[data-n]');
+        if (n) n.textContent = selIds.length;
       }
-      canvas.appendChild(box);
+    }
+    // Çoxlu seçim: hər elementə ayrıca kontur (ölçü tutacaqları YOXDUR —
+    // resize tək-element əməliyyatıdır); tək seçimdə 8 tutacaqlı qutu.
+    function renderSelection() {
+      canvas.querySelectorAll('.selbox').forEach(function (b) { b.parentNode.removeChild(b); });
+      for (var i = 0; i < selIds.length; i++) {
+        var el = byId(selIds[i]);
+        if (!el) continue;
+        var r = effRect(el);
+        var box = document.createElement('div');
+        box.className = 'selbox' + (selIds.length > 1 ? ' multi' : '');
+        box.setAttribute('data-for', el.id);
+        box.style.left = r.x + 'px';
+        box.style.top = r.y + 'px';
+        box.style.width = r.w + 'px';
+        box.style.height = r.h + 'px';
+        if (selIds.length === 1) {
+          for (var j = 0; j < HANDLE_DIRS.length; j++) {
+            var h = document.createElement('div');
+            h.className = 'hdl hdl-' + HANDLE_DIRS[j];
+            h.setAttribute('data-h', HANDLE_DIRS[j]);
+            box.appendChild(h);
+          }
+        }
+        canvas.appendChild(box);
+      }
+      syncSelHud();
     }
 
     function renderCanvas() {
@@ -1029,8 +1121,8 @@
         n.style.width = r.w + 'px';
         n.style.height = r.h + 'px';
       }
-      var box = canvas.querySelector('.selbox');
-      if (box && sel() === el) {
+      var box = canvas.querySelector('.selbox[data-for="' + el.id + '"]');
+      if (box) {
         box.style.left = r.x + 'px';
         box.style.top = r.y + 'px';
         box.style.width = r.w + 'px';
@@ -1039,10 +1131,25 @@
     }
 
     // ---------- selection ----------
+    function paintSelClasses() {
+      canvas.querySelectorAll('.elb').forEach(function (n) {
+        n.classList.toggle('sel', selIds.indexOf(n.getAttribute('data-id')) >= 0);
+      });
+    }
     function select(id) {
+      selIds = id ? [id] : [];
       selId = id;
-      var nodes = canvas.querySelectorAll('.elb');
-      for (var i = 0; i < nodes.length; i++) nodes[i].classList.toggle('sel', nodes[i].getAttribute('data-id') === id);
+      paintSelClasses();
+      renderSelection();
+      renderSidebar();
+    }
+    // Ctrl/Cmd/Shift+click: elementi seçim dəstinə əlavə/çıxarır.
+    function toggleSelect(id) {
+      var i = selIds.indexOf(id);
+      if (i >= 0) selIds.splice(i, 1);
+      else selIds.push(id);
+      selId = selIds.length ? selIds[selIds.length - 1] : null;
+      paintSelClasses();
       renderSelection();
       renderSidebar();
     }
@@ -1070,6 +1177,7 @@
       // koordinatdan başlayır (sonra ayrıca düzəldilə bilər).
       if (curVp) { vpSet(el, 'x', start.x); vpSet(el, 'y', start.y); }
       ELS().push(el);
+      selIds = [el.id];
       selId = el.id;
       renderCanvas();
       onDrag(function (cur) {
@@ -1101,17 +1209,33 @@
       });
     }
 
+    // Qrup sürüşdürməsi: bütün seçili elementlər eyni delta ilə hərəkət edir
+    // (cihaz rejimində yalnız həmin görünüşün override-larına yazılır).
+    // Modifikatorsuz sadə klik çoxlu seçimi tək elementə endirir.
     function startMove(el, e) {
       var pre = JSON.stringify(state);
       var start = canvasPos(e);
-      var r0 = effRect(el);
-      var ox = r0.x, oy = r0.y;
+      var orig = [];
+      selIds.forEach(function (id) {
+        var e2 = byId(id);
+        if (e2) orig.push({ el: e2, r: effRect(e2) });
+      });
+      var wasMulti = orig.length > 1;
+      var moved = false;
       onDrag(function (cur) {
-        vpSet(el, 'x', snapN(ox + cur.x - start.x));
-        vpSet(el, 'y', snapN(oy + cur.y - start.y));
-        updateNodeLive(el);
+        // Delta-nı əsas (son seçilmiş) elementin söykənmiş yeni mövqeyindən çıxar.
+        var dx = snapN(orig[0].r.x + cur.x - start.x) - orig[0].r.x;
+        var dy = snapN(orig[0].r.y + cur.y - start.y) - orig[0].r.y;
+        if (!dx && !dy) return;
+        moved = true;
+        orig.forEach(function (o) {
+          vpSet(o.el, 'x', o.r.x + dx);
+          vpSet(o.el, 'y', o.r.y + dy);
+          updateNodeLive(o.el);
+        });
       }, function () {
-        commitIfChanged(pre);
+        if (moved) commitIfChanged(pre);
+        else if (wasMulti && !e.ctrlKey && !e.metaKey && !e.shiftKey) select(el.id);
         renderSidebar();
       });
     }
@@ -1146,11 +1270,38 @@
         if (eb) {
           e.preventDefault();
           var id = eb.getAttribute('data-id');
-          if (id !== selId) select(id);
-          var el = byId(id);
-          if (el) startMove(el, e);
+          if (e.ctrlKey || e.metaKey || e.shiftKey) { toggleSelect(id); return; } // çoxlu seçim
+          if (selIds.indexOf(id) < 0) select(id);
+          var mel = byId(id);
+          if (mel) startMove(mel, e);
         } else {
-          select(null);
+          // Boş sahədən sürüşdürmə: marquee (rubber-band) seçimi; sadə klik
+          // seçimi təmizləyir.
+          var start = canvasPos(e);
+          var mq = null, mrect = null;
+          onDrag(function (cur) {
+            var x = Math.min(start.x, cur.x), y = Math.min(start.y, cur.y);
+            var w = Math.abs(cur.x - start.x), h2 = Math.abs(cur.y - start.y);
+            if (!mq && w < 4 && h2 < 4) return;
+            if (!mq) { mq = el('div', 'marquee'); canvas.appendChild(mq); }
+            mrect = { x: x, y: y, w: w, h: h2 };
+            mq.style.left = x + 'px'; mq.style.top = y + 'px';
+            mq.style.width = w + 'px'; mq.style.height = h2 + 'px';
+          }, function () {
+            if (!mq) { select(null); return; }
+            var ids = [];
+            ELS().forEach(function (e2) {
+              if (effHide(e2)) return;
+              var r = effRect(e2);
+              if (r.x < mrect.x + mrect.w && r.x + r.w > mrect.x && r.y < mrect.y + mrect.h && r.y + r.h > mrect.y) ids.push(e2.id);
+            });
+            mq.parentNode.removeChild(mq);
+            selIds = ids;
+            selId = ids.length ? ids[ids.length - 1] : null;
+            paintSelClasses();
+            renderSelection();
+            renderSidebar();
+          });
         }
       } else {
         e.preventDefault();
@@ -1215,51 +1366,106 @@
       if (mod && k === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
       if (mod && k === 'y') { e.preventDefault(); redo(); return; }
       if (mod && k === 'd') { e.preventDefault(); duplicateSel(); return; }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selId) { e.preventDefault(); deleteSel(); return; }
-      if (e.key.indexOf('Arrow') === 0 && selId) {
+      // Daxili bufer (OS clipboard-a toxunmur): Ctrl+C kopyala, Ctrl+X kəs,
+      // Ctrl+V yapışdır. Fokus input/textaraa-da ikən yuxarıda dayandırılır.
+      if (mod && k === 'c' && selIds.length) { e.preventDefault(); copySel(false); return; }
+      if (mod && k === 'x' && selIds.length) { e.preventDefault(); copySel(true); return; }
+      if (mod && k === 'v' && clipboard) { e.preventDefault(); pasteClipboard(); return; }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selIds.length) { e.preventDefault(); deleteSel(); return; }
+      if (e.key.indexOf('Arrow') === 0 && selIds.length) {
         e.preventDefault();
-        var el = sel();
-        if (!el) return;
         pushHistory();
         var d = e.shiftKey ? 10 : 1;
-        var er0 = effRect(el);
-        if (e.key === 'ArrowLeft') vpSet(el, 'x', er0.x - d);
-        if (e.key === 'ArrowRight') vpSet(el, 'x', er0.x + d);
-        if (e.key === 'ArrowUp') vpSet(el, 'y', er0.y - d);
-        if (e.key === 'ArrowDown') vpSet(el, 'y', er0.y + d);
+        selIds.forEach(function (id) {
+          var el = byId(id);
+          if (!el) return;
+          var er0 = effRect(el);
+          if (e.key === 'ArrowLeft') vpSet(el, 'x', er0.x - d);
+          if (e.key === 'ArrowRight') vpSet(el, 'x', er0.x + d);
+          if (e.key === 'ArrowUp') vpSet(el, 'y', er0.y - d);
+          if (e.key === 'ArrowDown') vpSet(el, 'y', er0.y + d);
+        });
         renderCanvas();
         renderSidebar();
       }
     });
 
+    // ---------- daxili bufer (copy/cut/paste) ----------
+    // Kopyalanan hər elementin dərin klonu + kopiya anındakı EFFEKTIV ölçüsü
+    // (cari viewport) saxlanır. Paste həmin koordinatları +16×n ofsetlə cari
+    // səhifəyə/görünüşə yazır; cihaz rejimində cari viewport override-ları ilə.
+    function copySel(cut) {
+      if (!selIds.length) return;
+      clipboard = selIds.map(function (id) {
+        var e2 = byId(id);
+        if (!e2) return null;
+        var c = JSON.parse(JSON.stringify(e2));
+        var r = effRect(e2);
+        c.cx = r.x; c.cy = r.y; c.cw = r.w; c.ch = r.h;
+        return c;
+      }).filter(Boolean);
+      pasteBump = 0;
+      if (cut) deleteSel();
+    }
+    function pasteClipboard() {
+      if (!clipboard || !clipboard.length) return;
+      pushHistory();
+      pasteBump++;
+      var off = 16 * pasteBump;
+      var newIds = [];
+      clipboard.forEach(function (ce) {
+        var copy = JSON.parse(JSON.stringify(ce));
+        copy.id = 'el-' + (++state.seq);
+        delete copy.cx; delete copy.cy; delete copy.cw; delete copy.ch;
+        copy.x = ce.cx + off; copy.y = ce.cy + off;
+        copy.w = ce.cw; copy.h = ce.ch;
+        // Cihaz rejimində yapışdırma cari görünüşə override kimi sabitlənir.
+        if (curVp) {
+          if (!copy.o) copy.o = {};
+          copy.o[curVp] = Object.assign({}, copy.o[curVp] || {}, { x: copy.x, y: copy.y, w: copy.w, h: copy.h });
+        }
+        ELS().push(copy);
+        newIds.push(copy.id);
+      });
+      selIds = newIds;
+      selId = newIds[newIds.length - 1] || null;
+      renderCanvas();
+      renderSidebar();
+    }
+
     function deleteSel() {
-      var el = sel();
-      if (!el) return;
+      if (!selIds.length) return;
       pushHistory();
       // Cihaz rejimində "sil" = yalnız bu görünüşdə gizlət (desktop toxunulmur).
       if (curVp) {
-        vpSet(el, 'hide', true);
-        selId = null;
+        selIds.forEach(function (id) { var e2 = byId(id); if (e2) vpSet(e2, 'hide', true); });
+        selIds = []; selId = null;
         renderCanvas();
         renderSidebar();
         return;
       }
-      P().elements = ELS().filter(function (x) { return x.id !== el.id; });
-      selId = null;
+      P().elements = ELS().filter(function (x) { return selIds.indexOf(x.id) < 0; });
+      selIds = []; selId = null;
       renderCanvas();
       renderSidebar();
     }
     function duplicateSel() {
-      var el = sel();
-      if (!el) return;
+      if (!selIds.length) return;
       pushHistory();
-      var copy = JSON.parse(JSON.stringify(el));
-      copy.id = 'el-' + (++state.seq);
-      var cr = effRect(el);
-      copy.x = el.x + 12; copy.y = el.y + 12;
-      if (curVp) { vpSet(copy, 'x', cr.x + 12); vpSet(copy, 'y', cr.y + 12); }
-      ELS().push(copy);
-      selId = copy.id;
+      var newIds = [];
+      selIds.forEach(function (id) {
+        var el = byId(id);
+        if (!el) return;
+        var copy = JSON.parse(JSON.stringify(el));
+        copy.id = 'el-' + (++state.seq);
+        var cr = effRect(el);
+        copy.x = el.x + 12; copy.y = el.y + 12;
+        if (curVp) { vpSet(copy, 'x', cr.x + 12); vpSet(copy, 'y', cr.y + 12); }
+        ELS().push(copy);
+        newIds.push(copy.id);
+      });
+      selIds = newIds;
+      selId = newIds[newIds.length - 1] || null;
       renderCanvas();
       renderSidebar();
     }
@@ -1533,7 +1739,7 @@
 
     function renderElSection() {
       sbEl.innerHTML = '';
-      var el2 = sel();
+      var el2 = selIds.length === 1 ? byId(selIds[0]) : null;
       if (!el2) { sbEl.style.display = 'none'; return; }
       sbEl.style.display = '';
       var p = el2.props;
@@ -1558,7 +1764,7 @@
         sbEl.appendChild(chkIn(false, t('vp_hide', 'Bu cihazda gizlət'), function () {
           pushHistory();
           vpSet(el2, 'hide', true);
-          selId = null;
+          selIds = []; selId = null;
           renderCanvas();
           renderSidebar();
         }));
@@ -1776,7 +1982,7 @@
     function renderSidebar() {
       renderTips();
       renderPageSection();
-      sbPage.style.display = selId ? 'none' : '';
+      sbPage.style.display = selIds.length ? 'none' : '';
       renderElSection();
     }
 
@@ -1785,7 +1991,7 @@
     function switchPage(i) {
       if (i < 0 || i >= state.pages.length || i === state.ai) return;
       state.ai = i;
-      selId = null;
+      selIds = []; selId = null;
       renderAll();
     }
     function addPage() {
@@ -1812,7 +2018,7 @@
         if (e2.props.pageId === removedId) { e2.props.action = 'none'; e2.props.pageId = ''; }
       });
       if (state.ai >= state.pages.length) state.ai = state.pages.length - 1;
-      selId = null;
+      selIds = []; selId = null;
       renderAll();
     }
     function renderPstrip() {
@@ -2355,7 +2561,7 @@
       st.css = tpl.css || '';
       if (st.css) st.css = st.css.replace(/@([a-z0-9_]+)/g, function (m2, tag) { return tagMap[tag] ? '#' + tagMap[tag] : m2; });
       state = st;
-      selId = null;
+      selIds = []; selId = null;
       closeGallery();
       renderAll();
     }

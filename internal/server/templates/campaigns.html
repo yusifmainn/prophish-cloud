@@ -72,7 +72,7 @@
         <label class="pick">
           <input type="radio" name="listener_mode" value="host" {{if eq $mode "host"}}checked{{end}}>
           <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span>
-          <span style="min-width:0"><span class="t">{{t "camp.listener_host"}}{{if .RecommendHost}} <span class="pill info" style="padding:2px 8px;font-size:11px">{{t "camp.recommended"}}</span>{{end}}</span><span class="s">{{t "camp.listener_host_hint"}} — <code data-host-url>{{.HostPublicURL}}</code></span></span>
+          <span style="min-width:0"><span class="t">{{t "camp.listener_host"}}</span><span class="s">{{t "camp.listener_host_hint"}} — <code data-host-url>{{.HostPublicURL}}</code></span></span>
         </label>
         <label class="pick">
           <input type="radio" name="listener_mode" value="cloudflare" {{if eq $mode "cloudflare"}}checked{{end}}>
