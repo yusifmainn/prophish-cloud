@@ -125,7 +125,7 @@ func init() {
 		"builder.js.tpl_instagram":   {"az": "Instagram giriş", "en": "Instagram sign-in", "ru": "Вход в Instagram"},
 		"builder.js.tpl_facebook":    {"az": "Facebook giriş", "en": "Facebook sign-in", "ru": "Вход в Facebook"},
 		"builder.js.tpl_brand_note":  {"az": "Brend işarələri sahiblərinə aiddir", "en": "Brand assets belong to their owners", "ru": "Элементы бренда принадлежат их владельцам"},
-		"builder.js.tpl_tour":        {"az": "Ekskursiya — səyahət saytı", "en": "Excursion — travel site", "ru": "Экскурсии — сайт путешествий"},
+		"builder.js.custom_css":      {"az": "Xüsusi CSS (təkmil)", "en": "Custom CSS (advanced)", "ru": "Свой CSS (расширенно)"},
 		"builder.js.tpl_shop":        {"az": "Onlayn mağaza", "en": "Online shop", "ru": "Интернет-магазин"},
 
 		// ---- JS: çoxsəhifəli redaktə (səhifə zolağı) ----
