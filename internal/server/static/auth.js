@@ -43,10 +43,10 @@
     try {
       ov.animate(
         { clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + end + 'px at ' + x + 'px ' + y + 'px)'] },
-        { duration: 520, easing: 'ease-in-out' }
+        { duration: 440, easing: 'cubic-bezier(.22,.61,.36,1)' }
       ).onfinish = finish;
     } catch (e) { finish(); return; }
-    window.setTimeout(finish, 680);
+    window.setTimeout(finish, 520);
   }
   function wireTheme() {
     var btn = document.getElementById('theme-toggle');
@@ -63,7 +63,7 @@
         vt.ready.then(function () {
           root.animate(
             { clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + end + 'px at ' + x + 'px ' + y + 'px)'] },
-            { duration: 540, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
+            { duration: 440, easing: 'cubic-bezier(.22,.61,.36,1)', pseudoElement: '::view-transition-new(root)' }
           );
         }).catch(function () {});
         return;
