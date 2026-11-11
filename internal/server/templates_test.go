@@ -46,7 +46,8 @@ func TestTemplatesRender(t *testing.T) {
 		"page_builder.html": map[string]any{"Edit": true,
 			"P":         &models.LandingPage{ID: "p1", Name: "P", HTMLBody: "<html></html>", RedirectURL: "u"},
 			"JSStrings": map[string]string{"builder.js.page": "Səhifə"}},
-		"profiles.html": map[string]any{"Profiles": []models.SendingProfile{{Name: "SMTP", SMTPHost: "h", SMTPPort: 587, FromAddress: "f"}}},
+		"preview_shell.html": map[string]any{"Raw": "/x/raw", "Back": "/pages"},
+		"profiles.html":      map[string]any{"Profiles": []models.SendingProfile{{Name: "SMTP", SMTPHost: "h", SMTPPort: 587, FromAddress: "f"}}},
 		"campaigns.html": map[string]any{
 			"Campaigns":      []store.CampaignRow{{ID: "c1", Name: "C", ClientName: "ACME", Status: "draft", CreatedAt: now}},
 			"Clients":        []models.Client{{ID: cid, Name: "ACME"}},

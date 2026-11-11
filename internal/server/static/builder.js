@@ -526,20 +526,47 @@
     function sel() { return selId ? byId(selId) : null; }
     function snapN(v) { return snapEl && snapEl.checked ? Math.round(v / 5) * 5 : Math.round(v); }
     // Kanvas miqyası: eni kiçik ekranlarda artboard scale ilə sığdırılır.
-    // Koordinat çevirməsində mütləq cari scaleK-ya bölmək lazımdır.
+    // Cihaz rejimi (deviceW=768/390): kanvas DƏqiq generasiya olunmuş səhifənin
+    // həmin eninə görə göründüyü kimi göstərilir — eyni fit riyaziyyatı.
+    // Koordinat çevirməsi hər zaman cari scaleK-ya bölünür (canvasPos).
     var scaleWrap = document.getElementById('canvas-scale');
     var workspace = document.getElementById('workspace');
     var scaleK = 1;
+    var deviceW = 0;
+    try { deviceW = parseInt(window.sessionStorage.getItem('builder-vp') || '0', 10) || 0; } catch (e) {}
     function applyZoom() {
       if (!scaleWrap || !workspace) return;
+      var frame = deviceW || num(state.w, 200, 4000, 960);
       var avail = workspace.clientWidth - 88;
-      if (avail <= 0) { scaleK = 1; return; } // ölçü belli deyil (jsdom) — 1:1
-      scaleK = Math.max(0.3, Math.min(1, avail / state.w));
+      var availK = avail > 0 ? Math.min(1, avail / frame) : 1; // jsdom/guard: ölçü yoxdursa 1:1
+      scaleK = Math.max(0.2, Math.min(1, frame / num(state.w, 200, 4000, 960)) * availK);
       scaleWrap.style.transform = scaleK < 1 ? 'scale(' + scaleK + ')' : '';
-      scaleWrap.style.width = Math.round(state.w * scaleK) + 'px';
+      scaleWrap.style.width = Math.round(frame * scaleK) + 'px';
       scaleWrap.style.height = Math.round(num(state.h, 200, 4000, 700) * scaleK) + 'px';
+      scaleWrap.classList.toggle('devframe', deviceW > 0);
     }
     if (window.addEventListener) window.addEventListener('resize', applyZoom);
+
+    // Cihaz keçidi (yalnız sessiya üçün saxlanır — vəziyyət formatı dəyişmir).
+    var vpsw = document.getElementById('vpsw');
+    if (vpsw) {
+      var vpBtns = vpsw.querySelectorAll('[data-vp]');
+      var syncVp = function () {
+        for (var i = 0; i < vpBtns.length; i++) vpBtns[i].classList.toggle('on', parseInt(vpBtns[i].getAttribute('data-vp'), 10) === deviceW);
+      };
+      for (var vi = 0; vi < vpBtns.length; vi++) {
+        (function (b) {
+          b.addEventListener('click', function (e) {
+            e.preventDefault();
+            deviceW = parseInt(b.getAttribute('data-vp'), 10) || 0;
+            try { window.sessionStorage.setItem('builder-vp', String(deviceW)); } catch (e2) {}
+            syncVp();
+            applyZoom();
+          });
+        })(vpBtns[vi]);
+      }
+      syncVp();
+    }
 
     function canvasPos(e) {
       var r = canvas.getBoundingClientRect();
@@ -1371,7 +1398,7 @@
     }
 
     // ---------- səhifə zolağı (çoxsəhifəli redaktə) ----------
-    var pstrip = document.getElementById('pstrip');
+    var pstrip = document.getElementById('ptabs') || document.getElementById('pstrip');
     function switchPage(i) {
       if (i < 0 || i >= state.pages.length || i === state.ai) return;
       state.ai = i;
@@ -2020,4 +2047,24 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+
+  // Cihaz önizləmə paneli (preview_shell.html) — #devf varsa işləyir.
+  function initDevShell() {
+    var frame = document.getElementById('devf');
+    if (!frame) return;
+    var btns = document.querySelectorAll('[data-dw]');
+    for (var i = 0; i < btns.length; i++) {
+      (function (b) {
+        b.addEventListener('click', function (e) {
+          e.preventDefault();
+          var w = b.getAttribute('data-dw');
+          frame.style.width = w === '100%' ? '100%' : w + 'px';
+          frame.style.maxWidth = '100%';
+          for (var j = 0; j < btns.length; j++) btns[j].classList.toggle('on', btns[j] === b);
+        });
+      })(btns[i]);
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDevShell);
+  else initDevShell();
 })();

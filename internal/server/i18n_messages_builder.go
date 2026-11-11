@@ -164,6 +164,17 @@ func init() {
 		"builder.js.anim_kb":    {"az": "Ken Burns (yavaş zum)", "en": "Ken Burns (slow zoom)", "ru": "Кен Бёрнс (медленный зум)"},
 		"builder.js.resp":       {"az": "Responsiv miqyas (mobil)", "en": "Responsive scaling (mobile)", "ru": "Адаптивный масштаб (мобильные)"},
 
+		// ---- Cihaz önizləmə paneli (preview shell) + kanvas viewport keçidi ----
+		"builder.view_desktop": {"az": "Masaüstü", "en": "Desktop", "ru": "Десктоп"},
+		"builder.view_tablet":  {"az": "Planşet", "en": "Tablet", "ru": "Планшет"},
+		"builder.view_mobile":  {"az": "Mobil", "en": "Mobile", "ru": "Мобильный"},
+		"dev.title":            {"az": "Cihaz önizləməsi", "en": "Device preview", "ru": "Предпросмотр по устройствам"},
+		"dev.back":             {"az": "Redaktora qayıt", "en": "Back to editor", "ru": "Назад в редактор"},
+		"dev.desktop":          {"az": "Masaüstü", "en": "Desktop", "ru": "Десктоп"},
+		"dev.laptop":           {"az": "Laptop", "en": "Laptop", "ru": "Ноутбук"},
+		"dev.tablet":           {"az": "Planşet", "en": "Tablet", "ru": "Планшет"},
+		"dev.mobile":           {"az": "Mobil", "en": "Mobile", "ru": "Мобильный"},
+
 		// ---- JS: form sahələri redaktoru ----
 		"builder.js.form_fields":       {"az": "Form sahələri", "en": "Form fields", "ru": "Поля формы"},
 		"builder.js.field_add":         {"az": "Sahə əlavə et", "en": "Add field", "ru": "Добавить поле"},

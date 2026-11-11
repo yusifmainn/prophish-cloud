@@ -2,7 +2,9 @@
 {{template "nav" .}}
 <main class="bmain">
   <style>
-    /* Vizual qurucu — tam-ekran üçzonalı düzən (inline style CSP-də icazəlidir). */
+    /* Vizual qurucu — tam-ekran üçzonalı düzən (inline style CSP-də icazəlidir).
+       Yeni dizayn sistemində --accent* tokenları --brand* adlanır — alias: */
+    #builder,.bgallery{--accent:var(--brand);--accent-soft:var(--brand-soft);--accent-line:var(--brand-line)}
     main.bmain{max-width:100%;padding:0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
     #builder{flex:1;display:flex;flex-direction:column;min-height:0}
     #builder-form{flex:1;display:flex;flex-direction:column;min-height:0}
@@ -21,11 +23,11 @@
     .btools button.on span{color:var(--accent)}
     .bwork{overflow:auto;background:var(--sunken);padding:44px;display:flex;justify-content:center;align-items:flex-start}
     #canvas{position:relative;flex:none;box-shadow:0 2px 6px rgba(10,20,40,.12),0 18px 44px -12px rgba(10,20,40,.25);overflow:hidden}
-    #canvas .elb{position:absolute;box-sizing:border-box;cursor:move}
-    #canvas .elb *{pointer-events:none}
+    #canvas .elb, .bthumb .elb{position:absolute;box-sizing:border-box;cursor:move}
+    #canvas .elb *, .bthumb .elb *{pointer-events:none}
     #canvas .elb.editing *{pointer-events:auto}
     #canvas .elb.editing{cursor:text}
-    #canvas .elb .fill{width:100%;height:100%;box-sizing:border-box}
+    #canvas .elb .fill, .bthumb .elb .fill{width:100%;height:100%;box-sizing:border-box}
     #canvas .elb .editable{outline:none;min-width:1px}
     .selbox{position:absolute;pointer-events:none;outline:1.5px solid var(--accent);z-index:9999}
     .selbox .hdl{position:absolute;width:10px;height:10px;background:#fff;border:1.5px solid var(--accent);border-radius:2px;pointer-events:auto;box-sizing:border-box}
@@ -54,6 +56,7 @@
     #builder-notice[hidden]{display:none}
     /* Səhifə zolağı (çoxsəhifəli ssenarilər) */
     .pstrip{display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--surface-2);border-bottom:1px solid var(--border);flex:none;overflow-x:auto}
+    #ptabs{display:flex;align-items:center;gap:6px;flex:none}
     .ptab{margin:0;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;font-size:12.5px;font-weight:600;background:var(--surface);color:var(--fg);border:1px solid var(--border-strong);border-radius:8px;cursor:pointer;box-shadow:var(--shadow-sm);white-space:nowrap}
     .ptab:hover{transform:none;border-color:var(--accent)}
     .ptab.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line)}
@@ -88,6 +91,12 @@
     @media (max-width:1100px){.bwrap{grid-template-columns:76px minmax(0,1fr) 280px}}
     /* Responsiv redaktor düzənləmələri */
     #canvas-scale{transform-origin:top center;flex:none}
+    #canvas-scale.devframe{outline:2px solid var(--border-strong);border-radius:16px;margin-top:8px}
+    /* Cihaz (viewport) keçid düymələri */
+    .vpsw{margin-left:auto;display:inline-flex;gap:2px;padding:3px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface)}
+    .vpsw button{margin:0;padding:5px 10px;font-size:12px;font-weight:600;background:none;border:0;border-radius:7px;color:var(--muted);cursor:pointer;box-shadow:none}
+    .vpsw button:hover{transform:none;color:var(--ink)}
+    .vpsw button.on{background:var(--accent-soft);color:var(--accent)}
     @media (max-width:1200px){
       .btools button span{display:none}
       .bwrap{grid-template-columns:56px minmax(0,1fr) 320px}
@@ -117,7 +126,11 @@
         <button type="submit">{{if .Edit}}{{t "common.save"}}{{else}}{{t "builder.create"}}{{end}}</button>
       </div>
 
-      <div class="pstrip" id="pstrip"></div>
+      <div class="pstrip" id="pstrip"><span id="ptabs"></span><span class="vpsw" id="vpsw">
+        <button type="button" data-vp="0">{{t "builder.view_desktop"}}</button>
+        <button type="button" data-vp="768">{{t "builder.view_tablet"}}</button>
+        <button type="button" data-vp="390">{{t "builder.view_mobile"}}</button>
+      </span></div>
       <div class="bwrap">
         <div class="btools">
           <button type="button" title="{{t "builder.tool.select"}}" data-tool="select" class="on">↖<span>{{t "builder.tool.select"}}</span></button>

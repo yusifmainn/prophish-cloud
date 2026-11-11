@@ -22,6 +22,7 @@ type Server struct {
 	launcher  *engine.Launcher
 	tunnels   *tunnelmgr.Manager
 	templates *template.Template
+	previews  *previewCache
 }
 
 func NewServer(cfg *config.Config, st *store.Store, sessions *scs.SessionManager, launcher *engine.Launcher, tunnels *tunnelmgr.Manager) (*Server, error) {
@@ -29,7 +30,7 @@ func NewServer(cfg *config.Config, st *store.Store, sessions *scs.SessionManager
 	if err != nil {
 		return nil, err
 	}
-	return &Server{cfg: cfg, store: st, sessions: sessions, launcher: launcher, tunnels: tunnels, templates: tmpl}, nil
+	return &Server{cfg: cfg, store: st, sessions: sessions, launcher: launcher, tunnels: tunnels, templates: tmpl, previews: &previewCache{}}, nil
 }
 
 // AdminRouter builds the authenticated admin panel router.
@@ -112,9 +113,12 @@ func (s *Server) AdminRouter() http.Handler {
 		r.Post("/pages/import", s.handlePageImport)
 		r.Get("/pages/builder", s.handlePageBuilderNew)
 		r.Post("/pages/builder/preview", s.handlePageBuilderPreview)
+		r.Get("/pages/builder/preview/{token}", s.handlePageBuilderPreviewShell)
+		r.Get("/pages/builder/preview/{token}/raw", s.handlePageBuilderPreviewRaw)
 		r.Get("/pages/{id}", s.handlePageDetail)
 		r.Get("/pages/{id}/builder", s.handlePageBuilderEdit)
 		r.Get("/pages/{id}/preview", s.handlePagePreview)
+		r.Get("/pages/{id}/preview/devices", s.handlePageDevices)
 		r.Post("/pages/{id}/edit", s.handlePageUpdate)
 		r.With(adminOnly).Post("/pages/{id}/delete", s.handlePageDelete)
 
