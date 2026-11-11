@@ -3,19 +3,71 @@ To: {{.Email}}
 Subject: {{.FirstName}}, parolunuzun muddeti bu gun bitir
 Date: Mon, 08 Nov 2026 08:02:00 +0400
 MIME-Version: 1.0
-Content-Type: text/html; charset=UTF-8
+Content-Type: multipart/alternative; boundary="PROPHISH_ITPAROL_BOUNDARY"
 
-<html>
-<body style="font-family:Arial,sans-serif;color:#222">
-  <p>Hormetli {{.FirstName}} {{.LastName}},</p>
-  <p>IT departamenti olaraq sizi melumatlandiririq ki, korporativ hesabinizin
-     parolunun muddeti <b>bu gun</b> bitir. Fasilesiz giris ucun parolu yeni<span>&shy;</span>leyin.</p>
-  <p style="margin:24px 0">
-    <a href="{{.URL}}" style="background:#1a7f37;color:#fff;padding:11px 20px;
-       text-decoration:none;border-radius:4px">Parolu indi yenile</a>
-  </p>
-  <p style="color:#666;font-size:13px">Qeyd: 24 saat erzinde yenilenmeyen hesablar
-     muveqqeti deaktiv edilecek.</p>
-  <p>Hormetle,<br>IT Destek Xidmeti</p>
+--PROPHISH_ITPAROL_BOUNDARY
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Hörmətli {{.FirstName}} {{.LastName}},
+
+İT departamenti olaraq sizi məlumatlandırırıq ki, korporativ hesabınızın
+parolunun müddəti bu gün bitir. Fasiləsiz giriş üçün parolu yeniləyin.
+
+Parolu indi yeniləyin:
+{{.URL}}
+
+Qeyd: 24 saat ərzində yenilənməyən hesablar müvəqqəti deaktiv ediləcək.
+
+Hörmətlə,
+İT Dəstək Xidməti
+
+--PROPHISH_ITPAROL_BOUNDARY
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<!doctype html>
+<html lang="az" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<style>
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse}
+  img{border:0;line-height:100%;outline:none;text-decoration:none}
+  body{margin:0;padding:0;width:100%}
+  @media screen and (max-width:620px){.wrap{width:100%!important}.px{padding-left:20px!important;padding-right:20px!important}}
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#eef2ef;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#eef2ef;font-size:1px;line-height:1px;">Korporativ parolunuzun muddeti bu gun bitir — indi yenileyin.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef2ef;">
+<tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid #dfe8e1;">
+    <tr><td bgcolor="#1a7f37" style="background-color:#1a7f37;padding:20px 32px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="font-family:'Segoe UI',Arial,sans-serif;color:#ffffff;font-size:18px;font-weight:bold;">İT Dəstək Xidməti</td>
+        <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;color:#bfe6cb;font-size:12px;font-weight:bold;">PAROL BİLDİRİŞİ</td>
+      </tr></table>
+    </td></tr>
+    <tr><td bgcolor="#fff4e5" style="background-color:#fff4e5;border-bottom:1px solid #f3d19e;padding:12px 32px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#8a5a12;">&#9888; Parolunuzun müddəti bu gün bitir</td></tr>
+    <tr><td class="px" style="padding:26px 32px 4px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#2e3f33;">Hörmətli <b>{{.FirstName}} {{.LastName}}</b>,</td></tr>
+    <tr><td class="px" style="padding:10px 32px 6px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#2e3f33;">İT departamenti olaraq sizi məlumatlandırırıq ki, korporativ hesabınızın parolunun müddəti <b>bu gün</b> bitir. Fasiləsiz giriş üçün parolu yeniləyin.</td></tr>
+    <tr><td align="center" style="padding:20px 32px 10px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td bgcolor="#1a7f37" align="center" style="background-color:#1a7f37;border-radius:6px;padding:13px 34px;">
+          <a href="{{.URL}}" style="font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">Parolu indi yenilə &rarr;</a>
+        </td>
+      </tr></table>
+    </td></tr>
+    <tr><td align="center" class="px" style="padding:4px 32px 10px;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:18px;color:#7b8a85;">Düymə işləmirsə, bu ünvanı brauzerə kopyalayın:<br><span style="color:#1a7f37;">{{.URL}}</span></td></tr>
+    <tr><td class="px" style="padding:4px 32px 22px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;line-height:20px;color:#7b8a85;">Qeyd: 24 saat ərzində yenilənməyən hesablar müvəqqəti deaktiv ediləcək.</td></tr>
+    <tr><td bgcolor="#f0f4f1" style="background-color:#f0f4f1;padding:16px 32px;font-family:'Segoe UI',Arial,sans-serif;font-size:11px;line-height:18px;color:#8a978e;">Hörmətlə, İT Dəstək Xidməti &middot; Daxili sistem</td></tr>
+  </table>
+</td></tr>
+</table>
 </body>
 </html>
+
+--PROPHISH_ITPAROL_BOUNDARY--
