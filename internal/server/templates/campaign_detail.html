@@ -15,7 +15,9 @@
   </div>
 
   {{if .Camp.TunnelManaged}}
-  <div class="note" style="margin-bottom:16px">⛓ {{if .Camp.PublicBaseURL}}<b>{{t "camp.tunnel_live"}}:</b> <code>{{.Camp.PublicBaseURL}}</code> — {{else}}<b>{{t "camp.tunnel_starting"}}</b> — {{end}}{{t "camp.tunnel_note"}}</div>
+  <div class="note" style="margin-bottom:16px">⛓ <b>{{t "camp.listener_label"}}: {{t "camp.mode_cf"}}</b> — {{if .Camp.PublicBaseURL}}<b>{{t "camp.tunnel_live"}}:</b> <code>{{.Camp.PublicBaseURL}}</code> — {{else}}<b>{{t "camp.tunnel_starting"}}</b> — {{end}}{{t "camp.tunnel_note"}}</div>
+  {{else if .Camp.PublicBaseURL}}
+  <div class="note" style="margin-bottom:16px">🌐 <b>{{t "camp.listener_label"}}:</b> {{if eq .Camp.PublicBaseURL .HostPublicURL}}{{t "camp.mode_host"}}{{else}}{{t "camp.mode_custom"}}{{end}} — <code>{{.Camp.PublicBaseURL}}</code></div>
   {{end}}
 
   {{if eq .C.Status "running"}}

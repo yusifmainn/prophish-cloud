@@ -37,7 +37,7 @@ func Load() (*Config, error) {
 		DatabaseURL:    getenv("PROPHISH_DB_URL", ""),
 		AdminAddr:      getenv("PROPHISH_ADMIN_ADDR", "127.0.0.1:8443"),
 		PublicAddr:     getenv("PROPHISH_PUBLIC_ADDR", "127.0.0.1:8080"),
-		PublicBaseURL:  strings.TrimRight(getenv("PROPHISH_PUBLIC_BASE_URL", "http://127.0.0.1:8080"), "/"),
+		PublicBaseURL:  strings.TrimRight(getenv("PROPHISH_PUBLIC_BASE_URL", ""), "/"), // empty → engine falls back to auto-detected host URL
 		SecureCookies:  strings.EqualFold(getenv("PROPHISH_SECURE_COOKIES", "false"), "true"),
 		TrustedProxies: parseCIDRs(getenv("PROPHISH_TRUSTED_PROXIES", "")),
 	}

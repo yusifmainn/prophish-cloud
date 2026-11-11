@@ -139,11 +139,11 @@ func (s *Store) DeleteCampaign(c ctx, id string) error {
 // a launched campaign's record stays faithful to what was actually sent. Returns
 // true only if a draft was updated. Target groups are regenerated separately via
 // DeleteResultsForCampaign + CreateResults.
-func (s *Store) UpdateCampaignConfig(c ctx, id, name, authID, templateID, pageID, profileID, publicBaseURL string) (bool, error) {
+func (s *Store) UpdateCampaignConfig(c ctx, id, name, authID, templateID, pageID, profileID, publicBaseURL string, tunnelManaged bool) (bool, error) {
 	tag, err := s.db.Exec(c,
-		`UPDATE campaigns SET name=$2, authorization_id=$3, template_id=$4, landing_page_id=$5, sending_profile_id=$6, public_base_url=$7
+		`UPDATE campaigns SET name=$2, authorization_id=$3, template_id=$4, landing_page_id=$5, sending_profile_id=$6, public_base_url=$7, tunnel_managed=$8
 		   WHERE id=$1 AND status='draft'`,
-		id, name, authID, templateID, pageID, profileID, publicBaseURL)
+		id, name, authID, templateID, pageID, profileID, publicBaseURL, tunnelManaged)
 	if err != nil {
 		return false, err
 	}

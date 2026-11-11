@@ -3,6 +3,8 @@ package engine
 import (
 	"strings"
 	"testing"
+
+	"prophish/internal/models"
 )
 
 func TestRenderTextMergesVars(t *testing.T) {
@@ -54,5 +56,24 @@ func TestAddrOnly(t *testing.T) {
 	}
 	if got := addrOnly("plain@example.com"); got != "plain@example.com" {
 		t.Errorf("got %q", got)
+	}
+}
+
+func TestResolveBaseURLFallbackChain(t *testing.T) {
+	host := func() string { return "http://203.0.113.9" }
+	l := NewLauncher(nil, nil, "https://global.example.com", host)
+	if got := l.resolveBaseURL(&models.Campaign{PublicBaseURL: "https://camp.example.com"}); got != "https://camp.example.com" {
+		t.Errorf("campaign override must win, got %q", got)
+	}
+	if got := l.resolveBaseURL(&models.Campaign{}); got != "https://global.example.com" {
+		t.Errorf("global default second, got %q", got)
+	}
+	l2 := NewLauncher(nil, nil, "", host)
+	if got := l2.resolveBaseURL(&models.Campaign{}); got != "http://203.0.113.9" {
+		t.Errorf("detected host URL third, got %q", got)
+	}
+	l3 := NewLauncher(nil, nil, "", func() string { return "" })
+	if got := l3.resolveBaseURL(&models.Campaign{}); got != "http://127.0.0.1:8080" {
+		t.Errorf("loopback last resort, got %q", got)
 	}
 }

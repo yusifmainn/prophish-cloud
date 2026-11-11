@@ -42,10 +42,22 @@ func init() {
 		// ---- Content and sending ----
 		"camp.sect_content": {"az": "Məzmun və göndərmə", "en": "Content and sending", "ru": "Содержание и отправка"},
 
-		// ---- Public URL override (tracking links) ----
+		// ---- Listener location (tracking links) ----
 		"camp.sect_delivery":    {"az": "İzləmə linkləri", "en": "Tracking links", "ru": "Отслеживаемые ссылки"},
-		"camp.public_url_label": {"az": "Public URL (Cloudflare tunnel)", "en": "Public URL (Cloudflare tunnel)", "ru": "Публичный URL (Cloudflare-туннель)"},
-		"camp.public_url_hint":  {"az": "İzləmə linkləri bu ünvanla qurulur. Boş buraxsanız defolt (%s) istifadə olunur. Tunel yenidən başladılanda URL-i burada yeniləyin.", "en": "Tracking links are built with this URL. Leave empty to use the default (%s). If the tunnel restarts, update the URL here.", "ru": "Отслеживаемые ссылки строятся на этом URL. Оставьте пустым для значения по умолчанию (%s). Если туннель перезапустится, обновите URL здесь."},
+		"camp.listener_q":       {"az": "Listener harada olsun?", "en": "Where should the listener run?", "ru": "Где разместить слушатель?"},
+		"camp.listener_host":    {"az": "Hazırki hostda", "en": "On this host", "ru": "На текущем хосте"},
+		"camp.listener_host_hint": {"az": "Public IP olduqda tövsiyə olunur — linklər birbaşa bu serverə işarə edir", "en": "Recommended when the host has a public IP — links point directly to this server", "ru": "Рекомендуется при наличии публичного IP — ссылки указывают прямо на этот сервер"},
+		"camp.listener_cf":      {"az": "Cloudflare gateway vasitəsilə", "en": "Via Cloudflare gateway", "ru": "Через шлюз Cloudflare"},
+		"camp.listener_cf_hint": {"az": "Private IP olduqda tövsiyə olunur. Hər kampaniya üçün YENİ tunnel avtomatik açılır. Qeyd: tunnel yenidən başladılanda URL dəyişir — köhnə linklər ölür.", "en": "Recommended when behind a private IP. A NEW tunnel is opened automatically per campaign. Note: when the tunnel restarts, the URL changes — old links die.", "ru": "Рекомендуется при частном IP. Для каждой кампании автоматически открывается НОВЫЙ туннель. Внимание: при перезапуске URL меняется — старые ссылки перестают работать."},
+		"camp.listener_custom":  {"az": "Xüsusi URL", "en": "Custom URL", "ru": "Свой URL"},
+		"camp.listener_custom_hint": {"az": "Öz domemniz/reverse proxy-niz varsa — təkmil istifadəçilər üçün", "en": "If you have your own domain/reverse proxy — for advanced users", "ru": "Если у вас свой домен/reverse proxy — для продвинутых"},
+		"camp.recommended":      {"az": "Tövsiyə olunur", "en": "Recommended", "ru": "Рекомендуется"},
+		"camp.listener_label":   {"az": "Listener", "en": "Listener", "ru": "Слушатель"},
+		"camp.mode_host":        {"az": "Hazırki host", "en": "This host", "ru": "Текущий хост"},
+		"camp.mode_cf":          {"az": "Cloudflare gateway", "en": "Cloudflare gateway", "ru": "Шлюз Cloudflare"},
+		"camp.mode_custom":      {"az": "Xüsusi URL", "en": "Custom URL", "ru": "Свой URL"},
+		"camp.public_url_label": {"az": "Public URL", "en": "Public URL", "ru": "Публичный URL"},
+		"camp.public_url_hint":  {"az": "İzləmə linkləri bu ünvanla qurulur. http:// və ya https:// ilə başlamalıdır.", "en": "Tracking links are built with this URL. It must start with http:// or https://.", "ru": "Отслеживаемые ссылки строятся на этом URL. Должен начинаться с http:// или https://."},
 
 		// ---- Per-campaign quick tunnel ----
 		"camp.tunnel_label":        {"az": "Hər kampaniya üçün yeni gateway (tunnel) yarat", "en": "Create a new gateway (tunnel) per campaign", "ru": "Создавать новый шлюз (туннель) для каждой кампании"},

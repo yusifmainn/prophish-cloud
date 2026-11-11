@@ -10,6 +10,7 @@ import (
 
 	"prophish/internal/config"
 	"prophish/internal/engine"
+	"prophish/internal/netutil"
 	"prophish/internal/store"
 	"prophish/internal/tunnelmgr"
 )
@@ -21,16 +22,17 @@ type Server struct {
 	sessions  *scs.SessionManager
 	launcher  *engine.Launcher
 	tunnels   *tunnelmgr.Manager
+	detector  *netutil.Detector // public-reachability check (listener recommendation)
 	templates *template.Template
 	previews  *previewCache
 }
 
-func NewServer(cfg *config.Config, st *store.Store, sessions *scs.SessionManager, launcher *engine.Launcher, tunnels *tunnelmgr.Manager) (*Server, error) {
+func NewServer(cfg *config.Config, st *store.Store, sessions *scs.SessionManager, launcher *engine.Launcher, tunnels *tunnelmgr.Manager, detector *netutil.Detector) (*Server, error) {
 	tmpl, err := parseTemplates()
 	if err != nil {
 		return nil, err
 	}
-	return &Server{cfg: cfg, store: st, sessions: sessions, launcher: launcher, tunnels: tunnels, templates: tmpl, previews: &previewCache{}}, nil
+	return &Server{cfg: cfg, store: st, sessions: sessions, launcher: launcher, tunnels: tunnels, detector: detector, templates: tmpl, previews: &previewCache{}}, nil
 }
 
 // AdminRouter builds the authenticated admin panel router.

@@ -209,6 +209,17 @@
       if (cb2) cb2.addEventListener('change', apply);
     }
     apply();
+    // Listener-location radios: the custom-URL field is shown only for "custom".
+    var customBox = form.querySelector('[data-custom-url]');
+    var radios = form.querySelectorAll('input[name="listener_mode"]');
+    function applyMode() {
+      if (!customBox) return;
+      var m = '';
+      for (var i = 0; i < radios.length; i++) if (radios[i].checked) m = radios[i].value;
+      customBox.style.display = m === 'custom' ? '' : 'none';
+    }
+    for (var r = 0; r < radios.length; r++) radios[r].addEventListener('change', applyMode);
+    applyMode();
   }
 
   // Live progress for a running campaign: poll the page itself (same origin) and

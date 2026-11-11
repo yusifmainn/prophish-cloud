@@ -19,6 +19,7 @@ import (
 	"prophish/internal/database"
 	"prophish/internal/engine"
 	"prophish/internal/imappoll"
+	"prophish/internal/netutil"
 	"prophish/internal/publicsrv"
 	"prophish/internal/server"
 	"prophish/internal/store"
@@ -68,7 +69,13 @@ func main() {
 	sessions.Cookie.SameSite = http.SameSiteLaxMode
 	sessions.Cookie.Secure = cfg.SecureCookies
 
-	launcher := engine.NewLauncher(st, cfg.EncryptionKey, cfg.PublicBaseURL)
+	// Public-reachability detection (listener-location recommendation + engine
+	// link fallback). Prewarm asynchronously so the first campaign-form load
+	// hits the cache instead of blocking on the lookup.
+	detector := netutil.NewDetector()
+	go func() { detector.Detect(context.Background()) }()
+
+	launcher := engine.NewLauncher(st, cfg.EncryptionKey, cfg.PublicBaseURL, func() string { return detector.Detect(context.Background()).BaseURL() })
 
 	// Per-campaign quick tunnels: restart tunnels of managed (non-archived)
 	// campaigns; each restart yields a fresh trycloudflare URL (saved to the DB
@@ -93,7 +100,7 @@ func main() {
 	go launcher.RunScheduler(bgCtx)
 	go imappoll.New(st, cfg.EncryptionKey).Run(bgCtx)
 
-	srv, err := server.NewServer(cfg, st, sessions, launcher, tunnels)
+	srv, err := server.NewServer(cfg, st, sessions, launcher, tunnels, detector)
 	if err != nil {
 		log.Fatalf("server: %v", err)
 	}

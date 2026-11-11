@@ -1,17 +1,19 @@
 # Local override: publish the public server on host port 80 and the admin
 # panel on 8444 (8080/8443 are taken by other containers on this machine).
+# NOTE: PROPHISH_PUBLIC_BASE_URL is intentionally NOT pinned here anymore —
+# the app auto-detects this host's public IP and recommends the listener
+# location per campaign (host listener vs fresh per-campaign Cloudflare tunnel).
 services:
   app:
-    environment:
-      PROPHISH_PUBLIC_BASE_URL: https://cup-portal-francis-diy.trycloudflare.com
     ports: !override
       - "0.0.0.0:8444:8443"
       - "0.0.0.0:80:8080"
 
-  # Cloudflare quick tunnel exposing the public server (prophish:8080) at a
-  # https://<random>.trycloudflare.com URL. NOTE: the URL changes every time
-  # the tunnel restarts — update it in the campaign's "Public URL" field.
-  # (The host cloudflared process on localhost:58627 is untouched/separate.)
+  # Optional shared Cloudflare quick tunnel exposing the public server
+  # (prophish:8080) at a https://<random>.trycloudflare.com URL. Kept running
+  # for convenience, but campaigns no longer hardcode its URL — the
+  # "Cloudflare gateway" listener option spawns a FRESH tunnel per campaign
+  # (tunnelmgr), and the "host" option uses this machine's public IP directly.
   tunnel:
     image: cloudflare/cloudflared:latest
     container_name: prophish-tunnel
