@@ -2,6 +2,7 @@
 {{template "nav" .}}
 <main>
   <div class="pghead"><div class="tt"><h1>{{t "tpl.title"}}</h1><p class="sub">{{t "tpl.subtitle"}}</p></div></div>
+  <div class="note">{{t "lib.goto"}}</div>
   {{if eq .Import "ok"}}<div class="note ok">{{t "tpl.import_ok"}}</div>{{end}}
   {{if eq .Import "err"}}<div class="err">{{t "tpl.import_err"}}</div>{{end}}
   {{if eq .Err "inuse"}}<div class="err">{{t "tpl.err_inuse"}}</div>{{end}}

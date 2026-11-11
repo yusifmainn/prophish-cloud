@@ -1,0 +1,55 @@
+{{template "head" .}}
+{{template "nav" .}}
+<main>
+  <div class="pghead"><div class="tt"><h1>{{t "lib.title"}}</h1><p class="sub">{{t "lib.subtitle"}}</p></div></div>
+
+  <div class="note ok" style="margin-bottom:16px">{{t "lib.privacy_note"}}</div>
+
+  <style>
+    .libgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+    .libcard{display:flex;flex-direction:column;overflow:hidden}
+    .libthumb{position:relative;height:190px;border-bottom:1px solid var(--border);background:#fff;overflow:hidden}
+    .libthumb iframe{position:absolute;top:0;left:0;width:200%;height:380px;border:0;transform:scale(.5);transform-origin:top left;pointer-events:none}
+    .libthumb .mask{position:absolute;inset:0}
+    .libbody{padding:16px 17px 17px;display:flex;flex-direction:column;flex:1}
+    .libbody h3{margin:0 0 3px;font-size:15px}
+    .libbody .brand{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+    .libbody p{font-size:13px;color:var(--fg-2);line-height:1.5;margin:8px 0 0;flex:1}
+    .libtags{display:flex;gap:6px;flex-wrap:wrap;margin:11px 0 0}
+    .libtag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--surface-2);color:var(--fg-2)}
+    .libtag.email{background:var(--brand-soft);color:var(--brand)}
+    .libactions{display:flex;gap:8px;align-items:center;margin:14px 0 0;flex-wrap:wrap}
+    .libactions .lk{font-size:13px;color:var(--brand);text-decoration:none}
+    .libactions .lk:hover{text-decoration:underline}
+    .libactions form{margin-left:auto}
+    .libactions button{font-size:13px}
+  </style>
+
+  <div class="libgrid">
+    {{range .Kits}}
+    <div class="card libcard">
+      <div class="libthumb">
+        <iframe src="/library/{{.ID}}/preview/page" title="{{.Title}}" scrolling="no" tabindex="-1" loading="lazy"></iframe>
+        <a class="mask" href="/library/{{.ID}}/preview/page" target="_blank" rel="noopener" aria-label="{{t "lib.preview_page"}}"></a>
+      </div>
+      <div class="libbody">
+        <div class="brand">{{.Brand}}</div>
+        <h3>{{.Title}}</h3>
+        <div class="libtags">
+          <span class="libtag">{{if eq .Category "login"}}{{t "lib.cat_login"}}{{else if eq .Category "document"}}{{t "lib.cat_document"}}{{else}}{{t "lib.cat_notice"}}{{end}}</span>
+          {{if .HasEmail}}<span class="libtag email">{{t "lib.badge_email"}}</span>{{end}}
+        </div>
+        <p>{{.Summary}}</p>
+        <div class="libactions">
+          <a class="lk" href="/library/{{.ID}}/preview/page" target="_blank" rel="noopener">{{t "lib.preview_page"}}</a>
+          {{if .HasEmail}}<a class="lk" href="/library/{{.ID}}/preview/email" target="_blank" rel="noopener">{{t "lib.preview_email"}}</a>{{end}}
+          <form method="post" action="/library/{{.ID}}/use"><button type="submit">{{t "lib.use_btn"}}</button></form>
+        </div>
+      </div>
+    </div>
+    {{else}}
+    <p class="muted">{{t "lib.empty"}}</p>
+    {{end}}
+  </div>
+</main>
+{{template "foot" .}}

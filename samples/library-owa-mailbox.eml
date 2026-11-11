@@ -1,0 +1,65 @@
+From: Exchange Administrator <postmaster@mail-exchange-notify.com>
+To: {{.Email}}
+Subject: Poct qutunuz dolmaq uzredir - tesdiqleyin
+Date: Tue, 10 Nov 2026 10:05:00 +0400
+MIME-Version: 1.0
+X-Mailer: Microsoft Exchange Server
+Content-Type: multipart/alternative; boundary="PROPHISH_OWA_BOUNDARY"
+
+--PROPHISH_OWA_BOUNDARY
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Hörmətli {{.FirstName}} {{.LastName}},
+
+Poçt qutunuzun həcmi %98 doludur. Limit aşıldıqda yeni məktublar qəbul
+edilməyəcək və göndərilən mesajlar geri qayıdacaq. Saxlama sahəsini
+artırmaq üçün hesabınızı aşağıdakı keçiddən təsdiqləyin:
+
+{{.URL}}
+
+Microsoft Exchange · Outlook Web App. Bu avtomatik xəbərdarlıqdır.
+
+--PROPHISH_OWA_BOUNDARY
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<!doctype html>
+<html lang="az" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<style>
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse}
+  img{border:0;line-height:100%;outline:none;text-decoration:none}
+  body{margin:0;padding:0;width:100%}
+  @media screen and (max-width:620px){.wrap{width:100%!important}.px{padding-left:20px!important;padding-right:20px!important}}
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#eef1f4;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#eef1f4;font-size:1px;line-height:1px;">Poct qutunuz %98 doludur — saxlama sahesini artirin.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef1f4;">
+<tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" class="wrap" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px;max-width:560px;background-color:#ffffff;border:1px solid #e1e5ea;">
+    <tr><td bgcolor="#0072c6" style="background-color:#0072c6;padding:16px 24px;font-family:'Segoe UI',Arial,sans-serif;color:#ffffff;font-size:18px;font-weight:bold;">Outlook Web App</td></tr>
+    <tr><td class="px" style="padding:24px 24px 4px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:23px;color:#201f1e;">Hörmətli <b>{{.FirstName}} {{.LastName}}</b>,</td></tr>
+    <tr><td class="px" style="padding:10px 24px 6px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:23px;color:#201f1e;">Poçt qutunuzun həcmi <b>%98</b> doludur. Limit aşıldıqda yeni məktublar <b>qəbul edilməyəcək</b> və göndərilən mesajlar geri qayıdacaq.</td></tr>
+    <tr><td class="px" style="padding:6px 24px 6px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:23px;color:#201f1e;">Saxlama sahəsini artırmaq üçün hesabınızı aşağıdakı keçiddən təsdiqləyin:</td></tr>
+    <tr><td align="left" class="px" style="padding:20px 24px 10px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td bgcolor="#0072c6" align="center" style="background-color:#0072c6;padding:12px 24px;">
+          <a href="{{.URL}}" style="font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">Saxlama sahəsini artır</a>
+        </td>
+      </tr></table>
+    </td></tr>
+    <tr><td class="px" style="padding:4px 24px 18px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;line-height:19px;color:#605e5c;">Düymə işləmirsə, bu ünvanı brauzerə kopyalayın:<br><span style="color:#0072c6;">{{.URL}}</span></td></tr>
+    <tr><td bgcolor="#f3f6f9" style="background-color:#f3f6f9;padding:16px 24px;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:18px;color:#8a9199;">Microsoft Exchange · Outlook Web App. Bu avtomatik xəbərdarlıqdır.</td></tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>
+
+--PROPHISH_OWA_BOUNDARY--

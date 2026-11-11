@@ -29,6 +29,7 @@ Müqavilə bağladığınız müştəri təşkilatlarda, yazılı icazə əsası
 | **Xüsusi email başlıqları** (şablon + profil) | ✅ |
 | Landing səhifələri | ✅ |
 | **Sayt klonlama (URL-dən import)** | ✅ |
+| **Hazır şablon kitabxanası** (real brend login səhifələri + Outlook email-ləri) | ✅ (Gophish-də hazır gəlmir) |
 | SMTP profilləri (şifrəli parol) | ✅ |
 | **Test email göndər** | ✅ |
 | Kampaniya yaratma + işə salma (təkrar işə salma qorunur) | ✅ |
@@ -44,6 +45,22 @@ Müqavilə bağladığınız müştəri təşkilatlarda, yazılı icazə əsası
 | Parol tutma | ❌ **qəsdən yoxdur** (privacy-by-design) |
 
 > **Qeyd:** IMAP reported-email monitoru kod səviyyəsində hazırdır, amma real IMAP poçt qutusu ilə canlı sınaqdan keçirilməlidir. Digər bütün funksiyalar canlı test olundu.
+
+### Şablon kitabxanası (hazır dəstlər)
+
+*Səhifələr → Kitabxana* bölməsində real brend giriş səhifələrinə **birebir bənzəyən** hazır dəstlər var — hər dəstin yanında uyğun email lure-u da gəlir. Bir kliklə («İstifadə et») redaktə oluna bilən açılış səhifəsinə və email şablonuna çevrilir (heç bir AI generasiyası deyil, sabit, versiyalanmış HTML).
+
+| Dəst | Növ |
+|---|---|
+| Microsoft 365 girişi (Azure AD / Entra, iki-mərhələli) | Giriş səhifəsi |
+| Outlook Web App (Exchange) | Giriş səhifəsi |
+| Google Workspace / Gmail | Giriş səhifəsi |
+| OneDrive / SharePoint paylaşılan sənəd (adla şəxsiləşdirilir) | Sənəd paylaşımı |
+| IT parol müddəti bitmə portalı (brend-müstəqil) | Bildiriş portalı |
+
+**Privacy-by-design saxlanılır:** bütün səhifələr formaları `{{.SubmitURL}}`-ə göndərir — daxil edilən dəyərlər oxunmur/saxlanmır, yalnız göndərmə faktı qeyd olunur.
+
+**Outlook uyğunluğu:** email şablonları Outlook-un (Word render mühərriki) tələblərinə görə qurulub — cədvəl-əsaslı struktur, inline stillər, `bgcolor` düymələr (VML/şərti şərhlər yox, çünki `html/template` HTML şərhlərini silir), preheader və «linki brauzerə kopyala» ehtiyat sətri. Eyni lure-lar `samples/library-*.eml` kimi də gəlir (multipart/alternative, UTF-8) — *Şablonlar → Email import* vasitəsilə idxal edilə və ya birbaşa Outlook-da açıla bilər.
 
 ### REST API nümunəsi
 ```bash

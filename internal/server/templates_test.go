@@ -43,6 +43,10 @@ func TestTemplatesRender(t *testing.T) {
 		},
 		"templates.html": map[string]any{"Templates": []models.EmailTemplate{{Name: "T", Subject: "S", CreatedAt: now}}},
 		"pages.html":     map[string]any{"Pages": []models.LandingPage{{Name: "P", RedirectURL: "u", CreatedAt: now}}},
+		"library.html": map[string]any{"Kits": []libKitVM{
+			{ID: "m365", Brand: "Microsoft 365", Category: "login", Title: "Microsoft 365 girişi", Summary: "desc", HasEmail: true},
+			{ID: "password", Brand: "IT Password Portal", Category: "notice", Title: "Parol portalı", Summary: "desc", HasEmail: true},
+		}},
 		"profiles.html":  map[string]any{"Profiles": []models.SendingProfile{{Name: "SMTP", SMTPHost: "h", SMTPPort: 587, FromAddress: "f"}}},
 		"campaigns.html": map[string]any{
 			"Campaigns":      []store.CampaignRow{{ID: "c1", Name: "C", ClientName: "ACME", Status: "draft", CreatedAt: now}},
