@@ -1,8 +1,8 @@
 {{template "head" .}}
 {{template "nav" .}}
 <main>
-  <div class="pghead">
-    <div class="tt">
+  <div class="pghead" style="padding-right:0">
+    <div class="tt" style="flex-basis:100%">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h1 style="margin:0">{{.C.Name}}</h1>{{template "statuspill" .C.Status}}</div>
       <p class="sub"><a href="/campaigns">← {{t "nav.campaigns"}}</a> · {{t "common.client"}}: <b>{{.C.ClientName}}</b> · {{t "campd.authorization"}}: {{.C.AuthScope}} ({{t "campd.expiry"}}: {{.C.AuthValidTo.Format "2006-01-02"}}){{if or (eq .C.Status "draft") (eq .C.Status "scheduled")}} · {{t "campd.report_after_launch"}}{{end}}</p>
     </div>
