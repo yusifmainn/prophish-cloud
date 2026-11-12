@@ -106,6 +106,12 @@ type Campaign struct {
 	CompletedAt      *time.Time
 	Archived         bool
 	CreatedAt        time.Time
+	// PublicBaseURL overrides the global public base URL for this campaign's
+	// tracking links when non-empty (empty = use the global default).
+	PublicBaseURL string
+	// TunnelManaged marks campaigns whose public URL comes from an app-managed
+	// per-campaign cloudflared quick tunnel (restarted on boot/exit).
+	TunnelManaged bool
 }
 
 type CampaignResult struct {

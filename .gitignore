@@ -1,2 +1,10 @@
+# Local environment / secrets — never commit real credentials.
+# Use .env.example as the template; keep the real .env only on each host.
+.env
+
+# Machine-specific docker compose overrides (ports, dev-only services).
+# docker compose auto-applies this file; keep it per-host, not in the repo.
+docker-compose.override.yml
+
 # Demo/documentation screenshots — not needed at runtime
 screenshots/

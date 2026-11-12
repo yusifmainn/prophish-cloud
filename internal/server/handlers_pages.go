@@ -98,7 +98,15 @@ func (s *Server) handlePagePreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Content-Security-Policy", "default-src 'self'; img-src * data:; style-src * 'unsafe-inline'; font-src * data:; script-src 'none'")
+	// Pages authored in the visual builder can carry an inline <script> for
+	// operator-written button actions; the builder marker gates a relaxed
+	// script-src for those pages only. Cloned/pasted pages (which may contain
+	// third-party markup) keep script-src 'none'.
+	csp := "default-src 'self'; img-src * data:; style-src * 'unsafe-inline'; font-src * data:; media-src * data:; script-src 'none'"
+	if strings.Contains(page.HTMLBody, "prophish-builder:") {
+		csp = "default-src 'self'; img-src * data:; style-src * 'unsafe-inline'; font-src * data:; media-src * data:; script-src 'unsafe-inline'"
+	}
+	w.Header().Set("Content-Security-Policy", csp)
 	w.Header().Set("X-Frame-Options", "SAMEORIGIN")
 
 	sample := previewTarget{FirstName: "Aysel", LastName: "Məmmədova", Position: "Mühasib", SubmitURL: "#"}
