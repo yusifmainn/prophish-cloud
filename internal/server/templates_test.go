@@ -21,8 +21,8 @@ func TestTemplatesRender(t *testing.T) {
 	now := time.Now()
 	cid := "client-1"
 	cases := map[string]any{
-		"setup.html":     map[string]any{"Error": "x"},
-		"login.html":     map[string]any{"Error": "x"},
+		"setup.html": map[string]any{"Error": "x"},
+		"login.html": map[string]any{"Error": "x"},
 		"dashboard.html": map[string]any{
 			"Stats":  store.DashboardStats{ActiveCampaigns: 1, Campaigns: 4, Tested: 120, ClickRate: 38, ReportRate: 29},
 			"Recent": []store.CampaignRow{{ID: "c1", Name: "C", ClientName: "ACME", Status: "completed", CreatedAt: now}},
@@ -47,7 +47,11 @@ func TestTemplatesRender(t *testing.T) {
 			{ID: "m365", Brand: "Microsoft 365", Category: "login", Title: "Microsoft 365 girişi", Summary: "desc", HasEmail: true},
 			{ID: "password", Brand: "IT Password Portal", Category: "notice", Title: "Parol portalı", Summary: "desc", HasEmail: true},
 		}},
-		"profiles.html":  map[string]any{"Profiles": []models.SendingProfile{{Name: "SMTP", SMTPHost: "h", SMTPPort: 587, FromAddress: "f"}}},
+		"page_builder.html": map[string]any{"Edit": true,
+			"P":         &models.LandingPage{ID: "p1", Name: "P", HTMLBody: "<html></html>", RedirectURL: "u"},
+			"JSStrings": map[string]string{"builder.js.page": "Səhifə"}},
+		"preview_shell.html": map[string]any{"Raw": "/x/raw", "Back": "/pages"},
+		"profiles.html":      map[string]any{"Profiles": []models.SendingProfile{{Name: "SMTP", SMTPHost: "h", SMTPPort: 587, FromAddress: "f"}}},
 		"campaigns.html": map[string]any{
 			"Campaigns":      []store.CampaignRow{{ID: "c1", Name: "C", ClientName: "ACME", Status: "draft", CreatedAt: now}},
 			"Clients":        []models.Client{{ID: cid, Name: "ACME"}},
@@ -60,6 +64,7 @@ func TestTemplatesRender(t *testing.T) {
 		"campaign_detail.html": map[string]any{
 			"C": &store.CampaignView{ID: "c1", Name: "C", Status: "draft", ClientName: "ACME",
 				TemplateName: "T", PageName: "P", ProfileName: "SMTP", AuthScope: "*.acme.az", AuthValidTo: now},
+			"Camp":  &models.Campaign{ID: "c1", Name: "C", TunnelManaged: true, PublicBaseURL: "https://x.trycloudflare.com"},
 			"Stats": models.ResultStats{Total: 10, Sent: 10, Opened: 6, Clicked: 3, Submitted: 1},
 			"Pct":   Percentages{Sent: 100, Opened: 60, Clicked: 30, Submitted: 10},
 		},

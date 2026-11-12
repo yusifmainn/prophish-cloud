@@ -19,9 +19,11 @@ import (
 	"prophish/internal/database"
 	"prophish/internal/engine"
 	"prophish/internal/imappoll"
+	"prophish/internal/netutil"
 	"prophish/internal/publicsrv"
 	"prophish/internal/server"
 	"prophish/internal/store"
+	"prophish/internal/tunnelmgr"
 )
 
 func main() {
@@ -67,7 +69,30 @@ func main() {
 	sessions.Cookie.SameSite = http.SameSiteLaxMode
 	sessions.Cookie.Secure = cfg.SecureCookies
 
-	launcher := engine.NewLauncher(st, cfg.EncryptionKey, cfg.PublicBaseURL)
+	// Public-reachability detection (listener-location recommendation + engine
+	// link fallback). Prewarm asynchronously so the first campaign-form load
+	// hits the cache instead of blocking on the lookup.
+	detector := netutil.NewDetector()
+	go func() { detector.Detect(context.Background()) }()
+
+	launcher := engine.NewLauncher(st, cfg.EncryptionKey, cfg.PublicBaseURL, func() string { return detector.Detect(context.Background()).BaseURL() })
+
+	// Per-campaign quick tunnels: restart tunnels of managed (non-archived)
+	// campaigns; each restart yields a fresh trycloudflare URL (saved to the DB
+	// by the manager when cloudflared prints it).
+	tunnels := tunnelmgr.New(st)
+	if ids, err := st.ListTunnelManagedCampaigns(ctx); err != nil {
+		log.Printf("list tunnel-managed campaigns: %v", err)
+	} else {
+		for _, id := range ids {
+			if err := tunnels.Start(id); err != nil {
+				log.Printf("restart tunnel for campaign %s: %v", id, err)
+			}
+		}
+		if len(ids) > 0 {
+			log.Printf("restarted %d campaign tunnel(s)", len(ids))
+		}
+	}
 
 	// Background workers: scheduled-campaign launcher and the IMAP reported-email monitor.
 	bgCtx, bgCancel := context.WithCancel(context.Background())
@@ -75,7 +100,7 @@ func main() {
 	go launcher.RunScheduler(bgCtx)
 	go imappoll.New(st, cfg.EncryptionKey).Run(bgCtx)
 
-	srv, err := server.NewServer(cfg, st, sessions, launcher)
+	srv, err := server.NewServer(cfg, st, sessions, launcher, tunnels, detector)
 	if err != nil {
 		log.Fatalf("server: %v", err)
 	}
@@ -117,6 +142,7 @@ func main() {
 	<-stop
 
 	log.Println("shutting down...")
+	tunnels.StopAll()
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_ = adminServer.Shutdown(shutdownCtx)

@@ -13,6 +13,28 @@ import (
 	"prophish/internal/models"
 )
 
+// listenerData computes the listener-location recommendation for the campaign
+// form: whether hosting the listener directly on this host is viable (cached
+// detection, ≤3s on a cold cache) and the host's public URL. The URL is always
+// derived live — never hardcoded: detected public IP → configured global
+// default → the request's own Host header.
+func (s *Server) listenerData(r *http.Request) (recommend bool, hostURL string) {
+	if s.detector != nil {
+		res := s.detector.Detect(r.Context())
+		recommend = res.Viable
+		if res.PublicIP != "" && res.Viable {
+			hostURL = "http://" + res.PublicIP
+		}
+	}
+	if hostURL == "" {
+		hostURL = s.cfg.PublicBaseURL
+	}
+	if hostURL == "" {
+		hostURL = "http://" + r.Host
+	}
+	return recommend, hostURL
+}
+
 // campaignPageData gathers everything the campaigns page (list + create form)
 // needs. Sel holds the currently-submitted selections so the form can be
 // re-rendered with the operator's choices intact after a validation error.
@@ -24,11 +46,52 @@ func (s *Server) campaignPageData(r *http.Request) map[string]any {
 	tmpls, _ := s.store.ListTemplates(r.Context())
 	pages, _ := s.store.ListLandingPages(r.Context())
 	profiles, _ := s.store.ListSendingProfiles(r.Context())
+	recommend, hostURL := s.listenerData(r)
+	mode := "cloudflare"
+	if recommend {
+		mode = "host"
+	}
 	return map[string]any{
 		"Campaigns": camps, "Clients": clients, "Authorizations": auths,
 		"Groups": groups, "Templates": tmpls, "Pages": pages, "Profiles": profiles,
-		"Sel": map[string]any{"Name": "", "ClientID": "", "AuthID": "", "TemplateID": "", "PageID": "", "ProfileID": "", "GroupIDs": map[string]bool{}},
+		"GlobalPublicURL": s.cfg.PublicBaseURL,
+		"RecommendHost":   recommend,
+		"HostPublicURL":   hostURL,
+		"ListenerMode":    mode,
+		"Sel":             map[string]any{"Name": "", "ClientID": "", "AuthID": "", "TemplateID": "", "PageID": "", "ProfileID": "", "GroupIDs": map[string]bool{}, "PublicBaseURL": ""},
 	}
+}
+
+// resolveListenerMode turns the form's listener-location choice into the
+// campaign's public_base_url + tunnel flag: host → the derived host URL pinned,
+// cloudflare → a fresh managed quick tunnel, custom → the sanitized manual URL.
+func (s *Server) resolveListenerMode(r *http.Request) (publicURL string, wantTunnel bool, mode string, ok bool) {
+	mode = r.FormValue("listener_mode")
+	switch mode {
+	case "host":
+		_, hostURL := s.listenerData(r)
+		return hostURL, false, mode, true
+	case "custom":
+		u, uok := sanitizePublicBaseURL(r.FormValue("public_base_url"))
+		return u, false, mode, uok
+	default:
+		mode = "cloudflare"
+		return "", true, mode, true
+	}
+}
+
+// sanitizePublicBaseURL validates the per-campaign public URL override: blank
+// is fine (falls back to the global default), otherwise it must be an
+// http(s):// URL; the trailing slash is stripped so link builders can append.
+func sanitizePublicBaseURL(v string) (string, bool) {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return "", true
+	}
+	if !strings.HasPrefix(v, "http://") && !strings.HasPrefix(v, "https://") {
+		return "", false
+	}
+	return strings.TrimRight(v, "/"), true
 }
 
 func (s *Server) handleCampaignsList(w http.ResponseWriter, r *http.Request) {
@@ -47,22 +110,28 @@ func (s *Server) handleCampaignCreate(w http.ResponseWriter, r *http.Request) {
 	pageID := r.FormValue("landing_page_id")
 	profileID := r.FormValue("sending_profile_id")
 	groupIDs := r.Form["group_ids"]
+	publicURL, wantTunnel, listenerMode, urlOK := s.resolveListenerMode(r)
 
 	// On any validation failure, re-render the page with a clear Azerbaijani
 	// message AND the operator's selections preserved (instead of a blank 400).
 	fail := func(msg string) {
 		data := s.campaignPageData(r)
 		data["Error"] = msg
+		data["ListenerMode"] = listenerMode
 		data["Sel"] = map[string]any{
 			"Name": name, "ClientID": clientID, "AuthID": authID,
 			"TemplateID": templateID, "PageID": pageID, "ProfileID": profileID,
-			"GroupIDs": strset(groupIDs),
+			"GroupIDs": strset(groupIDs), "PublicBaseURL": r.FormValue("public_base_url"),
 		}
 		s.render(w, r, http.StatusBadRequest, "campaigns.html", data)
 	}
 
 	if name == "" || clientID == "" || authID == "" || templateID == "" || pageID == "" || profileID == "" || len(groupIDs) == 0 {
 		fail("Bütün sahələri doldurun və ən azı bir hədəf qrupu seçin.")
+		return
+	}
+	if !urlOK {
+		fail("Public URL http:// və ya https:// ilə başlamalıdır.")
 		return
 	}
 	// Validate the authorization belongs to the chosen client.
@@ -92,7 +161,7 @@ func (s *Server) handleCampaignCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	campaignID, err := s.store.CreateCampaign(r.Context(), clientID, authID, name, templateID, pageID, profileID, s.currentUserID(r))
+	campaignID, err := s.store.CreateCampaign(r.Context(), clientID, authID, name, templateID, pageID, profileID, s.currentUserID(r), publicURL, wantTunnel)
 	if err != nil {
 		http.Error(w, "db error", http.StatusInternalServerError)
 		return
@@ -107,6 +176,16 @@ func (s *Server) handleCampaignCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.audit(r, "campaign.create", "campaign", campaignID, name)
+	if wantTunnel && s.tunnels != nil {
+		if err := s.tunnels.Start(campaignID); err != nil {
+			s.flashErr(r, "Kampaniya yaradıldı, amma tunnel başladıla bilmədi: "+err.Error())
+			http.Redirect(w, r, "/campaigns/"+campaignID, http.StatusSeeOther)
+			return
+		}
+		s.flashOK(r, "Kampaniya yaradıldı — tunnel başladılır, URL bir neçə saniyəyə hazır olur.")
+		http.Redirect(w, r, "/campaigns/"+campaignID, http.StatusSeeOther)
+		return
+	}
 	s.flashOK(r, "Kampaniya yaradıldı (qaralama). İndi onu işə sala və ya planlaşdıra bilərsiniz.")
 	http.Redirect(w, r, "/campaigns/"+campaignID, http.StatusSeeOther)
 }
@@ -135,10 +214,23 @@ func (s *Server) handleCampaignEditForm(w http.ResponseWriter, r *http.Request) 
 	gids, _ := s.store.CampaignGroupIDs(r.Context(), id)
 	data := s.campaignPageData(r)
 	data["EditID"] = id
+	data["TunnelManaged"] = camp.TunnelManaged
+	// Hazırki rejim: idarə olunan tunnel → cloudflare; törədilmiş host URL-i ilə
+	// üst-üstə düşən override → host; qalan boş olmayan override → xüsusi.
+	mode := data["ListenerMode"].(string)
+	if camp.TunnelManaged {
+		mode = "cloudflare"
+	} else if camp.PublicBaseURL != "" {
+		mode = "custom"
+		if camp.PublicBaseURL == data["HostPublicURL"] {
+			mode = "host"
+		}
+	}
+	data["ListenerMode"] = mode
 	data["Sel"] = map[string]any{
 		"Name": camp.Name, "ClientID": camp.ClientID, "AuthID": camp.AuthorizationID,
 		"TemplateID": camp.TemplateID, "PageID": camp.LandingPageID, "ProfileID": camp.SendingProfileID,
-		"GroupIDs": strset(gids),
+		"GroupIDs": strset(gids), "PublicBaseURL": camp.PublicBaseURL,
 	}
 	s.render(w, r, http.StatusOK, "campaigns.html", data)
 }
@@ -165,21 +257,27 @@ func (s *Server) handleCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 	pageID := r.FormValue("landing_page_id")
 	profileID := r.FormValue("sending_profile_id")
 	groupIDs := r.Form["group_ids"]
+	publicURL, wantTunnel, listenerMode, urlOK := s.resolveListenerMode(r)
 
 	fail := func(msg string) {
 		data := s.campaignPageData(r)
 		data["Error"] = msg
 		data["EditID"] = id
+		data["ListenerMode"] = listenerMode
 		data["Sel"] = map[string]any{
 			"Name": name, "ClientID": clientID, "AuthID": authID,
 			"TemplateID": templateID, "PageID": pageID, "ProfileID": profileID,
-			"GroupIDs": strset(groupIDs),
+			"GroupIDs": strset(groupIDs), "PublicBaseURL": r.FormValue("public_base_url"),
 		}
 		s.render(w, r, http.StatusBadRequest, "campaigns.html", data)
 	}
 
 	if name == "" || clientID == "" || authID == "" || templateID == "" || pageID == "" || profileID == "" || len(groupIDs) == 0 {
 		fail("Bütün sahələri doldurun və ən azı bir hədəf qrupu seçin.")
+		return
+	}
+	if !urlOK {
+		fail("Public URL http:// və ya https:// ilə başlamalıdır.")
 		return
 	}
 	auths, _ := s.store.ListAuthorizations(r.Context(), clientID)
@@ -204,7 +302,7 @@ func (s *Server) handleCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := s.store.UpdateCampaignConfig(r.Context(), id, name, authID, templateID, pageID, profileID)
+	ok, err := s.store.UpdateCampaignConfig(r.Context(), id, name, authID, templateID, pageID, profileID, publicURL, wantTunnel)
 	if err != nil {
 		http.Error(w, "db error", http.StatusInternalServerError)
 		return
@@ -213,6 +311,19 @@ func (s *Server) handleCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 		s.flashErr(r, "Kampaniya artıq qaralama deyil — redaktə edilə bilmədi.")
 		http.Redirect(w, r, "/campaigns/"+id, http.StatusSeeOther)
 		return
+	}
+	// Listener keçidi: Cloudflare-ə keçid təzə tunnel açır; ondan çıxış
+	// idarə olunan tunneli dayandırır.
+	if s.tunnels != nil && wantTunnel != camp.TunnelManaged {
+		if wantTunnel {
+			if err := s.tunnels.Start(id); err != nil {
+				s.flashErr(r, "Kampaniya yeniləndi, amma tunnel başladıla bilmədi: "+err.Error())
+				http.Redirect(w, r, "/campaigns/"+id, http.StatusSeeOther)
+				return
+			}
+		} else {
+			s.tunnels.Stop(id)
+		}
 	}
 	// A draft has never sent, so clearing and recreating results is safe.
 	if err := s.store.DeleteResultsForCampaign(r.Context(), id); err != nil {
@@ -246,9 +357,11 @@ func (s *Server) handleCampaignDetail(w http.ResponseWriter, r *http.Request) {
 	groups, _ := s.store.CampaignStatsByGroup(r.Context(), id)
 	pct := percentages(stats)
 	riskLabel, riskClass := models.RiskLevel(pct.Submitted, pct.Clicked)
+	_, hostURL := s.listenerData(r)
 	s.render(w, r, http.StatusOK, "campaign_detail.html", map[string]any{
-		"C":         view,
-		"Camp":      camp,
+		"C":            view,
+		"Camp":         camp,
+		"HostPublicURL": hostURL,
 		"Stats":     stats,
 		"Pct":       pct,
 		"Events":    events,

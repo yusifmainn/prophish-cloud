@@ -14,6 +14,12 @@
     {{end}}
   </div>
 
+  {{if .Camp.TunnelManaged}}
+  <div class="note" style="margin-bottom:16px">⛓ <b>{{t "camp.listener_label"}}: {{t "camp.mode_cf"}}</b> — {{if .Camp.PublicBaseURL}}<b>{{t "camp.tunnel_live"}}:</b> <code>{{.Camp.PublicBaseURL}}</code> — {{else}}<b>{{t "camp.tunnel_starting"}}</b> — {{end}}{{t "camp.tunnel_note"}}</div>
+  {{else if .Camp.PublicBaseURL}}
+  <div class="note" style="margin-bottom:16px">🌐 <b>{{t "camp.listener_label"}}:</b> {{if eq .Camp.PublicBaseURL .HostPublicURL}}{{t "camp.mode_host"}}{{else}}{{t "camp.mode_custom"}}{{end}} — <code>{{.Camp.PublicBaseURL}}</code></div>
+  {{end}}
+
   {{if eq .C.Status "running"}}
   <div class="note" data-live-poll><span>● {{t "campd.sending"}} — <b data-live-sent>{{.Stats.Sent}}</b> / <b data-live-total>{{.Stats.Total}}</b> {{t "campd.sent_status_refresh"}}</span><button type="button" class="secondary" data-live-toggle style="margin:0 0 0 auto;align-self:center;padding:4px 11px;font-size:12px">{{t "campd.pause"}}</button></div>
   {{end}}

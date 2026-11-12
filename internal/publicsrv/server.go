@@ -39,9 +39,9 @@ func (s *Server) Router() http.Handler {
 	r.Use(middleware.Throttle(128))
 	r.Use(s.rateLimit)
 
-	r.Get("/p/{token}.png", s.handleOpen)   // open-tracking pixel
-	r.Get("/t/{token}", s.handleClick)       // landing page (click)
-	r.Post("/s/{token}", s.handleSubmit)     // form submission (fact only)
+	r.Get("/p/{token}.png", s.handleOpen) // open-tracking pixel
+	r.Get("/t/{token}", s.handleClick)    // landing page (click)
+	r.Post("/s/{token}", s.handleSubmit)  // form submission (fact only)
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok")) })
 	return r
 }
@@ -86,9 +86,16 @@ func (s *Server) handleClick(w http.ResponseWriter, r *http.Request) {
 		_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "link_clicked", s.clientIP(r), r.UserAgent())
 	}
 
+	// Submit URL: the configured public base when set; otherwise same-origin
+	// relative — correct however the target reached us (host IP or tunnel).
+	submitURL := "/s/" + token
+	if s.baseURL != "" {
+		submitURL = fmt.Sprintf("%s/s/%s", s.baseURL, token)
+	}
+
 	page := renderLanding(t.PageHTML, landingData{
 		FirstName: t.FirstName, LastName: t.LastName, Position: t.Position,
-		SubmitURL: fmt.Sprintf("%s/s/%s", s.baseURL, token),
+		SubmitURL: submitURL,
 	})
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write([]byte(page))

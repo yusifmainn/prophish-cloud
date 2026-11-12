@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="{{curlang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROPhish — {{t "dev.title"}}</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg,#f6f9fc);color:#3c4a5e;font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;height:100vh;display:flex;flex-direction:column}
+  @media (prefers-color-scheme:dark){body{--bg:#0a1322}}
+  .devbar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface,#fff);border-bottom:1px solid var(--border,#e6ebf1);flex:none;flex-wrap:wrap}
+  .devbar a{color:var(--accent,#635bff);text-decoration:none;font-weight:600;font-size:13.5px}
+  .devbar b{font-size:14px;color:var(--ink,#0a2540)}
+  .devbtns{display:inline-flex;gap:2px;padding:3px;border:1px solid var(--border-strong,#dbe3ec);border-radius:9px;background:var(--surface,#fff);margin-left:auto}
+  .devbtns button{margin:0;padding:6px 13px;font-size:12.5px;font-weight:600;background:none;border:0;border-radius:7px;color:var(--muted,#697386);cursor:pointer;font-family:inherit}
+  .devbtns button:hover{color:var(--ink,#0a2540)}
+  .devbtns button.on{background:var(--accent-soft,#efeffe);color:var(--accent,#635bff)}
+  .devwrap{flex:1;min-height:0;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:18px}
+  #devf{border:1px solid var(--border,#e6ebf1);border-radius:10px;background:#fff;height:100%;box-shadow:0 2px 5px -1px rgba(50,50,93,.1)}
+</style>
+<script src="/static/builder.js?v=4"></script>
+</head>
+<body>
+<div class="devbar">
+  <a href="{{.Back}}">← {{t "dev.back"}}</a>
+  <b>{{t "dev.title"}}</b>
+  <div class="devbtns">
+    <button type="button" data-dw="100%" class="on">{{t "dev.desktop"}}</button>
+    <button type="button" data-dw="1366">{{t "dev.laptop"}} (1366)</button>
+    <button type="button" data-dw="768">{{t "dev.tablet"}} (768)</button>
+    <button type="button" data-dw="390">{{t "dev.mobile"}} (390)</button>
+  </div>
+</div>
+<div class="devwrap"><iframe id="devf" src="{{.Raw}}" style="width:100%"></iframe></div>
+</body>
+</html>

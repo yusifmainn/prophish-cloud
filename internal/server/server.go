@@ -10,7 +10,9 @@ import (
 
 	"prophish/internal/config"
 	"prophish/internal/engine"
+	"prophish/internal/netutil"
 	"prophish/internal/store"
+	"prophish/internal/tunnelmgr"
 )
 
 // Server holds shared dependencies and implements the HTTP handlers.
@@ -19,15 +21,18 @@ type Server struct {
 	store     *store.Store
 	sessions  *scs.SessionManager
 	launcher  *engine.Launcher
+	tunnels   *tunnelmgr.Manager
+	detector  *netutil.Detector // public-reachability check (listener recommendation)
 	templates *template.Template
+	previews  *previewCache
 }
 
-func NewServer(cfg *config.Config, st *store.Store, sessions *scs.SessionManager, launcher *engine.Launcher) (*Server, error) {
+func NewServer(cfg *config.Config, st *store.Store, sessions *scs.SessionManager, launcher *engine.Launcher, tunnels *tunnelmgr.Manager, detector *netutil.Detector) (*Server, error) {
 	tmpl, err := parseTemplates()
 	if err != nil {
 		return nil, err
 	}
-	return &Server{cfg: cfg, store: st, sessions: sessions, launcher: launcher, templates: tmpl}, nil
+	return &Server{cfg: cfg, store: st, sessions: sessions, launcher: launcher, tunnels: tunnels, detector: detector, templates: tmpl, previews: &previewCache{}}, nil
 }
 
 // AdminRouter builds the authenticated admin panel router.
@@ -53,15 +58,17 @@ func (s *Server) AdminRouter() http.Handler {
 	r.Get("/setup", s.handleSetupForm)
 	r.With(s.checkOrigin).Post("/setup", s.handleSetupSubmit)
 	r.Get("/static/app.js", s.handleStaticJS)
-		r.Get("/static/editor.js", s.handleStaticEditorJS)
-		r.Get("/static/auth.js", s.handleStaticAuthJS)
-		r.Get("/static/hero/{name}", s.handleStaticHero)
-		r.Get("/static/logo-mark.svg", s.handleStaticLogo)
-		r.Get("/static/logo-mark-dark-bg.svg", s.handleStaticLogo)
-		r.Get("/favicon.ico", s.handleBrandIcon)
-		r.Get("/favicon.svg", s.handleBrandIcon)
-		r.Get("/apple-touch-icon.png", s.handleBrandIcon)
-		r.Get("/static/fonts/{name}", s.handleStaticFont)
+	r.Get("/static/editor.js", s.handleStaticEditorJS)
+	r.Get("/static/builder.js", s.handleStaticBuilderJS)
+	r.Get("/static/shahdag.json", s.handleStaticShahdag)
+	r.Get("/static/auth.js", s.handleStaticAuthJS)
+	r.Get("/static/hero/{name}", s.handleStaticHero)
+	r.Get("/static/logo-mark.svg", s.handleStaticLogo)
+	r.Get("/static/logo-mark-dark-bg.svg", s.handleStaticLogo)
+	r.Get("/favicon.ico", s.handleBrandIcon)
+	r.Get("/favicon.svg", s.handleBrandIcon)
+	r.Get("/apple-touch-icon.png", s.handleBrandIcon)
+	r.Get("/static/fonts/{name}", s.handleStaticFont)
 
 	// Authenticated routes. checkOrigin adds CSRF defense-in-depth on top of the
 	// SameSite=Lax session cookie; adminOnly gates sensitive configuration.
@@ -82,16 +89,16 @@ func (s *Server) AdminRouter() http.Handler {
 		// operator must not be able to self-authorize a campaign).
 		r.With(adminOnly).Post("/clients/{id}/authorizations", s.handleAuthCreate)
 		r.With(adminOnly).Post("/authorizations/{aid}/edit", s.handleAuthUpdate)
-			r.With(adminOnly).Post("/authorizations/{aid}/delete", s.handleAuthDelete)
-			r.Post("/clients/{id}/groups", s.handleGroupCreate)
+		r.With(adminOnly).Post("/authorizations/{aid}/delete", s.handleAuthDelete)
+		r.Post("/clients/{id}/groups", s.handleGroupCreate)
 
 		r.Get("/groups/{id}", s.handleGroupDetail)
 		r.Post("/groups/{id}/targets", s.handleTargetAdd)
 		r.Post("/groups/{id}/import", s.handleTargetImport)
-			r.Post("/groups/{id}/rename", s.handleGroupUpdate)
-			r.With(adminOnly).Post("/groups/{id}/delete", s.handleGroupDelete)
-			r.Post("/targets/{tid}/edit", s.handleTargetUpdate)
-			r.Post("/targets/{tid}/delete", s.handleTargetDelete)
+		r.Post("/groups/{id}/rename", s.handleGroupUpdate)
+		r.With(adminOnly).Post("/groups/{id}/delete", s.handleGroupDelete)
+		r.Post("/targets/{tid}/edit", s.handleTargetUpdate)
+		r.Post("/targets/{tid}/delete", s.handleTargetDelete)
 
 		r.Get("/templates", s.handleTemplatesList)
 		r.Post("/templates", s.handleTemplateCreate)
@@ -106,10 +113,16 @@ func (s *Server) AdminRouter() http.Handler {
 		r.Get("/pages", s.handlePagesList)
 		r.Post("/pages", s.handlePageCreate)
 		r.Post("/pages/import", s.handlePageImport)
-			r.Get("/pages/{id}", s.handlePageDetail)
-			r.Get("/pages/{id}/preview", s.handlePagePreview)
-			r.Post("/pages/{id}/edit", s.handlePageUpdate)
-			r.With(adminOnly).Post("/pages/{id}/delete", s.handlePageDelete)
+		r.Get("/pages/builder", s.handlePageBuilderNew)
+		r.Post("/pages/builder/preview", s.handlePageBuilderPreview)
+		r.Get("/pages/builder/preview/{token}", s.handlePageBuilderPreviewShell)
+		r.Get("/pages/builder/preview/{token}/raw", s.handlePageBuilderPreviewRaw)
+		r.Get("/pages/{id}", s.handlePageDetail)
+		r.Get("/pages/{id}/builder", s.handlePageBuilderEdit)
+		r.Get("/pages/{id}/preview", s.handlePagePreview)
+		r.Get("/pages/{id}/preview/devices", s.handlePageDevices)
+		r.Post("/pages/{id}/edit", s.handlePageUpdate)
+		r.With(adminOnly).Post("/pages/{id}/delete", s.handlePageDelete)
 
 		// Built-in library of ready-made brand-faithful simulation kits.
 		r.Get("/library", s.handleLibraryList)
@@ -128,8 +141,8 @@ func (s *Server) AdminRouter() http.Handler {
 		r.Post("/campaigns", s.handleCampaignCreate)
 		r.Get("/campaigns/{id}", s.handleCampaignDetail)
 		r.Post("/campaigns/{id}/rename", s.handleCampaignRename)
-			r.Get("/campaigns/{id}/edit", s.handleCampaignEditForm)
-			r.Post("/campaigns/{id}/edit", s.handleCampaignUpdate)
+		r.Get("/campaigns/{id}/edit", s.handleCampaignEditForm)
+		r.Post("/campaigns/{id}/edit", s.handleCampaignUpdate)
 		r.Get("/campaigns/{id}/export.csv", s.handleCampaignExport)
 		r.Get("/campaigns/{id}/report.pdf", s.handleCampaignReportPDF)
 		r.Post("/campaigns/{id}/launch", s.handleCampaignLaunch)

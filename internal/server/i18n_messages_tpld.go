@@ -8,12 +8,12 @@ func init() {
 		"tpld.subject_label": {"az": "Mövzu:", "en": "Subject:", "ru": "Тема:"},
 
 		// ---- Attachments ----
-		"tpld.attachments":          {"az": "Əlavələr (attachments)", "en": "Attachments", "ru": "Вложения"},
-		"tpld.col_file":             {"az": "Fayl", "en": "File", "ru": "Файл"},
-		"tpld.col_type":             {"az": "Tip", "en": "Type", "ru": "Тип"},
+		"tpld.attachments":           {"az": "Əlavələr (attachments)", "en": "Attachments", "ru": "Вложения"},
+		"tpld.col_file":              {"az": "Fayl", "en": "File", "ru": "Файл"},
+		"tpld.col_type":              {"az": "Tip", "en": "Type", "ru": "Тип"},
 		"tpld.attach_delete_confirm": {"az": "'%s' əlavəsi silinsin?", "en": "Delete attachment '%s'?", "ru": "Удалить вложение '%s'?"},
-		"tpld.no_attachments":       {"az": "Əlavə yoxdur.", "en": "No attachments.", "ru": "Вложений нет."},
-		"tpld.upload":               {"az": "Yüklə", "en": "Upload", "ru": "Загрузить"},
+		"tpld.no_attachments":        {"az": "Əlavə yoxdur.", "en": "No attachments.", "ru": "Вложений нет."},
+		"tpld.upload":                {"az": "Yüklə", "en": "Upload", "ru": "Загрузить"},
 
 		// ---- Edit form ----
 		"tpld.edit_title":         {"az": "Şablonu redaktə et", "en": "Edit template", "ru": "Редактировать шаблон"},
@@ -30,8 +30,8 @@ func init() {
 		"tpld.preview_title": {"az": "Email önizləmə", "en": "Email preview", "ru": "Предпросмотр письма"},
 
 		// ---- Danger zone ----
-		"tpld.danger_hint":   {"az": "Şablonu bir kampaniya istifadə edirsə silinə bilməz (əvvəlcə həmin kampaniyanı silin).", "en": "A template cannot be deleted while a campaign uses it (delete that campaign first).", "ru": "Шаблон нельзя удалить, пока его использует кампания (сначала удалите эту кампанию)."},
+		"tpld.danger_hint":    {"az": "Şablonu bir kampaniya istifadə edirsə silinə bilməz (əvvəlcə həmin kampaniyanı silin).", "en": "A template cannot be deleted while a campaign uses it (delete that campaign first).", "ru": "Шаблон нельзя удалить, пока его использует кампания (сначала удалите эту кампанию)."},
 		"tpld.delete_confirm": {"az": "'%s' şablonu həmişəlik silinsin?", "en": "Permanently delete template '%s'?", "ru": "Удалить шаблон '%s' навсегда?"},
-		"tpld.delete_btn":    {"az": "Şablonu sil", "en": "Delete template", "ru": "Удалить шаблон"},
+		"tpld.delete_btn":     {"az": "Şablonu sil", "en": "Delete template", "ru": "Удалить шаблон"},
 	})
 }

@@ -83,17 +83,17 @@ func (s *Store) TargetIDsForGroups(c ctx, groupIDs []string) ([]string, error) {
 
 // CampaignView is the detail/report view joining human-readable names.
 type CampaignView struct {
-	ID            string
-	Name          string
-	Status        string
-	ClientID      string
-	ClientName    string
-	TemplateName  string
-	PageName      string
-	ProfileName   string
-	AuthScope     string
-	AuthValidTo   time.Time
-	CreatedAt     time.Time
+	ID           string
+	Name         string
+	Status       string
+	ClientID     string
+	ClientName   string
+	TemplateName string
+	PageName     string
+	ProfileName  string
+	AuthScope    string
+	AuthValidTo  time.Time
+	CreatedAt    time.Time
 }
 
 func (s *Store) CampaignView(c ctx, id string) (*CampaignView, error) {

@@ -2,7 +2,7 @@
 {{template "nav" .}}
 <main>
   <h1>{{.P.Name}}</h1>
-  <p class="muted" style="margin:8px 0 18px"><a href="/pages">{{t "pgd.back"}}</a></p>
+  <p class="muted" style="margin:8px 0 18px"><a href="/pages">{{t "pgd.back"}}</a> · <a href="/pages/{{.P.ID}}/builder">{{t "pgd.builder_link"}}</a> · <a href="/pages/{{.P.ID}}/preview/devices">{{t "pgd.devices_link"}}</a></p>
 
   <div class="card">
     <h2>{{t "pgd.edit_title"}}</h2>

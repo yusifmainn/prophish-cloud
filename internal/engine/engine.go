@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"prophish/internal/auth"
+	"prophish/internal/models"
 	"prophish/internal/store"
 )
 
@@ -17,20 +18,39 @@ type Launcher struct {
 	store         *store.Store
 	encKey        []byte // decrypts the SMTP password at send time (credential-encryption key)
 	publicBaseURL string
+	hostFallback  func() string // detected host public URL ("" when unknown)
 	sendDelay     time.Duration // simple rate limit between messages
 
 	mu      sync.Mutex                    // guards running
 	running map[string]context.CancelFunc // campaignID -> cancel for an in-flight send
 }
 
-func NewLauncher(st *store.Store, encKey []byte, publicBaseURL string) *Launcher {
+func NewLauncher(st *store.Store, encKey []byte, publicBaseURL string, hostFallback func() string) *Launcher {
 	return &Launcher{
 		store:         st,
 		encKey:        encKey,
 		publicBaseURL: publicBaseURL,
+		hostFallback:  hostFallback,
 		sendDelay:     750 * time.Millisecond,
 		running:       map[string]context.CancelFunc{},
 	}
+}
+
+// resolveBaseURL picks the tracking-link base URL: campaign override → global
+// configured default → auto-detected host public URL → loopback last resort.
+func (l *Launcher) resolveBaseURL(camp *models.Campaign) string {
+	if camp.PublicBaseURL != "" {
+		return camp.PublicBaseURL
+	}
+	if l.publicBaseURL != "" {
+		return l.publicBaseURL
+	}
+	if l.hostFallback != nil {
+		if u := l.hostFallback(); u != "" {
+			return u
+		}
+	}
+	return "http://127.0.0.1:8080"
 }
 
 // register/unregister/Cancel implement a tiny in-memory registry of in-flight
@@ -148,6 +168,10 @@ func (l *Launcher) Launch(ctx context.Context, campaignID string) error {
 		}
 	}
 
+	// Tracking-link base URL: campaign override → global default → detected
+	// host public URL (see resolveBaseURL).
+	baseURL := l.resolveBaseURL(camp)
+
 	// writeCtx records what HAS happened (a result marked sent, an event logged)
 	// and MUST NOT be the cancellable runCtx: an operator Stop can land while a
 	// message is being delivered by Send(), and if the follow-up MarkResultSent
@@ -183,8 +207,8 @@ func (l *Launcher) Launch(ctx context.Context, campaignID string) error {
 			LastName:      it.Last,
 			Email:         it.Email,
 			Position:      it.Position,
-			URL:           clickURL(l.publicBaseURL, it.Token),
-			TrackingPixel: pixelTag(l.publicBaseURL, it.Token),
+			URL:           clickURL(baseURL, it.Token),
+			TrackingPixel: pixelTag(baseURL, it.Token),
 		}
 
 		subject, e1 := renderText(tmpl.Subject, data)

@@ -15,5 +15,7 @@ func init() {
 		"pgd.delete_confirm_pre":  {"az": "'", "en": "Permanently delete the landing page '", "ru": "Удалить целевую страницу «"},
 		"pgd.delete_confirm_post": {"az": "' açılış səhifəsi həmişəlik silinsin?", "en": "'?", "ru": "» навсегда?"},
 		"pgd.delete_btn":          {"az": "Səhifəni sil", "en": "Delete page", "ru": "Удалить страницу"},
+		"pgd.builder_link":        {"az": "Vizual redaktorda aç", "en": "Open in visual editor", "ru": "Открыть в визуальном редакторе"},
+		"pgd.devices_link":        {"az": "Cihazlarda önizlə", "en": "Preview on devices", "ru": "Предпросмотр на устройствах"},
 	})
 }

@@ -65,6 +65,32 @@
         </div>
       </div>
 
+      <div class="sectlbl">{{t "camp.sect_delivery"}}</div>
+      {{$mode := .ListenerMode}}
+      <label>{{t "camp.listener_q"}}</label>
+      <div style="display:flex;flex-direction:column;gap:8px;max-width:640px" data-listener-group>
+        <label class="pick">
+          <input type="radio" name="listener_mode" value="host" {{if eq $mode "host"}}checked{{end}}>
+          <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span>
+          <span style="min-width:0"><span class="t">{{t "camp.listener_host"}}</span><span class="s">{{t "camp.listener_host_hint"}} — <code data-host-url>{{.HostPublicURL}}</code></span></span>
+        </label>
+        <label class="pick">
+          <input type="radio" name="listener_mode" value="cloudflare" {{if eq $mode "cloudflare"}}checked{{end}}>
+          <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span>
+          <span style="min-width:0"><span class="t">{{t "camp.listener_cf"}}{{if not .RecommendHost}} <span class="pill info" style="padding:2px 8px;font-size:11px">{{t "camp.recommended"}}</span>{{end}}</span><span class="s">{{t "camp.listener_cf_hint"}}</span></span>
+        </label>
+        <label class="pick">
+          <input type="radio" name="listener_mode" value="custom" {{if eq $mode "custom"}}checked{{end}}>
+          <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span>
+          <span style="min-width:0"><span class="t">{{t "camp.listener_custom"}}</span><span class="s">{{t "camp.listener_custom_hint"}}</span></span>
+        </label>
+      </div>
+      <div data-custom-url style="margin-top:10px;max-width:520px;{{if ne $mode "custom"}}display:none{{end}}">
+        <label for="c-puburl">{{t "camp.public_url_label"}}</label>
+        <input id="c-puburl" name="public_base_url" value="{{if $sel}}{{$sel.PublicBaseURL}}{{end}}" placeholder="https://…">
+        <p class="hint">{{t "camp.public_url_hint"}}</p>
+      </div>
+
       <div style="display:flex;gap:10px;justify-content:flex-end;border-top:1px solid var(--border);padding-top:16px;margin-top:20px">
         {{if .EditID}}<a class="btn secondary" href="/campaigns/{{.EditID}}">{{t "common.cancel"}}</a>{{end}}
         <button type="submit">{{if .EditID}}{{t "common.save_changes"}}{{else}}{{t "camp.create_draft"}}{{end}}</button>

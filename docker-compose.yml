@@ -34,8 +34,10 @@ services:
       PROPHISH_DB_URL: postgres://prophish:${PROPHISH_DB_PASSWORD}@db:5432/prophish?sslmode=disable
       PROPHISH_ADMIN_ADDR: 0.0.0.0:8443
       PROPHISH_PUBLIC_ADDR: 0.0.0.0:8080
-      # The external URL targets reach; override in .env for real campaigns.
-      PROPHISH_PUBLIC_BASE_URL: ${PROPHISH_PUBLIC_BASE_URL:-http://localhost:8080}
+      # The external URL targets reach. Leave EMPTY for auto-detection (the app
+      # detects this host's public IP and recommends the listener location per
+      # campaign); set it explicitly only for a custom domain/reverse proxy.
+      PROPHISH_PUBLIC_BASE_URL: ${PROPHISH_PUBLIC_BASE_URL:-}
       # REQUIRED: set a 32-byte base64 secret in .env (openssl rand -base64 32).
       PROPHISH_SESSION_KEY: ${PROPHISH_SESSION_KEY:?set PROPHISH_SESSION_KEY in .env}
       PROPHISH_SECURE_COOKIES: ${PROPHISH_SECURE_COOKIES:-false}
