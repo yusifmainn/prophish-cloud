@@ -389,7 +389,17 @@ func (s *Server) handleCampaignDetail(w http.ResponseWriter, r *http.Request) {
 	results, _ := s.store.ListResultsDetailed(r.Context(), id)
 	groups, _ := s.store.CampaignStatsByGroup(r.Context(), id)
 	pct := percentages(stats)
-	riskLabel, riskClass := models.RiskLevel(pct.Submitted, pct.Clicked)
+	// RiskLevel is the single source of truth for the band; translate the label
+	// per the viewer's language from its status class instead of the raw AZ text.
+	_, riskClass := models.RiskLevel(pct.Submitted, pct.Clicked)
+	riskKey := "campd.risk_low"
+	switch riskClass {
+	case "crit":
+		riskKey = "campd.risk_high"
+	case "warn":
+		riskKey = "campd.risk_medium"
+	}
+	riskLabel := s.t(r, riskKey)
 	_, hostURL := s.listenerData(r)
 	s.render(w, r, http.StatusOK, "campaign_detail.html", map[string]any{
 		"C":            view,
