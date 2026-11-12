@@ -22,6 +22,7 @@ func TestAdminIPAllow(t *testing.T) {
 	allow := []*net.IPNet{
 		mustCIDR(t, "10.30.22.0/24"),
 		mustCIDR(t, "10.20.51.0/24"),
+		mustCIDR(t, "10.20.25.223/32"),
 	}
 	ok := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
 
@@ -34,6 +35,8 @@ func TestAdminIPAllow(t *testing.T) {
 		{"empty list allows any", nil, "203.0.113.9:5000", http.StatusOK},
 		{"in first subnet", allow, "10.30.22.7:4000", http.StatusOK},
 		{"in second subnet", allow, "10.20.51.200:4000", http.StatusOK},
+		{"single allowed host", allow, "10.20.25.223:4000", http.StatusOK},
+		{"neighbour of single host blocked", allow, "10.20.25.224:4000", http.StatusForbidden},
 		{"loopback always allowed", allow, "127.0.0.1:4000", http.StatusOK},
 		{"ipv6 loopback allowed", allow, "[::1]:4000", http.StatusOK},
 		{"outside subnets blocked", allow, "10.20.52.5:4000", http.StatusForbidden},
