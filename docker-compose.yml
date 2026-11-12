@@ -63,3 +63,15 @@ services:
 
 volumes:
   prophish_pgdata:
+
+# Lower the bridge MTU for all services. Some host networks (corporate NAT,
+# VPN/overlay) have a path MTU below 1500 and drop ICMP "fragmentation needed",
+# so 1500-byte packets black-hole. That breaks the per-campaign cloudflared
+# tunnel's HTTPS to api.trycloudflare.com (the TLS handshake stalls), while
+# small requests still succeed. Docker's legacy default bridge is MSS-clamped
+# and hides this; user-defined/compose networks are not, so set a conservative
+# 1400 MTU here. Raise it toward 1500 only if your host path MTU allows.
+networks:
+  default:
+    driver_opts:
+      com.docker.network.driver.mtu: "1400"
