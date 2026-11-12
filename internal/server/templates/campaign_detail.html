@@ -8,6 +8,7 @@
     </div>
     {{if not (or (eq .C.Status "draft") (eq .C.Status "scheduled"))}}
     <div class="act">
+      <a class="btn secondary" href="/campaigns/{{.C.ID}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>{{t "campd.refresh"}}</a>
       <a class="btn secondary" href="/campaigns/{{.C.ID}}/report.pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>{{t "campd.pdf_report"}}</a>
       <a class="btn secondary" href="/campaigns/{{.C.ID}}/export.csv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>{{t "campd.csv_export"}}</a>
     </div>
