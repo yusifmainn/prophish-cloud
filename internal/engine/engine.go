@@ -99,6 +99,25 @@ func (l *Launcher) Launch(ctx context.Context, campaignID string) error {
 		return fmt.Errorf("refusing to launch: no active authorization covers this moment")
 	}
 
+	// A tunnel-managed campaign's public URL is written asynchronously by
+	// tunnelmgr a few seconds after the tunnel starts. Launching within that
+	// window would bake loopback (127.0.0.1) tracking links into every email —
+	// dead for every recipient. Wait briefly for the tunnel URL, and refuse to
+	// launch (leaving the campaign re-launchable) if it never arrives, rather
+	// than silently send broken links.
+	if camp.TunnelManaged && camp.PublicBaseURL == "" {
+		deadline := time.Now().Add(45 * time.Second)
+		for camp.PublicBaseURL == "" {
+			if time.Now().After(deadline) {
+				return fmt.Errorf("refusing to launch: Cloudflare tunnel URL not ready after 45s — check tunnel logs and launch again")
+			}
+			time.Sleep(time.Second)
+			if camp, err = l.store.GetCampaign(ctx, campaignID); err != nil {
+				return fmt.Errorf("await tunnel url: %w", err)
+			}
+		}
+	}
+
 	// Atomically claim the campaign BEFORE doing any work: flip draft/scheduled
 	// -> running in a single UPDATE. Only one caller can win, so a double-clicked
 	// launch or the scheduler firing twice cannot send the campaign twice.
