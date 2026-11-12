@@ -16,6 +16,7 @@ func init() {
 		"pg.html_label":       {"az": "HTML məzmun", "en": "HTML content", "ru": "HTML-содержимое"},
 		"pg.redirect_col":     {"az": "Yönləndirmə", "en": "Redirect", "ru": "Перенаправление"},
 		"pg.empty":            {"az": "Hələ səhifə yoxdur.", "en": "No pages yet.", "ru": "Пока нет страниц."},
+		"pg.delete_confirm":   {"az": "Seçilmiş səhifələr silinəcək. Kampaniyada istifadə olunanlar silinməyəcək. Davam edilsin?", "en": "The selected pages will be deleted. Those used by a campaign will not be deleted. Continue?", "ru": "Выбранные страницы будут удалены. Используемые в кампании удалены не будут. Продолжить?"},
 		"pg.builder_link":     {"az": "Vizual redaktorla yarat", "en": "Create in visual editor", "ru": "Создать в визуальном редакторе"},
 		"pg.builder_hint_pre": {"az": "HTML bilmədən yığmaq üçün", "en": "To build without HTML, open", "ru": "Чтобы собрать без HTML, откройте"},
 		"pg.builder_link2":    {"az": "vizual redaktoru", "en": "the visual editor", "ru": "визуальный редактор"},

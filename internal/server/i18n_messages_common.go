@@ -53,6 +53,12 @@ func init() {
 		"common.email_col":     {"az": "Email", "en": "Email", "ru": "Email"},
 		"common.employees_n":   {"az": "%d işçi", "en": "%d employees", "ru": "%d сотрудников"},
 
+		// ---- Confirmation modal (shared; replaces the browser confirm dialog) ----
+		"confirm.title": {"az": "Təsdiq", "en": "Confirm", "ru": "Подтверждение"},
+		"confirm.yes":   {"az": "Bəli", "en": "Yes", "ru": "Да"},
+		"confirm.no":    {"az": "Xeyr", "en": "No", "ru": "Нет"},
+		"confirm.close": {"az": "Bağla", "en": "Close", "ru": "Закрыть"},
+
 		// ---- Campaign status pills ----
 		"pill.completed": {"az": "Tamamlandı", "en": "Completed", "ru": "Завершено"},
 		"pill.running":   {"az": "Davam edir", "en": "Running", "ru": "Выполняется"},
