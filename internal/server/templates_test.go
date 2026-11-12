@@ -21,7 +21,8 @@ func TestTemplatesRender(t *testing.T) {
 	now := time.Now()
 	cid := "client-1"
 	cases := map[string]any{
-		"setup.html": map[string]any{"Error": "x"},
+		"setup.html":         map[string]any{"Error": "x"},
+		"documentation.html": map[string]any{},
 		"login.html": map[string]any{"Error": "x"},
 		"dashboard.html": map[string]any{
 			"Stats":  store.DashboardStats{ActiveCampaigns: 1, Campaigns: 4, Tested: 120, ClickRate: 38, ReportRate: 29},

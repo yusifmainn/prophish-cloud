@@ -69,6 +69,7 @@ func (s *Server) AdminRouter() http.Handler {
 	r.Get("/favicon.svg", s.handleBrandIcon)
 	r.Get("/apple-touch-icon.png", s.handleBrandIcon)
 	r.Get("/static/fonts/{name}", s.handleStaticFont)
+	r.Get("/static/docs/{name}", s.handleStaticDoc)
 
 	// Authenticated routes. checkOrigin adds CSRF defense-in-depth on top of the
 	// SameSite=Lax session cookie; adminOnly gates sensitive configuration.
@@ -77,6 +78,7 @@ func (s *Server) AdminRouter() http.Handler {
 		r.Use(s.requireAuth)
 		r.Use(s.checkOrigin)
 		r.Get("/", s.handleDashboard)
+		r.Get("/documentation", s.handleDocumentation)
 		r.Post("/logout", s.handleLogout)
 
 		r.Get("/clients", s.handleClientsList)

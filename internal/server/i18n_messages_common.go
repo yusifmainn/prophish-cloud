@@ -9,6 +9,7 @@ func init() {
 		"nav.workspace": {"az": "İş sahəsi", "en": "Workspace", "ru": "Рабочая область"},
 		"nav.dashboard": {"az": "Nəzarət paneli", "en": "Dashboard", "ru": "Панель управления"},
 		"nav.campaigns": {"az": "Kampaniyalar", "en": "Campaigns", "ru": "Кампании"},
+		"nav.docs":      {"az": "Təlimat", "en": "Documentation", "ru": "Документация"},
 		"nav.setup":     {"az": "Qurğu", "en": "Setup", "ru": "Настройка"},
 		"nav.clients":   {"az": "Müştərilər", "en": "Clients", "ru": "Клиенты"},
 		"nav.templates": {"az": "Şablonlar", "en": "Templates", "ru": "Шаблоны"},
