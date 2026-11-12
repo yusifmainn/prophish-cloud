@@ -4,6 +4,8 @@ import (
 	"embed"
 	"net/http"
 	"strings"
+
+	"github.com/go-chi/chi/v5"
 )
 
 //go:embed static/app.js
@@ -54,10 +56,11 @@ var appleTouchPNG []byte
 //go:embed static/fonts/*.woff2
 var fontFS embed.FS
 
-// Documentation screenshots (optimized WebP) for the in-app user guide, served
-// same-origin so the strict CSP (img-src 'self') allows them.
+// Documentation screenshots (optimized WebP) for the in-app user guide, one set
+// per UI language (az/en/ru) so the guide's screenshots match the chosen
+// language. Served same-origin so the strict CSP (img-src 'self') allows them.
 //
-//go:embed static/docs/*.webp
+//go:embed static/docs/az/*.webp static/docs/en/*.webp static/docs/ru/*.webp
 var docFS embed.FS
 
 // handleStaticJS serves the admin's progressive-enhancement script from the same
@@ -154,15 +157,21 @@ func (s *Server) handleBrandIcon(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(b)
 }
 
-// handleStaticDoc serves a documentation screenshot (WebP) by name (no path
-// traversal). Public GET — the images are the product's own UI, not secret.
+// handleStaticDoc serves a per-language documentation screenshot (WebP). The
+// language segment is whitelisted and the name is checked for traversal. Public
+// GET — the images are the product's own UI, not secret.
 func (s *Server) handleStaticDoc(w http.ResponseWriter, r *http.Request) {
-	name := strings.TrimPrefix(r.URL.Path, "/static/docs/")
+	lang := chi.URLParam(r, "lang")
+	if lang != "az" && lang != "en" && lang != "ru" {
+		http.NotFound(w, r)
+		return
+	}
+	name := chi.URLParam(r, "name")
 	if name == "" || strings.ContainsAny(name, `/\`) || strings.Contains(name, "..") {
 		http.NotFound(w, r)
 		return
 	}
-	b, err := docFS.ReadFile("static/docs/" + name)
+	b, err := docFS.ReadFile("static/docs/" + lang + "/" + name)
 	if err != nil {
 		http.NotFound(w, r)
 		return
