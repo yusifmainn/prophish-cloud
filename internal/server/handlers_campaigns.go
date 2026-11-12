@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -16,8 +17,8 @@ import (
 // listenerData computes the listener-location recommendation for the campaign
 // form: whether hosting the listener directly on this host is viable (cached
 // detection, ≤3s on a cold cache) and the host's public URL. The URL is always
-// derived live — never hardcoded: detected public IP → configured global
-// default → the request's own Host header.
+// derived live — never hardcoded: inbound-verified public IP → configured
+// global default → this host's own outbound IP on the PUBLIC tracking port.
 func (s *Server) listenerData(r *http.Request) (recommend bool, hostURL string) {
 	if s.detector != nil {
 		res := s.detector.Detect(r.Context())
@@ -30,9 +31,41 @@ func (s *Server) listenerData(r *http.Request) (recommend bool, hostURL string) 
 		hostURL = s.cfg.PublicBaseURL
 	}
 	if hostURL == "" {
-		hostURL = "http://" + r.Host
+		// Best-effort: this host's own LAN/outbound IP on the PUBLIC tracking
+		// port. NEVER r.Host — that is the admin UI's address (admin port, and
+		// often 127.0.0.1 over an SSH tunnel), which carries no /t /p /s routes,
+		// so tracking links would 404. This value is reachable by targets only
+		// if the public port is published to them (LAN) — the UI says as much.
+		if ip := outboundIP(); ip != "" {
+			hostURL = "http://" + net.JoinHostPort(ip, publicPort(s.cfg.PublicAddr))
+		}
 	}
 	return recommend, hostURL
+}
+
+// outboundIP returns this host's primary outbound IP (the source address the
+// kernel would use to reach the internet), or "" if it cannot be determined.
+// The UDP "dial" sends no packets — it only resolves the routing source
+// address — so it works even when the target is unreachable.
+func outboundIP() string {
+	c, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return ""
+	}
+	defer c.Close()
+	if a, ok := c.LocalAddr().(*net.UDPAddr); ok && a.IP != nil {
+		return a.IP.String()
+	}
+	return ""
+}
+
+// publicPort extracts the port from the public listener address
+// (PROPHISH_PUBLIC_ADDR, e.g. "0.0.0.0:8080" -> "8080"), defaulting to "8080".
+func publicPort(addr string) string {
+	if _, port, err := net.SplitHostPort(addr); err == nil && port != "" {
+		return port
+	}
+	return "8080"
 }
 
 // campaignPageData gathers everything the campaigns page (list + create form)
