@@ -33,6 +33,10 @@ services:
     environment:
       PROPHISH_DB_URL: postgres://prophish:${PROPHISH_DB_PASSWORD}@db:5432/prophish?sslmode=disable
       PROPHISH_ADMIN_ADDR: 0.0.0.0:8443
+      # Networks allowed to reach the ADMIN panel (comma-separated CIDRs).
+      # Loopback is always allowed. Empty = no restriction. Enforced in-app on
+      # the real peer IP, so pair with PROPHISH_ADMIN_BIND below for direct access.
+      PROPHISH_ADMIN_ALLOW_CIDRS: ${PROPHISH_ADMIN_ALLOW_CIDRS:-10.30.22.0/24,10.20.51.0/24}
       PROPHISH_PUBLIC_ADDR: 0.0.0.0:8080
       # The external URL targets reach. Leave EMPTY for auto-detection (the app
       # detects this host's public IP and recommends the listener location per
@@ -44,8 +48,10 @@ services:
       # Operator time zone for scheduling + display (IANA name). Defaults to UTC.
       PROPHISH_TIMEZONE: ${PROPHISH_TIMEZONE:-UTC}
     ports:
-      # Admin panel — keep bound to localhost; reach it over a VPN/SSH tunnel.
-      - "127.0.0.1:8443:8443"
+      # Admin panel. Localhost by default (reach it over a VPN/SSH tunnel); set
+      # PROPHISH_ADMIN_BIND=0.0.0.0 in .env for direct access without a tunnel —
+      # access is then still restricted to PROPHISH_ADMIN_ALLOW_CIDRS in-app.
+      - "${PROPHISH_ADMIN_BIND:-127.0.0.1}:8443:8443"
       # Public server (landing pages + /t /p /s tracking) — the only component
       # targets talk to. Bound to localhost by default; set PROPHISH_PUBLIC_BIND=0.0.0.0
       # in .env to publish it on the LAN so "host" listener campaigns reach it

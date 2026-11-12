@@ -2,6 +2,7 @@ package server
 
 import (
 	"html/template"
+	"net"
 	"net/http"
 
 	"github.com/alexedwards/scs/v2"
@@ -36,8 +37,47 @@ func NewServer(cfg *config.Config, st *store.Store, sessions *scs.SessionManager
 }
 
 // AdminRouter builds the authenticated admin panel router.
+// adminIPAllow restricts the admin panel to the configured client networks
+// (PROPHISH_ADMIN_ALLOW_CIDRS). Loopback is always allowed — so local access and
+// an SSH tunnel still work and the operator can never lock themselves out — and
+// an empty list means no restriction (the historical localhost-only behaviour).
+// It checks r.RemoteAddr, the true direct peer: the admin panel trusts no
+// X-Forwarded-For (see the note below), so the source network cannot be spoofed
+// by a header. NOTE: behind Docker's published ports the container must see the
+// real client IP for this to distinguish subnets; pair it with a host firewall
+// where that cannot be guaranteed.
+func (s *Server) adminIPAllow(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if len(s.cfg.AdminAllowCIDRs) == 0 {
+			next.ServeHTTP(w, r)
+			return
+		}
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			host = r.RemoteAddr
+		}
+		ip := net.ParseIP(host)
+		if ip != nil {
+			if ip.IsLoopback() {
+				next.ServeHTTP(w, r)
+				return
+			}
+			for _, n := range s.cfg.AdminAllowCIDRs {
+				if n.Contains(ip) {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+		}
+		http.Error(w, "Forbidden", http.StatusForbidden)
+	})
+}
+
 func (s *Server) AdminRouter() http.Handler {
 	r := chi.NewRouter()
+	// Network allowlist FIRST: an out-of-range client never reaches login,
+	// static assets or the session layer.
+	r.Use(s.adminIPAllow)
 	r.Use(middleware.RequestID)
 	// NOTE: middleware.RealIP is intentionally NOT used here. The admin panel is
 	// reached directly (over a VPN), so r.RemoteAddr is the true peer; trusting a
