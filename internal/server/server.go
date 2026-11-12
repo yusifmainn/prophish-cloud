@@ -139,6 +139,7 @@ func (s *Server) AdminRouter() http.Handler {
 
 		r.Get("/campaigns", s.handleCampaignsList)
 		r.Post("/campaigns", s.handleCampaignCreate)
+		r.Post("/campaigns/bulk-delete", s.handleCampaignsBulkDelete)
 		r.Get("/campaigns/{id}", s.handleCampaignDetail)
 		r.Post("/campaigns/{id}/rename", s.handleCampaignRename)
 		r.Get("/campaigns/{id}/edit", s.handleCampaignEditForm)

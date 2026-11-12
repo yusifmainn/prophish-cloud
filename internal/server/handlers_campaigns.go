@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -129,6 +130,37 @@ func sanitizePublicBaseURL(v string) (string, bool) {
 
 func (s *Server) handleCampaignsList(w http.ResponseWriter, r *http.Request) {
 	s.render(w, r, http.StatusOK, "campaigns.html", s.campaignPageData(r))
+}
+
+// handleCampaignsBulkDelete permanently deletes the campaigns whose IDs were
+// checked on the dashboard. Each campaign's in-flight send is cancelled and its
+// managed tunnel stopped first, so nothing keeps running for a gone campaign;
+// the DB rows (and their results/events) go via ON DELETE CASCADE.
+func (s *Server) handleCampaignsBulkDelete(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	n := 0
+	for _, id := range r.Form["campaign_ids"] {
+		if strings.TrimSpace(id) == "" {
+			continue
+		}
+		s.launcher.Cancel(id)
+		if s.tunnels != nil {
+			s.tunnels.Stop(id)
+		}
+		if err := s.store.DeleteCampaign(r.Context(), id); err != nil {
+			log.Printf("bulk delete campaign %s: %v", id, err)
+			continue
+		}
+		n++
+	}
+	if n > 0 {
+		s.audit(r, "campaign.delete", "campaign", "", fmt.Sprintf("%d deleted", n))
+	}
+	s.flashOK(r, s.tf(r, "flash.campaigns_deleted", n))
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (s *Server) handleCampaignCreate(w http.ResponseWriter, r *http.Request) {

@@ -15,5 +15,8 @@ func init() {
 		"dash.kpi.higher":     {"az": "yüksək = daha yaxşı", "en": "higher = better", "ru": "выше = лучше"},
 		"dash.recent":         {"az": "Son kampaniyalar", "en": "Recent campaigns", "ru": "Недавние кампании"},
 		"dash.empty":          {"az": "Hələ kampaniya yoxdur. Soldakı menyudan müştəri və kampaniya yaradın.", "en": "No campaigns yet. Create a client and a campaign from the menu on the left.", "ru": "Пока нет кампаний. Создайте клиента и кампанию в меню слева."},
+		"dash.select_all":     {"az": "Hamısını seç", "en": "Select all", "ru": "Выбрать все"},
+		"dash.delete_selected": {"az": "Seçilənləri sil", "en": "Delete selected", "ru": "Удалить выбранные"},
+		"dash.delete_confirm": {"az": "Seçilmiş kampaniyalar və onların bütün nəticələri həmişəlik silinəcək. Davam edilsin?", "en": "The selected campaigns and all their results will be permanently deleted. Continue?", "ru": "Выбранные кампании и все их результаты будут удалены навсегда. Продолжить?"},
 	})
 }

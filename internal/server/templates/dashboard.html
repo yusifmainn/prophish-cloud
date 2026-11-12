@@ -47,12 +47,14 @@
   </div>
 
   <div class="card flush">
-    <h2 class="card-head">{{t "dash.recent"}}</h2>
+    <form method="post" action="/campaigns/bulk-delete" data-confirm="{{t "dash.delete_confirm"}}">
+    <h2 class="card-head">{{t "dash.recent"}}<button type="submit" class="btn danger" data-bulk-submit disabled style="margin-left:auto;padding:5px 12px;font-size:12.5px">{{t "dash.delete_selected"}}<span data-bulk-count></span></button></h2>
     <table>
-      <thead><tr><th>{{t "common.campaign"}}</th><th>{{t "common.client"}}</th><th>{{t "common.status"}}</th><th>{{t "common.date"}}</th><th></th></tr></thead>
+      <thead><tr><th style="width:38px;text-align:center"><input type="checkbox" data-check-all aria-label="{{t "dash.select_all"}}" style="accent-color:var(--brand);width:16px;height:16px;cursor:pointer;vertical-align:middle"></th><th>{{t "common.campaign"}}</th><th>{{t "common.client"}}</th><th>{{t "common.status"}}</th><th>{{t "common.date"}}</th><th></th></tr></thead>
       <tbody>
         {{range .Recent}}
         <tr>
+          <td style="text-align:center"><input type="checkbox" name="campaign_ids" value="{{.ID}}" data-row-check aria-label="{{.Name}}" style="accent-color:var(--brand);width:16px;height:16px;cursor:pointer;vertical-align:middle"></td>
           <td><a href="/campaigns/{{.ID}}" class="tlink">{{.Name}}</a></td>
           <td>{{.ClientName}}</td>
           <td>{{template "statuspill" .Status}}</td>
@@ -60,10 +62,11 @@
           <td><a href="/campaigns/{{.ID}}" class="rowopen">{{t "common.open_arrow"}}</a></td>
         </tr>
         {{else}}
-        <tr><td colspan="5"><div class="empty"><p>{{t "dash.empty"}}</p></div></td></tr>
+        <tr><td colspan="6"><div class="empty"><p>{{t "dash.empty"}}</p></div></td></tr>
         {{end}}
       </tbody>
     </table>
+    </form>
   </div>
 </main>
 {{template "foot" .}}
