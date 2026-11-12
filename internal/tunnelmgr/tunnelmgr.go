@@ -28,8 +28,18 @@ var ErrCap = errors.New("tunnel cap reached")
 
 var urlRe = regexp.MustCompile(`https://[a-z0-9-]+\.trycloudflare\.com`)
 
-// ExtractURL returns the first trycloudflare URL in a log line, or "".
-func ExtractURL(line string) string { return urlRe.FindString(line) }
+// ExtractURL returns the first trycloudflare quick-tunnel URL in a log line, or
+// "". cloudflared prints https://api.trycloudflare.com in its control-plane and
+// in failure messages ("failed to request quick Tunnel: Post ...api.trycloudflare.com");
+// that is the API endpoint, not an assigned tunnel hostname, so it must never be
+// saved as a campaign's public URL.
+func ExtractURL(line string) string {
+	u := urlRe.FindString(line)
+	if u == "https://api.trycloudflare.com" {
+		return ""
+	}
+	return u
+}
 
 type proc struct {
 	cmd    *exec.Cmd
