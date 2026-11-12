@@ -86,11 +86,19 @@ func (s *Server) handleClick(w http.ResponseWriter, r *http.Request) {
 		_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "link_clicked", s.clientIP(r), r.UserAgent())
 	}
 
-	// Submit URL: the configured public base when set; otherwise same-origin
-	// relative — correct however the target reached us (host IP or tunnel).
+	// Submit URL: prefer the campaign's OWN public base (the HTTPS tunnel URL for
+	// a gateway campaign, the host URL otherwise) so the form posts back to the
+	// SAME origin the target loaded the page from. Otherwise a page served over
+	// the HTTPS tunnel would post to the http:// host base, which the browser
+	// blocks as an insecure/mixed-content submission ("not secure" interstitial).
+	// Fall back to the global base, then to a same-origin relative path.
+	base := s.baseURL
+	if camp, err := s.store.GetCampaign(r.Context(), t.CampaignID); err == nil && camp.PublicBaseURL != "" {
+		base = strings.TrimRight(camp.PublicBaseURL, "/")
+	}
 	submitURL := "/s/" + token
-	if s.baseURL != "" {
-		submitURL = fmt.Sprintf("%s/s/%s", s.baseURL, token)
+	if base != "" {
+		submitURL = fmt.Sprintf("%s/s/%s", base, token)
 	}
 
 	page := renderLanding(t.PageHTML, landingData{
