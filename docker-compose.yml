@@ -36,7 +36,7 @@ services:
       # Networks allowed to reach the ADMIN panel (comma-separated CIDRs).
       # Loopback is always allowed. Empty = no restriction. Enforced in-app on
       # the real peer IP, so pair with PROPHISH_ADMIN_BIND below for direct access.
-      PROPHISH_ADMIN_ALLOW_CIDRS: ${PROPHISH_ADMIN_ALLOW_CIDRS:-10.30.22.0/24,10.20.51.0/24}
+      PROPHISH_ADMIN_ALLOW_CIDRS: ${PROPHISH_ADMIN_ALLOW_CIDRS:-10.30.22.0/24,10.20.51.0/24,10.20.25.223/32}
       PROPHISH_PUBLIC_ADDR: 0.0.0.0:8080
       # The external URL targets reach. Leave EMPTY for auto-detection (the app
       # detects this host's public IP and recommends the listener location per
