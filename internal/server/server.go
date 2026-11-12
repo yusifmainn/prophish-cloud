@@ -123,6 +123,7 @@ func (s *Server) AdminRouter() http.Handler {
 
 		r.Get("/clients", s.handleClientsList)
 		r.Post("/clients", s.handleClientsCreate)
+		r.Post("/clients/bulk-delete", s.handleClientsBulkDelete)
 		r.Get("/clients/{id}", s.handleClientDetail)
 		r.Post("/clients/{id}/edit", s.handleClientUpdate)
 		// Deleting a client cascades to all its data → admin-only + confirmed.
@@ -144,6 +145,7 @@ func (s *Server) AdminRouter() http.Handler {
 
 		r.Get("/templates", s.handleTemplatesList)
 		r.Post("/templates", s.handleTemplateCreate)
+		r.Post("/templates/bulk-delete", s.handleTemplatesBulkDelete)
 		r.Post("/templates/import", s.handleTemplateImport)
 		r.Get("/templates/{id}", s.handleTemplateDetail)
 		r.Get("/templates/{id}/preview", s.handleTemplatePreview)
@@ -154,6 +156,7 @@ func (s *Server) AdminRouter() http.Handler {
 
 		r.Get("/pages", s.handlePagesList)
 		r.Post("/pages", s.handlePageCreate)
+		r.Post("/pages/bulk-delete", s.handlePagesBulkDelete)
 		r.Post("/pages/import", s.handlePageImport)
 		r.Get("/pages/builder", s.handlePageBuilderNew)
 		r.Post("/pages/builder/preview", s.handlePageBuilderPreview)

@@ -96,18 +96,71 @@
   }
   // Confirmation for destructive actions. Inline onsubmit/onclick handlers are
   // blocked by the Content-Security-Policy (script-src 'self'), so confirmation
-  // is wired here instead: any <form data-confirm="..."> asks before submitting.
+  // is wired here instead: any <form data-confirm="..."> is intercepted and asks
+  // through a centred in-page modal (title, message, a close ✕, and Yes/No). If
+  // the modal markup is absent (e.g. the login/setup screens, which use their own
+  // layout) it falls back to the native browser dialog.
   function wireConfirms() {
+    var modal = document.getElementById('confirm-modal');
+    var msgEl = modal && modal.querySelector('#cm-msg');
+    var pending = null;    // form awaiting confirmation
+    var lastFocus = null;  // element to restore focus to on close
+    var hideTimer = null;
+
+    function close() {
+      if (!modal) return;
+      pending = null;
+      modal.classList.remove('show');
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(function () {
+        modal.setAttribute('hidden', '');
+        modal.setAttribute('aria-hidden', 'true');
+      }, 180);
+      try { document.documentElement.style.overflow = ''; } catch (e) {}
+      if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) {} }
+      lastFocus = null;
+    }
+    function open(msg, form) {
+      pending = form;
+      lastFocus = document.activeElement;
+      if (msgEl) msgEl.textContent = msg;
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+      modal.removeAttribute('hidden');
+      modal.setAttribute('aria-hidden', 'false');
+      try { document.documentElement.style.overflow = 'hidden'; } catch (e) {}
+      void modal.offsetWidth; // reflow so the enter transition plays
+      modal.classList.add('show');
+      // Focus the safe (No) button by default so a stray Enter cancels, not deletes.
+      var no = modal.querySelector('.cbtn-no');
+      if (no && no.focus) { try { no.focus(); } catch (e) {} }
+    }
+
     document.addEventListener('submit', function (e) {
       var f = e.target;
-      if (f && f.getAttribute) {
-        var msg = f.getAttribute('data-confirm');
-        if (msg && !window.confirm(msg)) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      }
+      if (!f || !f.getAttribute) return;
+      var msg = f.getAttribute('data-confirm');
+      if (!msg) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (!modal) { if (window.confirm(msg)) f.submit(); return; }
+      open(msg, f);
     }, true);
+
+    if (!modal) return;
+    modal.addEventListener('click', function (e) {
+      var t = e.target;
+      if (!t || !t.closest) return;
+      if (t.closest('[data-confirm-ok]')) {
+        var f = pending;
+        close();
+        if (f) f.submit();
+      } else if (t.closest('[data-confirm-cancel]')) {
+        close();
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if ((e.key === 'Escape' || e.key === 'Esc') && modal.classList.contains('show')) close();
+    });
   }
 
   // Auto-dismiss the one-off flash toast after a few seconds (progressive

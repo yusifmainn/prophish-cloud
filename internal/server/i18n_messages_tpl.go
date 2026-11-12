@@ -36,7 +36,8 @@ func init() {
 		"tpl.import_btn":   {"az": "Import et", "en": "Import", "ru": "Импортировать"},
 
 		// ---- Templates table ----
-		"tpl.col_subject": {"az": "Mövzu", "en": "Subject", "ru": "Тема"},
-		"tpl.empty":       {"az": "Hələ şablon yoxdur.", "en": "No templates yet.", "ru": "Шаблонов пока нет."},
+		"tpl.col_subject":    {"az": "Mövzu", "en": "Subject", "ru": "Тема"},
+		"tpl.empty":          {"az": "Hələ şablon yoxdur.", "en": "No templates yet.", "ru": "Шаблонов пока нет."},
+		"tpl.delete_confirm": {"az": "Seçilmiş şablonlar silinəcək. Kampaniyada istifadə olunanlar silinməyəcək. Davam edilsin?", "en": "The selected templates will be deleted. Those used by a campaign will not be deleted. Continue?", "ru": "Выбранные шаблоны будут удалены. Используемые в кампании удалены не будут. Продолжить?"},
 	})
 }
