@@ -1,7 +1,7 @@
 {{template "head" .}}
 {{template "nav" .}}
 <main>
-  <div class="pghead"><div class="tt"><h1>{{t "pg.title"}}</h1><p class="sub">{{t "pg.subtitle"}}</p></div>
+  <div class="pghead" style="padding-right:0"><div class="tt"><h1>{{t "pg.title"}}</h1><p class="sub">{{t "pg.subtitle"}}</p></div>
   <div class="act"><a class="btn" href="/pages/builder">{{t "pg.builder_link"}}</a></div></div>
   <div class="note">{{t "lib.goto"}}</div>
   {{if eq .Import "ok"}}<div class="note ok">{{t "pg.import_ok"}}</div>{{end}}
