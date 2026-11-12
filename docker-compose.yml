@@ -46,9 +46,11 @@ services:
     ports:
       # Admin panel — keep bound to localhost; reach it over a VPN/SSH tunnel.
       - "127.0.0.1:8443:8443"
-      # Public server — in production, do NOT publish directly; front it with a
-      # TLS reverse proxy that only forwards /t/, /p/, /s/ paths.
-      - "127.0.0.1:8080:8080"
+      # Public server (landing pages + /t /p /s tracking) — the only component
+      # targets talk to. Bound to localhost by default; set PROPHISH_PUBLIC_BIND=0.0.0.0
+      # in .env to publish it on the LAN so "host" listener campaigns reach it
+      # directly, or front it with a TLS reverse proxy. Keep it off the public internet.
+      - "${PROPHISH_PUBLIC_BIND:-127.0.0.1}:8080:8080"
 
   # Optional local test mail server. Start with:  docker compose --profile test up -d
   # Then create a SMTP sending profile in the admin UI with host=mailhog port=1025
