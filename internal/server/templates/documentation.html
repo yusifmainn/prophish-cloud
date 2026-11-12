@@ -1,0 +1,197 @@
+{{template "head" .}}
+{{template "nav" .}}
+<main>
+<style>
+  .doc{max-width:1000px}
+  .doc-hero{background:linear-gradient(135deg,var(--brand-soft),transparent);border:1px solid var(--border);border-radius:var(--r-lg);padding:30px 32px;margin-bottom:26px}
+  .doc-hero h1{margin:0 0 10px;font-size:30px}
+  .doc-hero p{margin:0;color:var(--muted);font-size:15.5px;max-width:720px;line-height:1.6}
+  .doc-toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:34px}
+  .doc-toc a{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:var(--fg);font-size:14px;font-weight:550;text-decoration:none;transition:border-color .14s,background .14s}
+  .doc-toc a:hover{border-color:var(--brand-line);background:var(--surface-2);text-decoration:none}
+  .doc-toc a b{display:grid;place-items:center;width:24px;height:24px;flex:none;border-radius:7px;background:var(--brand-soft);color:var(--brand);font-size:12px;font-weight:700}
+  .doc-sec{margin:0 0 40px;scroll-margin-top:24px}
+  .doc-sec>h2{display:flex;align-items:center;gap:12px;font-size:21px;margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+  .doc-sec>h2 .n{display:grid;place-items:center;width:32px;height:32px;flex:none;border-radius:9px;background:linear-gradient(180deg,var(--grad-a),var(--grad-b));color:var(--brand-ink);font-size:15px;font-weight:700;box-shadow:var(--shadow-brand)}
+  .doc-sec p{color:var(--fg-2);line-height:1.68;font-size:14.8px;margin:0 0 14px}
+  .doc-sec h3{font-size:15.5px;margin:22px 0 10px}
+  .docfig{margin:18px 0 6px;border:1px solid var(--border-strong);border-radius:14px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  .docfig img{display:block;width:100%;height:auto}
+  .docfig figcaption{padding:10px 15px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--border);background:var(--surface)}
+  .doc-steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+  .doc-steps li{position:relative;padding:3px 0 14px 40px;color:var(--fg-2);line-height:1.6;font-size:14.6px}
+  .doc-steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:1px;width:26px;height:26px;display:grid;place-items:center;border-radius:8px;background:var(--brand-soft);color:var(--brand);font-size:12.5px;font-weight:700}
+  .doc-note{display:flex;gap:12px;padding:14px 16px;border-radius:12px;border:1px solid var(--border);background:var(--surface-2);margin:16px 0;font-size:14px;line-height:1.6;color:var(--fg-2)}
+  .doc-note.warn{border-color:var(--warn-bd,var(--border));background:color-mix(in srgb,var(--warn) 10%,transparent)}
+  .doc-note.brand{border-color:var(--brand-line);background:var(--brand-soft)}
+  .doc-note .ic{flex:none;font-size:17px;line-height:1.4}
+  .doc code{background:var(--surface-3);border:1px solid var(--border);border-radius:6px;padding:1px 6px;font-family:var(--mono);font-size:12.8px}
+  .doc kbd{display:inline-block;background:var(--surface);border:1px solid var(--border-strong);border-bottom-width:2px;border-radius:6px;padding:1px 7px;font-family:var(--mono);font-size:12px;font-weight:600}
+  .doc-modes{display:grid;gap:12px;margin:16px 0}
+  .doc-mode{border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:var(--surface)}
+  .doc-mode h4{margin:0 0 6px;font-size:14.5px;display:flex;align-items:center;gap:8px}
+  .doc-mode p{margin:0;font-size:13.8px}
+  .doc-mode .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand)}
+</style>
+
+<div class="doc">
+  <div class="doc-hero">
+    <h1>PROPhish — İstifadə Təlimatı</h1>
+    <p>Bu təlimat platformanın bütün funksiyalarını ilk quraşdırmadan kampaniya nəticələrinə qədər addım-addım izah edir. Hər bölmədə müvafiq ekranın görüntüsü və nə etməli olduğunuz göstərilir. PROPhish icazəli (authorized) təhlükəsizlik maarifləndirmə simulyasiyaları üçündür — parollar heç vaxt saxlanılmır, yalnız davranış faktı (açdı / klik etdi / göndərdi / bildirdi) qeyd olunur.</p>
+  </div>
+
+  <div class="doc-toc">
+    <a href="#setup"><b>1</b>İlk quraşdırma</a>
+    <a href="#login"><b>2</b>Giriş</a>
+    <a href="#dashboard"><b>3</b>Nəzarət paneli</a>
+    <a href="#clients"><b>4</b>Müştərilər və icazələr</a>
+    <a href="#groups"><b>5</b>Qruplar və hədəflər</a>
+    <a href="#templates"><b>6</b>E-poçt şablonları</a>
+    <a href="#pages"><b>7</b>Açılış səhifələri</a>
+    <a href="#builder"><b>8</b>Vizual redaktor</a>
+    <a href="#library"><b>9</b>Kitabxana</a>
+    <a href="#profiles"><b>10</b>SMTP profilləri</a>
+    <a href="#campaign"><b>11</b>Kampaniya yaratmaq</a>
+    <a href="#results"><b>12</b>Nəticələr və hesabat</a>
+    <a href="#users"><b>13</b>İstifadəçilər</a>
+    <a href="#settings"><b>14</b>Parametrlər (IMAP)</a>
+  </div>
+
+  <section id="setup" class="doc-sec">
+    <h2><span class="n">1</span>İlk quraşdırma</h2>
+    <p>Platforma ilk dəfə açılanda sizi quraşdırma ekranına yönləndirir. Burada ilk <b>administrator</b> hesabını yaradırsınız. Bu hesab bütün idarəetmə hüquqlarına malikdir və sonradan başqa operatorlar əlavə edə bilər.</p>
+    <ol class="doc-steps">
+      <li>E-poçt ünvanınızı daxil edin (giriş üçün istifadə olunacaq).</li>
+      <li>Güclü bir parol təyin edin — parol yalnız bcrypt hash kimi saxlanılır, açıq mətn kimi heç vaxt.</li>
+      <li><b>Hesabı yarat</b> düyməsini basın — avtomatik daxil olursunuz.</li>
+    </ol>
+    <figure class="docfig"><img src="/static/docs/01-setup.webp" alt="Quraşdırma ekranı" loading="lazy"><figcaption>İlk administrator hesabının yaradılması</figcaption></figure>
+  </section>
+
+  <section id="login" class="doc-sec">
+    <h2><span class="n">2</span>Giriş</h2>
+    <p>Administrator hesabı yaradıldıqdan sonra platforma sizi giriş ekranı ilə qarşılayır. E-poçt və parolla daxil olursunuz. Sağ yuxarıda tema (açıq/tünd) və dil (AZ / EN / RU) seçimi var.</p>
+    <figure class="docfig"><img src="/static/docs/00-login.webp" alt="Giriş ekranı" loading="lazy"><figcaption>Operator giriş ekranı</figcaption></figure>
+    <div class="doc-note"><span class="ic">🔒</span><span>Admin paneli internetə birbaşa açılmamalıdır — onu yalnız daxili şəbəkədə və ya VPN/SSH tunnel arxasında saxlayın.</span></div>
+  </section>
+
+  <section id="dashboard" class="doc-sec">
+    <h2><span class="n">3</span>Nəzarət paneli</h2>
+    <p>Daxil olduqda ilk gördüyünüz ekran. Yuxarıda dörd əsas göstərici var: <b>aktiv kampaniyalar</b>, <b>test olunmuş işçilər</b>, <b>orta klik faizi</b> (aşağı = daha yaxşı) və <b>phishing bildirmə faizi</b> (yüksək = daha yaxşı). Aşağıda son kampaniyalar siyahısı göstərilir.</p>
+    <figure class="docfig"><img src="/static/docs/02-dashboard.webp" alt="Nəzarət paneli" loading="lazy"><figcaption>Nəzarət paneli — ümumi göstəricilər və son kampaniyalar</figcaption></figure>
+    <h3>Toplu silmə</h3>
+    <p>Son kampaniyalar cədvəlində hər sətrin solunda və başlıqda checkbox var. Tək-tək və ya <b>hamısını seç</b> ilə seçib <b>Seçilənləri sil</b> düyməsi ilə silə bilərsiniz (təsdiqdən sonra). Silinən kampaniyanın bütün nəticələri də silinir.</p>
+    <p>Soldakı panel bütün bölmələrə keçid verir: <b>İş sahəsi</b> (Nəzarət paneli, Kampaniyalar), <b>Qurğu</b> (Müştərilər, Şablonlar, Səhifələr, Kitabxana, SMTP profilləri) və <b>Admin</b> (İstifadəçilər, Parametrlər, Audit jurnalı).</p>
+  </section>
+
+  <section id="clients" class="doc-sec">
+    <h2><span class="n">4</span>Müştərilər və icazələr</h2>
+    <p>Hər kampaniya bir <b>müştəriyə</b> bağlıdır (öz təşkilatınız və ya xidmət göstərdiyiniz şirkət). Müştəri yaratdıqdan sonra onun səhifəsində <b>icazə (authorization / RoE)</b> əlavə etməlisiniz — bu, hüquqi qapıdır: kampaniya yalnız qüvvədə olan icazə varsa işə salına bilər.</p>
+    <ol class="doc-steps">
+      <li><b>Müştərilər</b> bölməsində yeni müştəri yaradın (ad, əlaqə e-poçtu, qeydlər).</li>
+      <li>Müştərinin səhifəsində <b>icazə</b> əlavə edin: əhatə dairəsi (məs. <code>*.şirkət.az</code>), icazə verən şəxs, sənəd nömrəsi və qüvvədə olma tarixləri.</li>
+      <li>Həmçinin bu səhifədə həmin müştəri üçün <b>qruplar</b> yaradırsınız.</li>
+    </ol>
+    <figure class="docfig"><img src="/static/docs/03-clients.webp" alt="Müştərilər siyahısı" loading="lazy"><figcaption>Müştərilər siyahısı</figcaption></figure>
+    <figure class="docfig"><img src="/static/docs/04-client-detail.webp" alt="Müştəri səhifəsi" loading="lazy"><figcaption>Müştəri səhifəsi — icazələr və qruplar</figcaption></figure>
+    <div class="doc-note warn"><span class="ic">⚠️</span><span>İcazə olmadan və ya icazənin müddəti bitmişsə kampaniya işə salınmır — bu, sistemin qəsdən qoyulmuş qoruyucusudur.</span></div>
+  </section>
+
+  <section id="groups" class="doc-sec">
+    <h2><span class="n">5</span>Qruplar və hədəflər</h2>
+    <p>Qrup — birlikdə test ediləcək işçilərin siyahısıdır (məs. "Maliyyə Departamenti"). Qrupun səhifəsində hədəfləri tək-tək və ya <b>CSV</b> ilə toplu əlavə edirsiniz.</p>
+    <ol class="doc-steps">
+      <li>Qrupu açın və hədəf əlavə edin: e-poçt, ad, soyad, vəzifə.</li>
+      <li>Çoxlu hədəf üçün CSV faylı yükləyin.</li>
+    </ol>
+    <figure class="docfig"><img src="/static/docs/05-group-targets.webp" alt="Qrup və hədəflər" loading="lazy"><figcaption>Qrup səhifəsi — hədəflərin idarə olunması</figcaption></figure>
+  </section>
+
+  <section id="templates" class="doc-sec">
+    <h2><span class="n">6</span>E-poçt şablonları</h2>
+    <p>Hədəflərə göndəriləcək fişinq e-poçtunun məzmunu. Şablonda mövzu və HTML gövdə olur. Linkləri izləmək üçün <code>{{"{{.TrackingURL}}"}}</code> dəyişənindən istifadə edin — sistem onu hər hədəf üçün unikal izləmə linki ilə əvəz edir.</p>
+    <figure class="docfig"><img src="/static/docs/06-templates.webp" alt="Şablonlar" loading="lazy"><figcaption>E-poçt şablonları</figcaption></figure>
+  </section>
+
+  <section id="pages" class="doc-sec">
+    <h2><span class="n">7</span>Açılış səhifələri</h2>
+    <p>İşçi linkə klikləyəndən sonra gördüyü səhifə (məs. saxta giriş səhifəsi). Üç yolla yarada bilərsiniz:</p>
+    <ol class="doc-steps">
+      <li><b>URL-dən klonla</b> — mövcud bir səhifəni çəkib açılış səhifəsinə çevirir; formalar avtomatik izlənməyə yönəldilir.</li>
+      <li><b>Əl ilə</b> — HTML gövdəni özünüz yazırsınız. Forma <code>action="{{"{{.SubmitURL}}"}}"</code> və <code>method="post"</code> olmalıdır.</li>
+      <li><b>Vizual redaktor</b> və ya <b>Kitabxana</b> (aşağıda).</li>
+    </ol>
+    <figure class="docfig"><img src="/static/docs/07-pages.webp" alt="Açılış səhifələri" loading="lazy"><figcaption>Açılış səhifələri</figcaption></figure>
+    <div class="doc-note"><span class="ic">🔐</span><span>Təhlükəsizlik: daxil edilən parollar <b>heç vaxt oxunmur və saxlanılmır</b> — yalnız formanın göndərildiyi faktı qeyd olunur.</span></div>
+  </section>
+
+  <section id="builder" class="doc-sec">
+    <h2><span class="n">8</span>Vizual redaktor</h2>
+    <p>HTML bilmədən açılış səhifəsini sürükle-burax üsulu ilə yaratmaq üçün. Hazır bloklar, mətn, şəkil, forma elementləri əlavə edib dizaynı birbaşa görərək qurursunuz.</p>
+    <figure class="docfig"><img src="/static/docs/08-builder.webp" alt="Vizual redaktor" loading="lazy"><figcaption>Vizual səhifə redaktoru</figcaption></figure>
+  </section>
+
+  <section id="library" class="doc-sec">
+    <h2><span class="n">9</span>Kitabxana</h2>
+    <p>Hazır brend şablonları — Microsoft 365, Google, OneDrive, OWA, IT parol portalı və s. Sıfırdan yazmaq istəmirsinizsə, kitabxanadan hazır bir dəsti (e-poçt + açılış səhifəsi) seçib bir kliklə istifadəyə alırsınız.</p>
+    <figure class="docfig"><img src="/static/docs/09-library.webp" alt="Kitabxana" loading="lazy"><figcaption>Hazır şablon kitabxanası</figcaption></figure>
+  </section>
+
+  <section id="profiles" class="doc-sec">
+    <h2><span class="n">10</span>SMTP profilləri</h2>
+    <p>E-poçtların hansı poçt serveri ilə göndəriləcəyini təyin edir: SMTP host, port, istifadəçi, "From" ünvanı. SMTP parolu şifrələnmiş saxlanılır (açıq mətn kimi yox).</p>
+    <figure class="docfig"><img src="/static/docs/10-profiles.webp" alt="SMTP profilləri" loading="lazy"><figcaption>Göndərmə (SMTP) profilləri</figcaption></figure>
+    <div class="doc-note"><span class="ic">✉️</span><span>Test üçün daxili MailHog serverindən istifadə edə bilərsiniz (host <code>mailhog</code>, port <code>1025</code>).</span></div>
+  </section>
+
+  <section id="campaign" class="doc-sec">
+    <h2><span class="n">11</span>Kampaniya yaratmaq</h2>
+    <p>Bütün komponentləri birləşdirən addım. Kampaniya forması: ad, müştəri, icazə, qrup(lar), e-poçt şablonu, açılış səhifəsi və SMTP profili seçirsiniz. Ən vacib hissə — <b>Listener</b> (hədəflərin linkə haradan çatacağı) seçimidir.</p>
+    <figure class="docfig"><img src="/static/docs/11-campaigns.webp" alt="Kampaniya yaratmaq" loading="lazy"><figcaption>Kampaniya yaratma forması və listener seçimləri</figcaption></figure>
+
+    <h3>Listener rejimləri</h3>
+    <div class="doc-modes">
+      <div class="doc-mode">
+        <h4>Hazırki host <span class="pill">daxili / LAN</span></h4>
+        <p>Linklər birbaşa bu serverin ünvanına işarə edir. Yalnız hədəflər həmin ünvana çata bildikdə (korporativ şəbəkə daxilində) işləyir. Public IP yoxdursa xaricdən açılmaz.</p>
+      </div>
+      <div class="doc-mode">
+        <h4>Cloudflare gateway <span class="pill">tövsiyə / hər yerdən</span></h4>
+        <p>Hər kampaniya üçün avtomatik <code>https://…trycloudflare.com</code> tuneli açılır. Hədəf linki ev, telefon, istənilən yerdən aça bilir və bağlantı HTTPS-dir. Yalnız serverdən çıxış (outbound) internet lazımdır.</p>
+      </div>
+      <div class="doc-mode">
+        <h4>Xüsusi URL <span class="pill">öz domeniniz</span></h4>
+        <p>Öz domeniniz və ya reverse proxy-niz varsa, tam URL-i əl ilə daxil edirsiniz (məs. <code>https://secure.domeniniz.az</code>).</p>
+      </div>
+    </div>
+    <div class="doc-note warn"><span class="ic">⏱️</span><span>Cloudflare gateway seçsəniz, tunel URL-i hazır olana qədər (~5-10 san) sistem göndərişi gözləyir — tez göndərsəniz belə linklər düzgün olur. Kampaniya göndərildikdən sonra serveri restart etməyin, əks halda tunel URL-i dəyişər.</span></div>
+  </section>
+
+  <section id="results" class="doc-sec">
+    <h2><span class="n">12</span>Nəticələr və hesabat</h2>
+    <p>Kampaniya işə salındıqdan sonra detal səhifəsində real nəticələri izləyirsiniz: neçə nəfərə <b>göndərildi</b>, neçəsi <b>açdı</b>, <b>klik etdi</b>, <b>məlumat verdi</b> və <b>phishing kimi bildirdi</b>. Sağda ümumi <b>risk balı</b> (Aşağı / Orta / Yüksək) göstərilir.</p>
+    <figure class="docfig"><img src="/static/docs/12-campaign-detail.webp" alt="Kampaniya nəticələri" loading="lazy"><figcaption>Kampaniya detalı — davranış icmalı və risk balı</figcaption></figure>
+    <ul class="doc-steps">
+      <li><b>Yenilə</b> — nəticələri yeniləyir (tamamlanmış kampaniyalar avtomatik yenilənmir).</li>
+      <li><b>PDF hesabat</b> — rəhbərliyə təqdim üçün hesabat.</li>
+      <li><b>CSV export</b> — hədəf-səviyyəli nəticələr.</li>
+    </ul>
+    <div class="doc-note brand"><span class="ic">📊</span><span>"Açıldı" piksel-əsaslıdır — bəzi poçt sistemləri şəkilləri bloklayır (açılma az görünə bilər) və ya linkləri avtomatik yoxlayır (açılma/klik şişə bilər).</span></div>
+  </section>
+
+  <section id="users" class="doc-sec">
+    <h2><span class="n">13</span>İstifadəçilər</h2>
+    <p>Admin bölməsində əlavə operatorlar yarada, rolları (admin / operator) təyin edə və hesabları aktiv/deaktiv edə bilərsiniz.</p>
+    <figure class="docfig"><img src="/static/docs/13-users.webp" alt="İstifadəçilər" loading="lazy"><figcaption>İstifadəçilərin idarə olunması</figcaption></figure>
+  </section>
+
+  <section id="settings" class="doc-sec">
+    <h2><span class="n">14</span>Parametrlər (IMAP)</h2>
+    <p>Phishing-bildirmə qutusunu (işçilərin şübhəli e-poçtu yönləndirdiyi IMAP qutusu) konfiqurasiya edirsiniz. Sistem bu qutunu yoxlayıb hədəfləri avtomatik "bildirdi" kimi işarələyir — bu, müsbət göstəricidir.</p>
+    <figure class="docfig"><img src="/static/docs/14-settings.webp" alt="Parametrlər" loading="lazy"><figcaption>IMAP / phishing-bildirmə parametrləri</figcaption></figure>
+  </section>
+
+  <div class="doc-note brand" style="margin-top:30px"><span class="ic">✅</span><span><b>Tam iş axını:</b> Müştəri yarat → icazə əlavə et → qrup və hədəflər → e-poçt şablonu → açılış səhifəsi → SMTP profili → kampaniya yarat (listener seç) → işə sal → nəticələri izlə → PDF/CSV hesabat.</span></div>
+</div>
+</main>
+{{template "foot" .}}

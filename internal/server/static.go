@@ -54,6 +54,12 @@ var appleTouchPNG []byte
 //go:embed static/fonts/*.woff2
 var fontFS embed.FS
 
+// Documentation screenshots (optimized WebP) for the in-app user guide, served
+// same-origin so the strict CSP (img-src 'self') allows them.
+//
+//go:embed static/docs/*.webp
+var docFS embed.FS
+
 // handleStaticJS serves the admin's progressive-enhancement script from the same
 // origin, so it is allowed by the CSP (script-src falls back to default-src 'self';
 // inline scripts are blocked). It is an unauthenticated GET — the file is not secret.
@@ -144,6 +150,24 @@ func (s *Server) handleBrandIcon(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", ct)
+	w.Header().Set("Cache-Control", "public, max-age=604800")
+	_, _ = w.Write(b)
+}
+
+// handleStaticDoc serves a documentation screenshot (WebP) by name (no path
+// traversal). Public GET — the images are the product's own UI, not secret.
+func (s *Server) handleStaticDoc(w http.ResponseWriter, r *http.Request) {
+	name := strings.TrimPrefix(r.URL.Path, "/static/docs/")
+	if name == "" || strings.ContainsAny(name, `/\`) || strings.Contains(name, "..") {
+		http.NotFound(w, r)
+		return
+	}
+	b, err := docFS.ReadFile("static/docs/" + name)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "image/webp")
 	w.Header().Set("Cache-Control", "public, max-age=604800")
 	_, _ = w.Write(b)
 }
