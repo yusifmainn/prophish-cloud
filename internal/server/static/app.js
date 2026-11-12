@@ -260,7 +260,36 @@
     start();
   }
 
-  function init() { wireToggle(); markActive(); wireConfirms(); wireFlash(); wireTabs(); wireCampaignForm(); wireLivePoll(); }
+  // Select-all + per-row checkboxes for the dashboard campaign table. Keeps the
+  // header checkbox in sync (checked / indeterminate) and enables the bulk
+  // action button only when at least one row is selected.
+  function wireBulkSelect() {
+    var all = document.querySelector('[data-check-all]');
+    if (!all) return;
+    var form = all.closest('form');
+    if (!form) return;
+    function rows() { return Array.prototype.slice.call(form.querySelectorAll('[data-row-check]')); }
+    var submit = form.querySelector('[data-bulk-submit]');
+    var count = form.querySelector('[data-bulk-count]');
+    function sync() {
+      var cbs = rows();
+      var checked = cbs.filter(function (c) { return c.checked; });
+      all.checked = cbs.length > 0 && checked.length === cbs.length;
+      all.indeterminate = checked.length > 0 && checked.length < cbs.length;
+      if (submit) submit.disabled = checked.length === 0;
+      if (count) count.textContent = checked.length ? ' (' + checked.length + ')' : '';
+    }
+    all.addEventListener('change', function () {
+      rows().forEach(function (c) { c.checked = all.checked; });
+      sync();
+    });
+    form.addEventListener('change', function (e) {
+      if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-row-check')) sync();
+    });
+    sync();
+  }
+
+  function init() { wireToggle(); markActive(); wireConfirms(); wireFlash(); wireTabs(); wireCampaignForm(); wireLivePoll(); wireBulkSelect(); }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
