@@ -59,9 +59,19 @@ func injectBeforeBodyClose(html, snippet string) string {
 	return html[:idx] + snippet + html[idx:]
 }
 
-// pixelTag builds the tracking pixel img tag for a given base URL and token.
+// pixelTag builds the open-tracking pixel img tag for a given base URL and token.
+//
+// The pixel is a visible 1x1 image, deliberately NOT hidden with
+// display:none / visibility:hidden / opacity:0: several mail clients (notably
+// Outlook) skip downloading images that are hidden that way, which would stop
+// the "opened" event from ever firing. A 1x1 transparent image placed at the
+// end of the body is effectively invisible to the recipient while still being
+// requested by every client that loads remote images. (Clients that block
+// remote images entirely — Outlook's default, many corporate policies, Apple
+// Mail Privacy Protection — will still never report an open; that is inherent
+// to pixel-based open tracking, not something markup can fix.)
 func pixelTag(baseURL, token string) template.HTML {
-	return template.HTML(fmt.Sprintf(`<img src="%s/p/%s.png" width="1" height="1" alt="" style="display:none">`, baseURL, token))
+	return template.HTML(fmt.Sprintf(`<img src="%s/p/%s.png" alt="" width="1" height="1" border="0" style="width:1px;height:1px;border:0;margin:0;padding:0;overflow:hidden;line-height:1px;">`, baseURL, token))
 }
 
 // clickURL builds the per-target landing-page link.
