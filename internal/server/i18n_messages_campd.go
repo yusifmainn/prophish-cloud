@@ -46,6 +46,7 @@ func init() {
 		"campd.configuration":        {"az": "Konfiqurasiya", "en": "Configuration", "ru": "Конфигурация"},
 		"campd.template":             {"az": "Şablon", "en": "Template", "ru": "Шаблон"},
 		"campd.landing_page":         {"az": "Açılış səhifəsi", "en": "Landing page", "ru": "Целевая страница"},
+		"campd.real_url":             {"az": "Real sayt (public)", "en": "Real site (public)", "ru": "Реальный сайт (public)"},
 		"campd.smtp_profile":         {"az": "SMTP profili", "en": "SMTP profile", "ru": "SMTP-профиль"},
 		"campd.dept_breakdown":       {"az": "Şöbələr üzrə bölgü", "en": "Breakdown by department", "ru": "Разбивка по отделам"},
 		"campd.department":           {"az": "Şöbə", "en": "Department", "ru": "Отдел"},

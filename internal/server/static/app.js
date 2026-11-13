@@ -273,6 +273,42 @@
     }
     for (var r = 0; r < radios.length; r++) radios[r].addEventListener('change', applyMode);
     applyMode();
+
+    // Campaign kind tabs (Local / Public). Local serves a hosted landing page on
+    // click; Public redirects the click to a real external URL (no page, no form).
+    // Switching toggles which destination field is shown AND which one is
+    // `required`, so the browser never blocks submission on a hidden control.
+    var kindInput = form.querySelector('[data-kind-input]');
+    var kindTabs = form.querySelectorAll('[data-mode-tabs] a');
+    var destLocal = form.querySelector('[data-dest-local]');
+    var destPublic = form.querySelector('[data-dest-public]');
+    var pageSel = form.querySelector('select[name="landing_page_id"]');
+    var urlInput = form.querySelector('input[name="redirect_url"]');
+    var kindHints = form.querySelectorAll('[data-mode-hint]');
+    function setKind(kind) {
+      if (kind !== 'public') kind = 'local';
+      if (kindInput) kindInput.value = kind;
+      for (var i = 0; i < kindTabs.length; i++) {
+        kindTabs[i].classList.toggle('active', kindTabs[i].getAttribute('data-mode') === kind);
+      }
+      if (destLocal) destLocal.style.display = kind === 'local' ? '' : 'none';
+      if (destPublic) destPublic.style.display = kind === 'public' ? '' : 'none';
+      for (var h = 0; h < kindHints.length; h++) {
+        kindHints[h].style.display = kindHints[h].getAttribute('data-mode-hint') === kind ? '' : 'none';
+      }
+      // Only the active destination carries `required`.
+      if (pageSel) { if (kind === 'local') pageSel.setAttribute('required', ''); else pageSel.removeAttribute('required'); }
+      if (urlInput) { if (kind === 'public') urlInput.setAttribute('required', ''); else urlInput.removeAttribute('required'); }
+    }
+    if (kindTabs.length) {
+      for (var kt = 0; kt < kindTabs.length; kt++) {
+        kindTabs[kt].addEventListener('click', function (e) {
+          e.preventDefault();
+          setKind(this.getAttribute('data-mode'));
+        });
+      }
+      setKind(kindInput ? kindInput.value : 'local');
+    }
   }
 
   // Live progress for a running campaign: poll the page itself (same origin) and

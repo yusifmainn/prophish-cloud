@@ -92,7 +92,7 @@ func (s *Server) campaignPageData(r *http.Request) map[string]any {
 		"RecommendHost":   recommend,
 		"HostPublicURL":   hostURL,
 		"ListenerMode":    mode,
-		"Sel":             map[string]any{"Name": "", "ClientID": "", "AuthID": "", "TemplateID": "", "PageID": "", "ProfileID": "", "GroupIDs": map[string]bool{}, "PublicBaseURL": ""},
+		"Sel":             map[string]any{"Name": "", "ClientID": "", "AuthID": "", "TemplateID": "", "PageID": "", "ProfileID": "", "GroupIDs": map[string]bool{}, "PublicBaseURL": "", "Kind": "local", "RedirectURL": ""},
 	}
 }
 
@@ -126,6 +126,21 @@ func sanitizePublicBaseURL(v string) (string, bool) {
 		return "", false
 	}
 	return strings.TrimRight(v, "/"), true
+}
+
+// sanitizeRedirectURL validates a "public" campaign's real destination URL. It is
+// REQUIRED (blank is invalid) and must be an http(s):// URL. Unlike the listener
+// base URL, the full path/query is kept verbatim (no trailing-slash trimming) so
+// a deep link to the real site is preserved exactly.
+func sanitizeRedirectURL(v string) (string, bool) {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return "", false
+	}
+	if !strings.HasPrefix(v, "http://") && !strings.HasPrefix(v, "https://") {
+		return "", false
+	}
+	return v, true
 }
 
 func (s *Server) handleCampaignsList(w http.ResponseWriter, r *http.Request) {
@@ -175,6 +190,11 @@ func (s *Server) handleCampaignCreate(w http.ResponseWriter, r *http.Request) {
 	pageID := r.FormValue("landing_page_id")
 	profileID := r.FormValue("sending_profile_id")
 	groupIDs := r.Form["group_ids"]
+	kind := r.FormValue("kind")
+	if kind != "public" {
+		kind = "local"
+	}
+	redirectInput := strings.TrimSpace(r.FormValue("redirect_url"))
 	publicURL, wantTunnel, listenerMode, urlOK := s.resolveListenerMode(r)
 
 	// On any validation failure, re-render the page with a clear Azerbaijani
@@ -187,12 +207,27 @@ func (s *Server) handleCampaignCreate(w http.ResponseWriter, r *http.Request) {
 			"Name": name, "ClientID": clientID, "AuthID": authID,
 			"TemplateID": templateID, "PageID": pageID, "ProfileID": profileID,
 			"GroupIDs": strset(groupIDs), "PublicBaseURL": r.FormValue("public_base_url"),
+			"Kind": kind, "RedirectURL": redirectInput,
 		}
 		s.render(w, r, http.StatusBadRequest, "campaigns.html", data)
 	}
 
-	if name == "" || clientID == "" || authID == "" || templateID == "" || pageID == "" || profileID == "" || len(groupIDs) == 0 {
+	if name == "" || clientID == "" || authID == "" || templateID == "" || profileID == "" || len(groupIDs) == 0 {
 		fail("Bütün sahələri doldurun və ən azı bir hədəf qrupu seçin.")
+		return
+	}
+	// Destination depends on the kind: a local campaign needs a landing page; a
+	// public campaign needs a real redirect URL and has no landing page.
+	pageArg, redirectArg := pageID, ""
+	if kind == "public" {
+		u, rok := sanitizeRedirectURL(redirectInput)
+		if !rok {
+			fail("Public rejim üçün http:// və ya https:// ilə başlayan real URL daxil edin.")
+			return
+		}
+		pageArg, redirectArg = "", u
+	} else if pageID == "" {
+		fail("Açılış səhifəsi seçin və ya Public rejimə keçin.")
 		return
 	}
 	if !urlOK {
@@ -226,7 +261,7 @@ func (s *Server) handleCampaignCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	campaignID, err := s.store.CreateCampaign(r.Context(), clientID, authID, name, templateID, pageID, profileID, s.currentUserID(r), publicURL, wantTunnel)
+	campaignID, err := s.store.CreateCampaign(r.Context(), clientID, authID, name, templateID, pageArg, profileID, s.currentUserID(r), publicURL, kind, redirectArg, wantTunnel)
 	if err != nil {
 		http.Error(w, "db error", http.StatusInternalServerError)
 		return
@@ -296,6 +331,7 @@ func (s *Server) handleCampaignEditForm(w http.ResponseWriter, r *http.Request) 
 		"Name": camp.Name, "ClientID": camp.ClientID, "AuthID": camp.AuthorizationID,
 		"TemplateID": camp.TemplateID, "PageID": camp.LandingPageID, "ProfileID": camp.SendingProfileID,
 		"GroupIDs": strset(gids), "PublicBaseURL": camp.PublicBaseURL,
+		"Kind": camp.Kind, "RedirectURL": camp.RedirectURL,
 	}
 	s.render(w, r, http.StatusOK, "campaigns.html", data)
 }
@@ -322,6 +358,11 @@ func (s *Server) handleCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 	pageID := r.FormValue("landing_page_id")
 	profileID := r.FormValue("sending_profile_id")
 	groupIDs := r.Form["group_ids"]
+	kind := r.FormValue("kind")
+	if kind != "public" {
+		kind = "local"
+	}
+	redirectInput := strings.TrimSpace(r.FormValue("redirect_url"))
 	publicURL, wantTunnel, listenerMode, urlOK := s.resolveListenerMode(r)
 
 	fail := func(msg string) {
@@ -333,12 +374,25 @@ func (s *Server) handleCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 			"Name": name, "ClientID": clientID, "AuthID": authID,
 			"TemplateID": templateID, "PageID": pageID, "ProfileID": profileID,
 			"GroupIDs": strset(groupIDs), "PublicBaseURL": r.FormValue("public_base_url"),
+			"Kind": kind, "RedirectURL": redirectInput,
 		}
 		s.render(w, r, http.StatusBadRequest, "campaigns.html", data)
 	}
 
-	if name == "" || clientID == "" || authID == "" || templateID == "" || pageID == "" || profileID == "" || len(groupIDs) == 0 {
+	if name == "" || clientID == "" || authID == "" || templateID == "" || profileID == "" || len(groupIDs) == 0 {
 		fail("Bütün sahələri doldurun və ən azı bir hədəf qrupu seçin.")
+		return
+	}
+	pageArg, redirectArg := pageID, ""
+	if kind == "public" {
+		u, rok := sanitizeRedirectURL(redirectInput)
+		if !rok {
+			fail("Public rejim üçün http:// və ya https:// ilə başlayan real URL daxil edin.")
+			return
+		}
+		pageArg, redirectArg = "", u
+	} else if pageID == "" {
+		fail("Açılış səhifəsi seçin və ya Public rejimə keçin.")
 		return
 	}
 	if !urlOK {
@@ -367,7 +421,7 @@ func (s *Server) handleCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := s.store.UpdateCampaignConfig(r.Context(), id, name, authID, templateID, pageID, profileID, publicURL, wantTunnel)
+	ok, err := s.store.UpdateCampaignConfig(r.Context(), id, name, authID, templateID, pageArg, profileID, publicURL, kind, redirectArg, wantTunnel)
 	if err != nil {
 		http.Error(w, "db error", http.StatusInternalServerError)
 		return

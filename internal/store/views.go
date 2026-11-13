@@ -100,11 +100,11 @@ func (s *Store) CampaignView(c ctx, id string) (*CampaignView, error) {
 	var v CampaignView
 	err := s.db.QueryRow(c,
 		`SELECT c.id, c.name, c.status, c.client_id, cl.name,
-		        et.name, lp.name, sp.name, a.scope, a.valid_to, c.created_at
+		        et.name, coalesce(lp.name,''), sp.name, a.scope, a.valid_to, c.created_at
 		   FROM campaigns c
 		   JOIN clients cl        ON cl.id = c.client_id
 		   JOIN email_templates et ON et.id = c.template_id
-		   JOIN landing_pages lp   ON lp.id = c.landing_page_id
+		   LEFT JOIN landing_pages lp ON lp.id = c.landing_page_id
 		   JOIN sending_profiles sp ON sp.id = c.sending_profile_id
 		   JOIN authorizations a   ON a.id = c.authorization_id
 		  WHERE c.id = $1`, id).

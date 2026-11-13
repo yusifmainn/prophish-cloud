@@ -39,6 +39,16 @@ func init() {
 		"camp.selected_targets": {"az": "Seçilmiş hədəf", "en": "Selected targets", "ru": "Выбранные цели"},
 		"camp.employees_word":   {"az": "işçi", "en": "employees", "ru": "сотрудников"},
 
+		// ---- Campaign kind (Local / Public) ----
+		"camp.kind_label":       {"az": "Kampaniya növü", "en": "Campaign type", "ru": "Тип кампании"},
+		"camp.kind_local":       {"az": "Local", "en": "Local", "ru": "Local"},
+		"camp.kind_public":      {"az": "Public", "en": "Public", "ru": "Public"},
+		"camp.kind_local_hint":  {"az": "Klikdən sonra toolun öz açılış səhifəsi göstərilir (klon/kitabxana). Forma varsa yalnız göndərmə faktı qeyd olunur — parol saxlanmır.", "en": "On click, a landing page hosted by the tool is shown (clone/library). If it has a form, only the fact of submission is recorded — no password is stored.", "ru": "При клике показывается целевая страница, размещённая в инструменте (клон/библиотека). Если есть форма, фиксируется только факт отправки — пароль не сохраняется."},
+		"camp.kind_public_hint": {"az": "Klikdən sonra işçi sizin verdiyiniz real sayta yönləndirilir. Açılış səhifəsi və forma yoxdur — yalnız göndərildi / açıldı / kliklədi izlənir.", "en": "On click, the employee is redirected to the real site you provide. No landing page and no form — only sent / opened / clicked are tracked.", "ru": "При клике сотрудник перенаправляется на указанный вами реальный сайт. Нет целевой страницы и формы — отслеживаются только отправлено / открыто / кликнуто."},
+		"camp.real_url_label":   {"az": "Real sayt URL-i", "en": "Real site URL", "ru": "URL реального сайта"},
+		"camp.real_url_hint":    {"az": "Klikdən sonra işçi bu ünvana yönləndirilir. http:// və ya https:// ilə başlamalıdır. Email-dəki link yenə izləmə linkidir (tunel/host), bu URL deyil.", "en": "After the click the employee is redirected here. Must start with http:// or https://. The link in the email is still the tracking link (tunnel/host), not this URL.", "ru": "После клика сотрудник перенаправляется сюда. Должен начинаться с http:// или https://. Ссылка в письме — это по-прежнему отслеживаемая ссылка (туннель/хост), а не этот URL."},
+		"camp.type_col":         {"az": "Növ", "en": "Type", "ru": "Тип"},
+
 		// ---- Content and sending ----
 		"camp.sect_content": {"az": "Məzmun və göndərmə", "en": "Content and sending", "ru": "Содержание и отправка"},
 

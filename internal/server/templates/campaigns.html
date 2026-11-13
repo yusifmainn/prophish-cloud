@@ -1,6 +1,7 @@
 {{template "head" .}}
 {{template "nav" .}}
 {{$sel := .Sel}}
+{{$kind := "local"}}{{if $sel}}{{if eq $sel.Kind "public"}}{{$kind = "public"}}{{end}}{{end}}
 <main>
   <div class="pghead">
     <div class="tt"><h1>{{t "nav.campaigns"}}</h1><p class="sub">{{t "camp.subtitle"}}</p></div>
@@ -14,6 +15,15 @@
     <div class="note">{{t "camp.need_intro"}}{{if not .Clients}} {{t "camp.need_clients"}};{{end}}{{if not .Templates}} {{t "camp.need_template"}};{{end}}{{if not .Pages}} {{t "camp.need_page"}};{{end}}{{if not .Profiles}} {{t "camp.need_profile"}}.{{end}}</div>
     {{end}}
     <form method="post" action="{{if .EditID}}/campaigns/{{.EditID}}/edit{{else}}/campaigns{{end}}" data-campaign-form>
+      <input type="hidden" name="kind" value="{{$kind}}" data-kind-input>
+      <label>{{t "camp.kind_label"}}</label>
+      <div class="tabs" data-mode-tabs style="margin:2px 0 4px">
+        <a href="#local" data-mode="local"{{if eq $kind "local"}} class="active"{{end}}>{{t "camp.kind_local"}}</a>
+        <a href="#public" data-mode="public"{{if eq $kind "public"}} class="active"{{end}}>{{t "camp.kind_public"}}</a>
+      </div>
+      <p class="hint" data-mode-hint="local" style="margin:0 0 18px{{if ne $kind "local"}};display:none{{end}}">{{t "camp.kind_local_hint"}}</p>
+      <p class="hint" data-mode-hint="public" style="margin:0 0 18px{{if ne $kind "public"}};display:none{{end}}">{{t "camp.kind_public_hint"}}</p>
+
       <div class="sectlbl">{{t "camp.sect_basics"}}</div>
       <label for="c-name">{{t "camp.name_label"}}</label>
       <input id="c-name" name="name" value="{{if $sel}}{{$sel.Name}}{{end}}" required placeholder="{{t "camp.name_ph"}}">
@@ -55,9 +65,14 @@
           <label for="c-tpl">{{t "camp.template_label"}}</label>
           <select id="c-tpl" name="template_id" required><option value="">{{t "camp.select"}}</option>{{range .Templates}}<option value="{{.ID}}" {{if $sel}}{{if eq $sel.TemplateID .ID}}selected{{end}}{{end}}>{{.Name}}</option>{{end}}</select>
         </div>
-        <div>
+        <div data-dest-local{{if ne $kind "local"}} style="display:none"{{end}}>
           <label for="c-page">{{t "camp.page_label"}}</label>
-          <select id="c-page" name="landing_page_id" required><option value="">{{t "camp.select"}}</option>{{range .Pages}}<option value="{{.ID}}" {{if $sel}}{{if eq $sel.PageID .ID}}selected{{end}}{{end}}>{{.Name}}</option>{{end}}</select>
+          <select id="c-page" name="landing_page_id"{{if eq $kind "local"}} required{{end}}><option value="">{{t "camp.select"}}</option>{{range .Pages}}<option value="{{.ID}}" {{if $sel}}{{if eq $sel.PageID .ID}}selected{{end}}{{end}}>{{.Name}}</option>{{end}}</select>
+        </div>
+        <div data-dest-public{{if ne $kind "public"}} style="display:none"{{end}}>
+          <label for="c-realurl">{{t "camp.real_url_label"}}</label>
+          <input id="c-realurl" type="url" name="redirect_url" value="{{if $sel}}{{$sel.RedirectURL}}{{end}}" placeholder="https://…"{{if eq $kind "public"}} required{{end}}>
+          <p class="hint">{{t "camp.real_url_hint"}}</p>
         </div>
         <div style="grid-column:1/-1">
           <label for="c-smtp">{{t "camp.smtp_label"}}</label>
@@ -101,12 +116,12 @@
   <div class="card flush">
     <h2 class="card-head">{{t "camp.all_title"}}</h2>
     <table>
-      <thead><tr><th>{{t "common.name"}}</th><th>{{t "common.client"}}</th><th>{{t "common.status"}}</th><th>{{t "common.created"}}</th><th></th></tr></thead>
+      <thead><tr><th>{{t "common.name"}}</th><th>{{t "common.client"}}</th><th>{{t "camp.type_col"}}</th><th>{{t "common.status"}}</th><th>{{t "common.created"}}</th><th></th></tr></thead>
       <tbody>
         {{range .Campaigns}}
-        <tr><td><a href="/campaigns/{{.ID}}" class="tlink">{{.Name}}</a></td><td>{{.ClientName}}</td><td>{{template "statuspill" .Status}}</td><td class="muted num">{{.CreatedAt.Format "2006-01-02"}}</td>
+        <tr><td><a href="/campaigns/{{.ID}}" class="tlink">{{.Name}}</a></td><td>{{.ClientName}}</td><td>{{if eq .Kind "public"}}<span class="pill info">{{t "camp.kind_public"}}</span>{{else}}<span class="pill neutral">{{t "camp.kind_local"}}</span>{{end}}</td><td>{{template "statuspill" .Status}}</td><td class="muted num">{{.CreatedAt.Format "2006-01-02"}}</td>
             <td><a href="/campaigns/{{.ID}}" class="rowopen">{{t "common.open_arrow"}}</a></td></tr>
-        {{else}}<tr><td colspan="5"><div class="empty"><p>{{t "camp.empty"}}</p></div></td></tr>{{end}}
+        {{else}}<tr><td colspan="6"><div class="empty"><p>{{t "camp.empty"}}</p></div></td></tr>{{end}}
       </tbody>
     </table>
   </div>

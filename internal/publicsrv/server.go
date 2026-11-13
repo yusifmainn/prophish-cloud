@@ -86,6 +86,23 @@ func (s *Server) handleClick(w http.ResponseWriter, r *http.Request) {
 		_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "link_clicked", s.clientIP(r), r.UserAgent())
 	}
 
+	// Public campaign: the click is now recorded (above), so there is nothing
+	// hosted to show — send the target straight on to the configured real site.
+	// No landing page, no form, nothing to submit. A 302 keeps the method GET and
+	// our no-referrer policy (set by publicHeaders) prevents the tracking token
+	// leaking to the destination in a Referer header. If the destination is
+	// somehow empty (should be impossible — enforced at create time and by a DB
+	// CHECK), fall back to the neutral awareness notice rather than a broken 302.
+	if t.CampaignKind == "public" {
+		if dest := strings.TrimSpace(t.CampaignRedirectURL); dest != "" {
+			http.Redirect(w, r, dest, http.StatusFound)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte(awarenessPage))
+		return
+	}
+
 	// Submit URL: prefer the campaign's OWN public base (the HTTPS tunnel URL for
 	// a gateway campaign, the host URL otherwise) so the form posts back to the
 	// SAME origin the target loaded the page from. Otherwise a page served over

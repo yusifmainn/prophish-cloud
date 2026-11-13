@@ -101,11 +101,18 @@ type Campaign struct {
 	LandingPageID    string
 	SendingProfileID string
 	Status           string
-	LaunchAt         *time.Time
-	SendBy           *time.Time
-	CompletedAt      *time.Time
-	Archived         bool
-	CreatedAt        time.Time
+	// Kind is the delivery style: "local" (a hosted landing page is served on
+	// click, the classic flow) or "public" (a click is tracked and then
+	// redirected to RedirectURL, a real external site — no landing page, no form).
+	Kind string
+	// RedirectURL is the external destination a "public" campaign redirects a
+	// click to. Empty for "local" campaigns.
+	RedirectURL string
+	LaunchAt    *time.Time
+	SendBy      *time.Time
+	CompletedAt *time.Time
+	Archived    bool
+	CreatedAt   time.Time
 	// PublicBaseURL overrides the global public base URL for this campaign's
 	// tracking links when non-empty (empty = use the global default).
 	PublicBaseURL string

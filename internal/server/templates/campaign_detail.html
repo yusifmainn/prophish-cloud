@@ -92,7 +92,11 @@
     <h2>{{t "campd.configuration"}}</h2>
     <table>
       <tr><th>{{t "campd.template"}}</th><td>{{.C.TemplateName}}</td></tr>
+      {{if eq .Camp.Kind "public"}}
+      <tr><th>{{t "campd.real_url"}}</th><td><code>{{.Camp.RedirectURL}}</code></td></tr>
+      {{else}}
       <tr><th>{{t "campd.landing_page"}}</th><td>{{.C.PageName}}</td></tr>
+      {{end}}
       <tr><th>{{t "campd.smtp_profile"}}</th><td>{{.C.ProfileName}}</td></tr>
     </table>
   </div>

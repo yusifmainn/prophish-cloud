@@ -6,18 +6,18 @@ import (
 	"prophish/internal/models"
 )
 
-func (s *Store) CreateCampaign(c ctx, clientID, authID, name, templateID, pageID, profileID, createdBy, publicBaseURL string, tunnelManaged bool) (string, error) {
+func (s *Store) CreateCampaign(c ctx, clientID, authID, name, templateID, pageID, profileID, createdBy, publicBaseURL, kind, redirectURL string, tunnelManaged bool) (string, error) {
 	var id string
 	err := s.db.QueryRow(c,
-		`INSERT INTO campaigns (client_id, authorization_id, name, template_id, landing_page_id, sending_profile_id, created_by, public_base_url, tunnel_managed)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
-		clientID, authID, name, templateID, pageID, profileID, nullIfEmpty(createdBy), publicBaseURL, tunnelManaged).Scan(&id)
+		`INSERT INTO campaigns (client_id, authorization_id, name, template_id, landing_page_id, sending_profile_id, created_by, public_base_url, tunnel_managed, kind, redirect_url)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+		clientID, authID, name, templateID, nullIfEmpty(pageID), profileID, nullIfEmpty(createdBy), publicBaseURL, tunnelManaged, kind, redirectURL).Scan(&id)
 	return id, err
 }
 
 // ListCampaigns lists non-archived campaigns by default.
 func (s *Store) ListCampaigns(c ctx, includeArchived bool) ([]CampaignRow, error) {
-	q := `SELECT c.id, c.name, cl.name, c.status, c.created_at
+	q := `SELECT c.id, c.name, cl.name, c.status, c.created_at, c.kind
 	        FROM campaigns c JOIN clients cl ON cl.id = c.client_id`
 	if !includeArchived {
 		q += ` WHERE c.archived = FALSE`
@@ -31,7 +31,7 @@ func (s *Store) ListCampaigns(c ctx, includeArchived bool) ([]CampaignRow, error
 	var out []CampaignRow
 	for rows.Next() {
 		var r CampaignRow
-		if err := rows.Scan(&r.ID, &r.Name, &r.ClientName, &r.Status, &r.CreatedAt); err != nil {
+		if err := rows.Scan(&r.ID, &r.Name, &r.ClientName, &r.Status, &r.CreatedAt, &r.Kind); err != nil {
 			return nil, err
 		}
 		out = append(out, r)
@@ -42,12 +42,12 @@ func (s *Store) ListCampaigns(c ctx, includeArchived bool) ([]CampaignRow, error
 func (s *Store) GetCampaign(c ctx, id string) (*models.Campaign, error) {
 	var m models.Campaign
 	err := s.db.QueryRow(c,
-		`SELECT id, client_id, authorization_id, name, template_id, landing_page_id, sending_profile_id,
-		        status, launch_at, send_by, completed_at, archived, created_at, public_base_url, tunnel_managed
+		`SELECT id, client_id, authorization_id, name, template_id, coalesce(landing_page_id::text,''), sending_profile_id,
+		        status, launch_at, send_by, completed_at, archived, created_at, public_base_url, tunnel_managed, kind, redirect_url
 		   FROM campaigns WHERE id=$1`, id).
 		Scan(&m.ID, &m.ClientID, &m.AuthorizationID, &m.Name, &m.TemplateID, &m.LandingPageID,
 			&m.SendingProfileID, &m.Status, &m.LaunchAt, &m.SendBy, &m.CompletedAt, &m.Archived, &m.CreatedAt,
-			&m.PublicBaseURL, &m.TunnelManaged)
+			&m.PublicBaseURL, &m.TunnelManaged, &m.Kind, &m.RedirectURL)
 	if err != nil {
 		return nil, err
 	}
@@ -139,11 +139,11 @@ func (s *Store) DeleteCampaign(c ctx, id string) error {
 // a launched campaign's record stays faithful to what was actually sent. Returns
 // true only if a draft was updated. Target groups are regenerated separately via
 // DeleteResultsForCampaign + CreateResults.
-func (s *Store) UpdateCampaignConfig(c ctx, id, name, authID, templateID, pageID, profileID, publicBaseURL string, tunnelManaged bool) (bool, error) {
+func (s *Store) UpdateCampaignConfig(c ctx, id, name, authID, templateID, pageID, profileID, publicBaseURL, kind, redirectURL string, tunnelManaged bool) (bool, error) {
 	tag, err := s.db.Exec(c,
-		`UPDATE campaigns SET name=$2, authorization_id=$3, template_id=$4, landing_page_id=$5, sending_profile_id=$6, public_base_url=$7, tunnel_managed=$8
+		`UPDATE campaigns SET name=$2, authorization_id=$3, template_id=$4, landing_page_id=$5, sending_profile_id=$6, public_base_url=$7, tunnel_managed=$8, kind=$9, redirect_url=$10
 		   WHERE id=$1 AND status='draft'`,
-		id, name, authID, templateID, pageID, profileID, publicBaseURL, tunnelManaged)
+		id, name, authID, templateID, nullIfEmpty(pageID), profileID, publicBaseURL, tunnelManaged, kind, redirectURL)
 	if err != nil {
 		return false, err
 	}
@@ -218,6 +218,7 @@ type CampaignRow struct {
 	ClientName string
 	Status     string
 	CreatedAt  time.Time
+	Kind       string // "local" or "public"
 }
 
 // SetCampaignTunnel records a managed campaign's current tunnel URL (called by
