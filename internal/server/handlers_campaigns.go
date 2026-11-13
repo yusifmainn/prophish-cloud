@@ -28,7 +28,12 @@ func (s *Server) listenerData(r *http.Request) (recommend bool, hostURL string) 
 			hostURL = "http://" + res.PublicIP
 		}
 	}
-	if hostURL == "" {
+	// A loopback/localhost global base URL is NEVER a valid "host" listener target:
+	// it would point every tracking link at the RECIPIENT's own machine, so opens
+	// and clicks never register. Ignore it here and derive this host's real LAN
+	// address below instead ("on this host" means reachable at this host's network
+	// address, not at the target's loopback).
+	if hostURL == "" && !isLoopbackBaseURL(s.cfg.PublicBaseURL) {
 		hostURL = s.cfg.PublicBaseURL
 	}
 	if hostURL == "" {
@@ -42,6 +47,35 @@ func (s *Server) listenerData(r *http.Request) (recommend bool, hostURL string) 
 		}
 	}
 	return recommend, hostURL
+}
+
+// isLoopbackBaseURL reports whether a configured base URL points at the local
+// loopback (localhost / 127.0.0.0/8 / ::1). Such a URL is only ever reachable
+// from this host itself, so it must not be pinned as a "host" listener URL that
+// a target on another machine is expected to load.
+func isLoopbackBaseURL(raw string) bool {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return false
+	}
+	if i := strings.Index(raw, "://"); i >= 0 {
+		raw = raw[i+3:]
+	}
+	if i := strings.IndexAny(raw, "/?#"); i >= 0 {
+		raw = raw[:i]
+	}
+	host := raw
+	if h, _, err := net.SplitHostPort(raw); err == nil {
+		host = h
+	}
+	host = strings.Trim(host, "[]")
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	if ip := net.ParseIP(host); ip != nil {
+		return ip.IsLoopback()
+	}
+	return false
 }
 
 // outboundIP returns this host's primary outbound IP (the source address the
@@ -488,17 +522,17 @@ func (s *Server) handleCampaignDetail(w http.ResponseWriter, r *http.Request) {
 	riskLabel := s.t(r, riskKey)
 	_, hostURL := s.listenerData(r)
 	s.render(w, r, http.StatusOK, "campaign_detail.html", map[string]any{
-		"C":            view,
-		"Camp":         camp,
+		"C":             view,
+		"Camp":          camp,
 		"HostPublicURL": hostURL,
-		"Stats":     stats,
-		"Pct":       pct,
-		"Events":    events,
-		"Results":   results,
-		"Groups":    groups,
-		"RiskLabel": riskLabel,
-		"RiskClass": riskClass,
-		"NowLocal":  time.Now().Format("2006-01-02T15:04"),
+		"Stats":         stats,
+		"Pct":           pct,
+		"Events":        events,
+		"Results":       results,
+		"Groups":        groups,
+		"RiskLabel":     riskLabel,
+		"RiskClass":     riskClass,
+		"NowLocal":      time.Now().Format("2006-01-02T15:04"),
 	})
 }
 

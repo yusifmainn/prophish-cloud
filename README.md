@@ -105,10 +105,11 @@ curl -H "X-API-Key: <açar>" http://127.0.0.1:8443/api/campaigns/<id>
 2. `.env` faylını yaradın (`.env.example`-dən köçürün) və açarı yazın:
    ```
    PROPHISH_SESSION_KEY=<yuxarıdakı açar>
-   PROPHISH_PUBLIC_BASE_URL=http://localhost:8080
    PROPHISH_TIMEZONE=Asia/Baku
    ```
    > `PROPHISH_TIMEZONE` planlaşdırma vaxtlarının və tarixlərin hansı saat qurşağında göstərilməsini təyin edir (defolt: UTC). Təyin etməsəniz, "09:00"-a planlaşdırılan kampaniya 09:00 UTC-də gedər.
+   >
+   > **İzləmə URL-i (açılma/klik üçün vacibdir):** İzləmə pikseli və açılış səhifəsinin linki emailə yazılır, ona görə onlar **işçinin kompüterindən** əlçatan ünvana işarə etməlidir. `PROPHISH_PUBLIC_BASE_URL`-i **boş** buraxın — "on this host" rejimi avtomatik bu serverin LAN ünvanını (`http://<lan-ip>:8080`) istifadə edəcək; bunun üçün `.env`-də `PROPHISH_PUBLIC_BIND=0.0.0.0` təyin edin ki, port LAN-da əlçatan olsun. `localhost`/`127.0.0.1` dəyəri linkləri alıcının **öz** kompüterinə yönəldir və açılma/klik heç vaxt qeydə alınmır. LAN-dan kənar alıcılar (webmail, telefon) üçün **Cloudflare gateway** listener seçin — o, hər kampaniyaya əlçatan `https` URL verir (webmail-ın şəkil proksisi daxili IP-yə çata bilmədiyi üçün host rejimində açılma düşməyə bilər).
 3. Stacki qaldırın:
    ```bash
    docker compose up -d --build
