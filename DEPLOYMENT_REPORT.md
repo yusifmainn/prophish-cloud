@@ -17,26 +17,30 @@ PROPhish is an internally hosted platform for running authorized phishing-awaren
 
 The running system is a single Go binary that exposes two independent HTTP servers backed by one PostgreSQL database, all orchestrated with Docker Compose:
 
+The platform runs on a single host at **`10.20.51.58`**. Both servers bind to `0.0.0.0`, so machines on the permitted internal subnets reach them directly; the database stays bound to localhost.
+
 | Component | Port | Who reaches it | Role |
 |---|---|---|---|
-| Admin panel | `8443` | Our team only, over VPN / SSH tunnel / IP allowlist | Clients, authorizations, groups, templates, campaigns, reporting |
-| Public server | `8080` | The simulation targets (employees) | Landing pages and open/click/submit tracking only |
+| Admin panel | `8443` | Our team, directly from the allowlisted internal subnets (in-app CIDR check on the real peer IP) | Clients, authorizations, groups, templates, campaigns, reporting |
+| Public server | `8080` | The simulation targets (employees) on the LAN | Landing pages and open/click/submit tracking only |
 | PostgreSQL | `5432` | The app (localhost only) | All persistent data |
 
-The split is the heart of the design. The admin panel holds everything sensitive and is never exposed to the internet. The public server exposes only three URL prefixes — `/t/` (click), `/p/` (open pixel), `/s/` (form submission) — and is the only surface a target ever touches.
+The split is the heart of the design. The admin panel holds everything sensitive and is never exposed to the public internet — reachability is confined to the internal subnets listed in `PROPHISH_ADMIN_ALLOW_CIDRS`. The public server exposes only three URL prefixes — `/t/` (click), `/p/` (open pixel), `/s/` (form submission) — and is the only surface a target ever touches.
 
 ```
                 ┌──────────────────────────────┐
-  Our team      │  ADMIN PANEL  :8443          │  ← VPN / localhost / IP allowlist
-  (VPN) ───────▶│  clients, RoE, groups,       │
+  Our team      │  ADMIN PANEL  :8443          │  ← allowlisted internal subnets
+  (subnet) ────▶│  clients, RoE, groups,       │    (in-app IP allowlist)
                 │  templates, campaigns, reports│
                 └──────────────┬───────────────┘
                                │  PostgreSQL (isolated, localhost-bound)
                 ┌──────────────┴───────────────┐
   Employees     │  PUBLIC SERVER  :8080        │  ← only /t/ /p/ /s/
-  (target LAN)  │  landing pages + tracking     │
+  (target LAN)  │  landing pages + tracking     │    (http://10.20.51.58:8080)
                 └──────────────────────────────┘
 ```
+
+Permitted subnets (`PROPHISH_ADMIN_ALLOW_CIDRS`): `10.30.22.0/24`, `10.20.51.0/24`, `10.20.25.223/32`. The host itself sits inside `10.20.51.0/24`.
 
 ---
 
@@ -130,15 +134,20 @@ This produces the 32-byte secret PROPhish uses to sign session cookies. The same
 
 ### Step 3 — Write the `.env` file
 
-Copy `.env.example` to `.env` and fill in the real values. The settings that actually matter at deploy time:
+Copy `.env.example` to `.env` and fill in the real values. The configuration we actually run on `10.20.51.58`:
 
 ```dotenv
 PROPHISH_DB_PASSWORD=<strong, unique password>
 PROPHISH_SESSION_KEY=<output of the openssl command above>
+PROPHISH_PUBLIC_BASE_URL=http://10.20.51.58:8080
+PROPHISH_SECURE_COOKIES=false
 PROPHISH_TIMEZONE=Asia/Baku
-PROPHISH_SECURE_COOKIES=false        # set true once behind HTTPS
+PROPHISH_PUBLIC_BIND=0.0.0.0
+PROPHISH_ADMIN_BIND=0.0.0.0
 PROPHISH_ADMIN_ALLOW_CIDRS=10.30.22.0/24,10.20.51.0/24,10.20.25.223/32
 ```
+
+The two `*_BIND=0.0.0.0` lines are the key change from the shipped defaults. By default both ports bind to `127.0.0.1`, which only accepts connections from the host itself. Setting them to `0.0.0.0` publishes the ports on the server's own address (`10.20.51.58`), so operators and targets on the permitted subnets connect directly. The admin panel's exposure is not left open by this — it is gated in-app by `PROPHISH_ADMIN_ALLOW_CIDRS`, which is checked against each request's real peer IP, with loopback always allowed.
 
 The time zone matters more than it looks: without it, a campaign scheduled for "09:00" fires at 09:00 UTC rather than 09:00 local. The IANA time-zone database is embedded in the binary, so any zone name resolves even inside the minimal container.
 
@@ -146,7 +155,7 @@ The time zone matters more than it looks: without it, a campaign scheduled for "
 
 This is the single most common source of "why aren't opens showing up" and we treat it deliberately. The tracking pixel and the landing-page link are written into every email, so they must resolve from the *recipient's* machine, not from the server.
 
-- **On-LAN recipients:** leave `PROPHISH_PUBLIC_BASE_URL` empty and set `PROPHISH_PUBLIC_BIND=0.0.0.0`. The app auto-detects this host's LAN address and uses `http://<lan-ip>:8080`. A `localhost`/`127.0.0.1` value is a trap: it points every link at the recipient's own machine, so nothing ever registers. The public server now explicitly refuses to pin a loopback tracking URL.
+- **On-LAN recipients (our setup):** we pinned `PROPHISH_PUBLIC_BASE_URL=http://10.20.51.58:8080` explicitly and set `PROPHISH_PUBLIC_BIND=0.0.0.0`, so every pixel and link resolves to the server's own LAN address and other machines on the subnet can reach it. (Leaving the base URL empty makes the app auto-detect the same LAN address; we pinned it so the value is deterministic.) A `localhost`/`127.0.0.1` value is a trap: it points every link at the recipient's own machine, so nothing ever registers. The public server also explicitly refuses to pin a loopback tracking URL.
 - **Off-LAN recipients** (webmail, phones, external networks): use the Cloudflare gateway listener per campaign, which hands out a public `https` URL automatically. A private-IP host URL cannot be reached by a webmail provider's image proxy, which is why opens won't record in host mode for those recipients.
 
 ### Step 5 — Bring the stack up
@@ -159,7 +168,17 @@ Compose builds the image, starts PostgreSQL, waits for its health check to pass,
 
 ### Step 6 — Create the first administrator
 
-Open the admin panel at `http://127.0.0.1:8443` (over a tunnel if remote). The first visit walks through creating the initial admin account, with a minimum 12-character password enforced server-side.
+Open the admin panel at `http://10.20.51.58:8443` from a machine on one of the permitted subnets. The first visit walks through creating the initial admin account, with a minimum 12-character password enforced server-side.
+
+### Admin access model — what changed
+
+Early on, the admin port was bound to localhost only, so reaching the panel meant opening an SSH local-forward from the operator's machine and authenticating to the server first:
+
+```bash
+ssh -L 8443:127.0.0.1:8443 prophish@10.20.51.58    # then browse to http://127.0.0.1:8443
+```
+
+That tunnel is no longer required. With `PROPHISH_ADMIN_BIND=0.0.0.0` and the `PROPHISH_ADMIN_ALLOW_CIDRS` allowlist in place, operators on the approved internal subnets browse straight to `http://10.20.51.58:8443`. The security boundary moved from "you must hold an SSH account on the host" to "your source IP must fall inside an allowlisted subnet," enforced in-app on the real peer address. The SSH-forward still works as a fallback for anyone outside those subnets and remains the recommended path if the panel is ever reachable from a less-trusted network.
 
 ### Step 7 — Verify and hand over
 
@@ -287,7 +306,7 @@ Measures now in place:
 
 ### Production checklist
 
-- Keep the admin panel (`:8443`) off the public internet — VPN, SSH tunnel, or the IP allowlist.
+- Keep the admin panel (`:8443`) off the public internet. In this deployment it binds to `0.0.0.0` but is reachable only from the allowlisted internal subnets (`PROPHISH_ADMIN_ALLOW_CIDRS`), enforced in-app on the real peer IP; keep those subnets internal, and keep the SSH local-forward as the path for anyone outside them.
 - Front the public server with a TLS reverse proxy and forward only `/t/`, `/p/`, `/s/`.
 - Set `PROPHISH_SECURE_COOKIES=true` under HTTPS.
 - Never expose the Postgres port; apply at-rest disk encryption.
