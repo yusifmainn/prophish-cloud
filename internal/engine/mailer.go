@@ -33,12 +33,54 @@ type Message struct {
 	Attachments []models.Attachment
 }
 
-// Send delivers one message using STARTTLS when offered. This is a simulation
-// mailer for authorized awareness campaigns; rate limiting is handled by the engine.
+// Send delivers one message. The transport security depends on the port:
+//
+//   - Port 465 (SMTPS): the connection is wrapped in TLS from the very first
+//     byte (implicit TLS). No STARTTLS handshake takes place.
+//   - Port 587 / 25 (and anything else): the connection starts as plaintext and
+//     is upgraded with STARTTLS when the server advertises it.
+//
+// This is a simulation mailer for authorized awareness campaigns; rate limiting
+// is handled by the engine.
 func Send(cfg SMTPConfig, msg Message) error {
-	addr := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port))
+	return sendWithTLS(cfg, msg, nil)
+}
 
-	conn, err := net.DialTimeout("tcp", addr, 15*time.Second)
+// sendWithTLS is the implementation behind Send. tlsCfg lets callers (chiefly
+// tests, which use self-signed certificates) override the TLS settings; when
+// nil a secure default is used. ServerName and MinVersion are always enforced
+// on the config actually used.
+func sendWithTLS(cfg SMTPConfig, msg Message, tlsCfg *tls.Config) error {
+	// Port 465 speaks implicit TLS: dial with a TLS handshake up front rather
+	// than connecting in the clear and upgrading via STARTTLS.
+	return sendImpl(cfg, msg, tlsCfg, cfg.Port == 465)
+}
+
+// sendImpl is the core send routine. implicitTLS selects implicit TLS (465) vs.
+// plaintext+STARTTLS (587/25). It is a separate parameter so tests can exercise
+// the implicit-TLS path on an ephemeral port that is not literally 465.
+func sendImpl(cfg SMTPConfig, msg Message, tlsCfg *tls.Config, implicitTLS bool) error {
+	addr := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port))
+	if tlsCfg == nil {
+		tlsCfg = &tls.Config{}
+	} else {
+		tlsCfg = tlsCfg.Clone()
+	}
+	if tlsCfg.ServerName == "" {
+		tlsCfg.ServerName = cfg.Host
+	}
+	if tlsCfg.MinVersion == 0 {
+		tlsCfg.MinVersion = tls.VersionTLS12
+	}
+
+	var conn net.Conn
+	var err error
+	if implicitTLS {
+		dialer := &net.Dialer{Timeout: 15 * time.Second}
+		conn, err = tls.DialWithDialer(dialer, "tcp", addr, tlsCfg)
+	} else {
+		conn, err = net.DialTimeout("tcp", addr, 15*time.Second)
+	}
 	if err != nil {
 		return fmt.Errorf("dial smtp: %w", err)
 	}
@@ -53,16 +95,25 @@ func Send(cfg SMTPConfig, msg Message) error {
 		return err
 	}
 
-	if ok, _ := c.Extension("STARTTLS"); ok {
-		tlsCfg := &tls.Config{ServerName: cfg.Host, MinVersion: tls.VersionTLS12}
-		if err := c.StartTLS(tlsCfg); err != nil {
-			return fmt.Errorf("starttls: %w", err)
+	// secure tracks whether the channel is encrypted: either implicit TLS (465)
+	// or a successful STARTTLS upgrade. Credentials are only sent once secure.
+	secure := implicitTLS
+
+	// On a plaintext connection, upgrade with STARTTLS when offered. On an
+	// implicit-TLS connection (465) the channel is already encrypted, so this
+	// step is skipped.
+	if !implicitTLS {
+		if ok, _ := c.Extension("STARTTLS"); ok {
+			if err := c.StartTLS(tlsCfg); err != nil {
+				return fmt.Errorf("starttls: %w", err)
+			}
+			secure = true
 		}
 	}
 
 	if cfg.Username != "" {
 		if ok, mechs := c.Extension("AUTH"); ok {
-			auth, err := pickAuth(mechs, cfg)
+			auth, err := pickAuth(mechs, cfg, secure)
 			if err != nil {
 				return err
 			}
@@ -93,20 +144,52 @@ func Send(cfg SMTPConfig, msg Message) error {
 }
 
 // pickAuth selects an SMTP auth mechanism from the server's advertised list.
-// It prefers PLAIN (the net/smtp default, which Gmail and most servers accept)
-// and falls back to LOGIN for servers that advertise only LOGIN — notably
-// Microsoft 365 / Office 365, which rejects PLAIN with "504 5.7.4 Unrecognized
-// authentication type".
-func pickAuth(mechs string, cfg SMTPConfig) (smtp.Auth, error) {
+// It prefers PLAIN (which Gmail and most servers accept) and falls back to LOGIN
+// for servers that advertise only LOGIN — notably Microsoft 365 / Office 365,
+// which rejects PLAIN with "504 5.7.4 Unrecognized authentication type".
+//
+// secure reports whether the underlying connection is encrypted. We do not rely
+// on net/smtp's own ServerInfo.TLS flag because it is only set after a STARTTLS
+// upgrade and stays false on an implicit-TLS (465) connection — so both auth
+// mechanisms below consult secure instead, and refuse to send credentials in the
+// clear.
+func pickAuth(mechs string, cfg SMTPConfig, secure bool) (smtp.Auth, error) {
 	up := " " + strings.ToUpper(mechs) + " "
 	switch {
 	case strings.Contains(up, " PLAIN "):
-		return smtp.PlainAuth("", cfg.Username, cfg.Password, cfg.Host), nil
+		return &plainAuth{username: cfg.Username, password: cfg.Password, host: cfg.Host, secure: secure}, nil
 	case strings.Contains(up, " LOGIN "):
-		return &loginAuth{username: cfg.Username, password: cfg.Password, host: cfg.Host}, nil
+		return &loginAuth{username: cfg.Username, password: cfg.Password, host: cfg.Host, secure: secure}, nil
 	default:
 		return nil, fmt.Errorf("smtp auth: server offers no supported mechanism (has %q, need PLAIN or LOGIN)", mechs)
 	}
+}
+
+// plainAuth implements the SMTP AUTH PLAIN mechanism. It mirrors net/smtp's
+// PlainAuth but gates on our own secure flag instead of ServerInfo.TLS, so it
+// works over an implicit-TLS (465) connection while still refusing to transmit
+// credentials over an unencrypted channel.
+type plainAuth struct {
+	username, password, host string
+	secure                   bool
+}
+
+func (a *plainAuth) Start(server *smtp.ServerInfo) (string, []byte, error) {
+	if !a.secure && !server.TLS {
+		return "", nil, fmt.Errorf("smtp: refusing AUTH PLAIN on an unencrypted connection to %q", a.host)
+	}
+	if server.Name != a.host {
+		return "", nil, fmt.Errorf("smtp: AUTH PLAIN server name %q does not match %q", server.Name, a.host)
+	}
+	resp := []byte("\x00" + a.username + "\x00" + a.password)
+	return "PLAIN", resp, nil
+}
+
+func (a *plainAuth) Next(fromServer []byte, more bool) ([]byte, error) {
+	if more {
+		return nil, fmt.Errorf("smtp: unexpected server challenge during AUTH PLAIN")
+	}
+	return nil, nil
 }
 
 // loginAuth implements the SMTP AUTH LOGIN mechanism. net/smtp ships only
@@ -115,11 +198,12 @@ func pickAuth(mechs string, cfg SMTPConfig) (smtp.Auth, error) {
 // PlainAuth — this is permitted only over a TLS connection.
 type loginAuth struct {
 	username, password, host string
+	secure                   bool
 	step                     int
 }
 
 func (a *loginAuth) Start(server *smtp.ServerInfo) (string, []byte, error) {
-	if !server.TLS {
+	if !a.secure && !server.TLS {
 		return "", nil, fmt.Errorf("smtp: refusing AUTH LOGIN on an unencrypted connection to %q", a.host)
 	}
 	if server.Name != a.host {
