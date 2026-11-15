@@ -269,7 +269,7 @@ func headerBlock(raw string) string {
 	return raw
 }
 
-func TestBuildMIMEAddsTextPartAndListUnsubscribe(t *testing.T) {
+func TestBuildMIMEAddsTextPartNoListUnsubscribe(t *testing.T) {
 	// HTML-only message (no TextBody): a plain-text alternative must be derived.
 	raw := buildMIME("Aze Tourism <info@aze-tourism.online>", Message{
 		To:       "someone@example.com",
@@ -283,8 +283,10 @@ func TestBuildMIMEAddsTextPartAndListUnsubscribe(t *testing.T) {
 	if !strings.Contains(raw, "Hello World") {
 		t.Errorf("expected derived text to contain the visible words; got:\n%s", raw)
 	}
-	if !strings.Contains(raw, "List-Unsubscribe: <mailto:info@aze-tourism.online") {
-		t.Errorf("expected a List-Unsubscribe header; headers:\n%s", headerBlock(raw))
+	// A List-Unsubscribe header must NOT be added automatically: it marks mail as
+	// bulk and worsens inbox placement for a 1:1 message.
+	if strings.Contains(raw, "List-Unsubscribe") {
+		t.Errorf("did not expect an automatic List-Unsubscribe header; headers:\n%s", headerBlock(raw))
 	}
 	if !strings.Contains(raw, "Message-ID:") {
 		t.Error("expected a Message-ID header")

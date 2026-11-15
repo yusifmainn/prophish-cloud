@@ -249,14 +249,11 @@ func buildMIME(from string, m Message) string {
 	if !hasHeader(m.Headers, "Message-ID") {
 		fmt.Fprintf(&b, "Message-ID: %s\r\n", newMessageID(from))
 	}
-	// A List-Unsubscribe header is a recognized "legitimate bulk sender" signal
-	// that lowers spam scoring; point it at the sender's own address unless the
-	// caller supplied one.
-	if !hasHeader(m.Headers, "List-Unsubscribe") {
-		if ua := addrOnly(from); strings.Contains(ua, "@") {
-			fmt.Fprintf(&b, "List-Unsubscribe: <mailto:%s?subject=unsubscribe>\r\n", stripCRLF(ua))
-		}
-	}
+	// NOTE: we deliberately do NOT add a List-Unsubscribe header. It marks a
+	// message as bulk mail, which Outlook/Microsoft junk more aggressively —
+	// especially from a new sending domain — so for a 1:1 message it hurts
+	// inbox placement rather than helping. A caller may still set one via
+	// custom headers if a specific scenario calls for it.
 	b.WriteString("MIME-Version: 1.0\r\n")
 	// Custom headers (reserved ones are skipped so they can't be overridden;
 	// key and value are sanitized so a malicious value cannot inject new headers).
