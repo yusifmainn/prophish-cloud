@@ -12,12 +12,6 @@ import (
 	"prophish/internal/store"
 )
 
-// trackingHeader carries the per-message result token on outbound mail so a
-// reported (forwarded) email can be mapped back to its target. The name is
-// intentionally generic — it must not identify the tool or hint at a phishing
-// test. The IMAP poller also recognizes the legacy name (legacyTrackingHeader).
-const trackingHeader = "X-Entity-Ref-ID"
-
 // Launcher sends campaigns. It enforces that a valid authorization exists before
 // a single email goes out.
 type Launcher struct {
@@ -246,11 +240,8 @@ func (l *Launcher) Launch(ctx context.Context, campaignID string) error {
 		}
 
 		// Per-message headers: carry the result token so a reported (forwarded)
-		// email can be mapped back to this target. The header name is deliberately
-		// neutral (not tool-identifying) so it neither fingerprints the campaign
-		// nor adds a spam-filter signal; the IMAP poller also accepts the legacy
-		// name for messages sent before this rename.
-		msgHeaders := map[string]string{trackingHeader: it.Token}
+		// email can be mapped back to this target.
+		msgHeaders := map[string]string{"X-PROPhish-RID": it.Token}
 		for k, v := range headers {
 			msgHeaders[k] = v
 		}

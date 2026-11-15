@@ -2,7 +2,6 @@ package store
 
 import (
 	"errors"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -24,9 +23,6 @@ type TrackedFull struct {
 	// the click to CampaignRedirectURL instead of showing any page).
 	CampaignKind        string
 	CampaignRedirectURL string
-	// SentAt is when the message was sent, or nil if not yet sent. The public
-	// server uses it to ignore scanner prefetches that fire moments after send.
-	SentAt *time.Time
 }
 
 func (s *Store) TrackedByToken(c ctx, token string) (*TrackedFull, error) {
@@ -38,7 +34,7 @@ func (s *Store) TrackedByToken(c ctx, token string) (*TrackedFull, error) {
 		`SELECT r.id, r.campaign_id, r.status,
 		        coalesce(tg.first_name,''), coalesce(tg.last_name,''), coalesce(tg.position,''),
 		        coalesce(lp.name,''), coalesce(lp.html_body,''), coalesce(lp.redirect_url,''),
-		        c.kind, coalesce(c.redirect_url,''), r.sent_at
+		        c.kind, coalesce(c.redirect_url,'')
 		   FROM campaign_results r
 		   JOIN campaigns c   ON c.id = r.campaign_id
 		   JOIN targets   tg  ON tg.id = r.target_id
@@ -47,7 +43,7 @@ func (s *Store) TrackedByToken(c ctx, token string) (*TrackedFull, error) {
 		Scan(&t.ResultID, &t.CampaignID, &t.Status,
 			&t.FirstName, &t.LastName, &t.Position,
 			&t.PageName, &t.PageHTML, &t.RedirectURL,
-			&t.CampaignKind, &t.CampaignRedirectURL, &t.SentAt)
+			&t.CampaignKind, &t.CampaignRedirectURL)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}

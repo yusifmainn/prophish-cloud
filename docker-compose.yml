@@ -42,13 +42,6 @@ services:
       # detects this host's public IP and recommends the listener location per
       # campaign); set it explicitly only for a custom domain/reverse proxy.
       PROPHISH_PUBLIC_BASE_URL: ${PROPHISH_PUBLIC_BASE_URL:-}
-      # Named Cloudflare tunnel (recommended for real engagements). When set, the
-      # app runs ONE stable `cloudflared tunnel run --token …` instead of per-
-      # campaign trycloudflare quick tunnels — no 429 rate limits and the URL does
-      # not change on restart. Create the tunnel in the Cloudflare dashboard, route
-      # its hostname to http://app:8080 (this service), then set the token here and
-      # set PROPHISH_PUBLIC_BASE_URL above to that hostname so campaigns use it.
-      PROPHISH_CLOUDFLARE_TUNNEL_TOKEN: ${PROPHISH_CLOUDFLARE_TUNNEL_TOKEN:-}
       # REQUIRED: set a 32-byte base64 secret in .env (openssl rand -base64 32).
       PROPHISH_SESSION_KEY: ${PROPHISH_SESSION_KEY:?set PROPHISH_SESSION_KEY in .env}
       PROPHISH_SECURE_COOKIES: ${PROPHISH_SECURE_COOKIES:-false}

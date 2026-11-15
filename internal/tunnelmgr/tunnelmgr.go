@@ -17,9 +17,7 @@ import (
 	"log"
 	"os/exec"
 	"regexp"
-	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"prophish/internal/store"
@@ -27,33 +25,6 @@ import (
 
 // ErrCap is returned when the concurrent-tunnel cap is reached.
 var ErrCap = errors.New("tunnel cap reached")
-
-// Restart backoff. A run that provisioned a URL (the tunnel worked and then
-// dropped) reconnects quickly. A run that never got a URL means provisioning
-// failed — a missing/incompatible binary, no egress, or (most commonly)
-// trycloudflare rate-limiting us with HTTP 429. Retrying such a failure quickly
-// only deepens the rate limit, so we back off hard and grow from there.
-const (
-	minBackoff     = time.Second
-	maxBackoff     = time.Minute
-	failBackoff    = 10 * time.Minute
-	maxFailBackoff = 30 * time.Minute
-)
-
-// nextBackoff returns how long to wait before the next restart, given the
-// current backoff and whether the just-finished run obtained a tunnel URL.
-func nextBackoff(current time.Duration, gotURL bool) time.Duration {
-	if gotURL {
-		return minBackoff
-	}
-	if current < failBackoff {
-		return failBackoff
-	}
-	if next := current * 2; next < maxFailBackoff {
-		return next
-	}
-	return maxFailBackoff
-}
 
 var urlRe = regexp.MustCompile(`https://[a-z0-9-]+\.trycloudflare\.com`)
 
@@ -82,8 +53,6 @@ type Manager struct {
 	Max  int      // concurrent tunnel cap
 	// Save persists a freshly-observed tunnel URL for the campaign.
 	Save func(ctx context.Context, campaignID, url string) error
-	// NamedCmd builds the command for the single named tunnel (overridable in tests).
-	NamedCmd func(token string) *exec.Cmd
 
 	mu    sync.Mutex
 	procs map[string]*proc
@@ -91,15 +60,11 @@ type Manager struct {
 
 // New builds a Manager bound to the store and the in-container public server.
 func New(st *store.Store) *Manager {
-	bin := "cloudflared"
 	return &Manager{
-		Bin:   bin,
+		Bin:   "cloudflared",
 		Args:  []string{"tunnel", "--no-autoupdate", "--url", "http://localhost:8080"},
 		Max:   25,
 		Save:  func(c context.Context, id, url string) error { return st.SetCampaignTunnel(c, id, url) },
-		NamedCmd: func(token string) *exec.Cmd {
-			return exec.Command(bin, "tunnel", "--no-autoupdate", "run", "--token", token)
-		},
 		procs: map[string]*proc{},
 	}
 }
@@ -137,12 +102,11 @@ func stopped(pr *proc) bool {
 }
 
 func (m *Manager) supervise(id string, pr *proc) {
-	backoff := minBackoff
+	backoff := time.Second
 	for {
 		if stopped(pr) {
 			return
 		}
-		var gotURL atomic.Bool
 		cmd := exec.Command(m.Bin, m.Args...)
 		out, err := cmd.StdoutPipe()
 		if err == nil {
@@ -161,42 +125,34 @@ func (m *Manager) supervise(id string, pr *proc) {
 				_ = cmd.Wait()
 				return
 			}
-			done := make(chan struct{})
-			go func() { m.scan(id, out, &gotURL); close(done) }()
+			go m.scan(id, out)
 			if werr := cmd.Wait(); werr != nil {
 				log.Printf("tunnelmgr: campaign %s: tunnel exited: %v", id, werr)
 			}
-			<-done // let scan drain the pipe so gotURL reflects this run
 		}
 		if stopped(pr) {
 			return
 		}
-		backoff = nextBackoff(backoff, gotURL.Load())
-		if gotURL.Load() {
-			log.Printf("tunnelmgr: campaign %s: restarting tunnel in %s", id, backoff)
-		} else {
-			// Most often trycloudflare rate-limiting (HTTP 429); hammering makes it
-			// worse, so wait a long time before trying again.
-			log.Printf("tunnelmgr: campaign %s: tunnel did not provision (rate limit or error) — backing off %s", id, backoff)
-		}
+		log.Printf("tunnelmgr: campaign %s: restarting tunnel in %s", id, backoff)
 		select {
 		case <-pr.stopCh:
 			return
 		case <-time.After(backoff):
 		}
+		backoff *= 2
+		if backoff > time.Minute {
+			backoff = time.Minute
+		}
 	}
 }
 
 // scan reads cloudflared output and saves every trycloudflare URL observed
-// (a supervised restart prints a new one, which replaces the old in the DB). It
-// sets gotURL when a tunnel hostname is seen, so the supervisor can tell a
-// working-then-dropped tunnel from one that never provisioned.
-func (m *Manager) scan(id string, r io.Reader, gotURL *atomic.Bool) {
+// (a supervised restart prints a new one, which replaces the old in the DB).
+func (m *Manager) scan(id string, r io.Reader) {
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 64*1024), 64*1024)
 	for sc.Scan() {
 		if u := ExtractURL(sc.Text()); u != "" {
-			gotURL.Store(true)
 			if err := m.Save(context.Background(), id, u); err != nil {
 				log.Printf("tunnelmgr: campaign %s: save url: %v", id, err)
 			} else {
@@ -223,73 +179,6 @@ func (m *Manager) Stop(campaignID string) {
 	m.mu.Unlock()
 	if cmd != nil && cmd.Process != nil {
 		_ = cmd.Process.Kill()
-	}
-}
-
-// RunNamed supervises a single named Cloudflare tunnel (`cloudflared tunnel run
-// --token <token>`) until ctx is cancelled. Unlike the per-campaign quick
-// tunnels, a named tunnel has a stable hostname configured in the Cloudflare
-// dashboard (which must route that hostname to this app's public server), so
-// there is no URL to scrape and no trycloudflare rate limit. Campaigns then use
-// that stable hostname as their public base URL. It restarts the process with
-// backoff if it exits, and returns when ctx is cancelled.
-func (m *Manager) RunNamed(ctx context.Context, token string) {
-	backoff := minBackoff
-	for {
-		if ctx.Err() != nil {
-			return
-		}
-		cmd := m.NamedCmd(token)
-		out, err := cmd.StdoutPipe()
-		if err == nil {
-			cmd.Stderr = cmd.Stdout
-			err = cmd.Start()
-		}
-		if err != nil {
-			log.Printf("tunnelmgr: named tunnel spawn failed: %v", err)
-		} else {
-			go logNamed(out)
-			done := make(chan error, 1)
-			go func() { done <- cmd.Wait() }()
-			select {
-			case <-ctx.Done():
-				_ = cmd.Process.Kill()
-				<-done
-				return
-			case werr := <-done:
-				if werr != nil {
-					log.Printf("tunnelmgr: named tunnel exited: %v", werr)
-				}
-			}
-		}
-		if ctx.Err() != nil {
-			return
-		}
-		log.Printf("tunnelmgr: named tunnel restarting in %s", backoff)
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(backoff):
-		}
-		if backoff *= 2; backoff > maxBackoff {
-			backoff = maxBackoff
-		}
-	}
-}
-
-// logNamed drains the named tunnel's output, surfacing only connection-ready and
-// error lines so the operator can confirm the tunnel is up without log spam.
-func logNamed(r io.Reader) {
-	sc := bufio.NewScanner(r)
-	sc.Buffer(make([]byte, 64*1024), 64*1024)
-	for sc.Scan() {
-		line := sc.Text()
-		switch {
-		case strings.Contains(line, "Registered tunnel connection"):
-			log.Printf("tunnelmgr: named tunnel connected")
-		case strings.Contains(line, "ERR"), strings.Contains(strings.ToLower(line), "error"):
-			log.Printf("tunnelmgr: named tunnel: %s", line)
-		}
 	}
 }
 

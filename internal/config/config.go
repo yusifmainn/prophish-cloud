@@ -27,13 +27,6 @@ type Config struct {
 	TrustedProxies  []*net.IPNet   // CIDRs whose X-Forwarded-For is trusted on the public listener
 	AdminAllowCIDRs []*net.IPNet   // CIDRs allowed to reach the ADMIN panel (empty = no restriction; loopback always allowed)
 	Location        *time.Location // display/scheduling time zone (PROPHISH_TIMEZONE), defaults to UTC
-
-	// CloudflareTunnelToken, when set, runs ONE named Cloudflare tunnel
-	// (`cloudflared tunnel run --token …`) instead of per-campaign quick tunnels.
-	// A named tunnel has a stable hostname (routed to this app's public server in
-	// the Cloudflare dashboard) and no trycloudflare rate limit. Set
-	// PROPHISH_PUBLIC_BASE_URL to that hostname so campaigns use it.
-	CloudflareTunnelToken string
 }
 
 // Load reads configuration from the process environment. If a .env file exists in the
@@ -49,8 +42,6 @@ func Load() (*Config, error) {
 		SecureCookies:   strings.EqualFold(getenv("PROPHISH_SECURE_COOKIES", "false"), "true"),
 		TrustedProxies:  parseCIDRs(getenv("PROPHISH_TRUSTED_PROXIES", "")),
 		AdminAllowCIDRs: parseCIDRs(getenv("PROPHISH_ADMIN_ALLOW_CIDRS", "")),
-
-		CloudflareTunnelToken: strings.TrimSpace(getenv("PROPHISH_CLOUDFLARE_TUNNEL_TOKEN", "")),
 	}
 
 	if c.DatabaseURL == "" {

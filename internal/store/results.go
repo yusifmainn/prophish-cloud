@@ -2,7 +2,6 @@ package store
 
 import (
 	"errors"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"prophish/internal/models"
@@ -66,10 +65,10 @@ func (s *Store) MarkResultError(c ctx, resultID string) error {
 func (s *Store) ResultByToken(c ctx, token string) (*Tracked, error) {
 	var t Tracked
 	err := s.db.QueryRow(c,
-		`SELECT r.id, r.campaign_id, r.status, c.landing_page_id, r.sent_at
+		`SELECT r.id, r.campaign_id, r.status, c.landing_page_id
 		   FROM campaign_results r JOIN campaigns c ON c.id = r.campaign_id
 		  WHERE r.result_token=$1`, token).
-		Scan(&t.ResultID, &t.CampaignID, &t.Status, &t.LandingPageID, &t.SentAt)
+		Scan(&t.ResultID, &t.CampaignID, &t.Status, &t.LandingPageID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -164,9 +163,6 @@ type Tracked struct {
 	CampaignID    string
 	Status        string
 	LandingPageID string
-	// SentAt is when the message was sent, or nil if not yet sent. The public
-	// server uses it to ignore scanner prefetches that fire moments after send.
-	SentAt *time.Time
 }
 
 var _ = models.CampaignResult{}

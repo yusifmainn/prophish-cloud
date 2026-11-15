@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -60,72 +59,14 @@ func publicHeaders(next http.Handler) http.Handler {
 // 1x1 transparent GIF, served for the open pixel.
 var pixelGIF, _ = base64.StdEncoding.DecodeString("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")
 
-// scannerGraceWindow is how long after a message is sent we treat pixel/link
-// hits as automated. Mail-security scanners and link proxies fetch the content
-// within seconds of the message passing through them — long before a human
-// recipient could realistically open and act on it. A hit inside this window is
-// almost certainly a scanner, so it does not count as an open/click. Tune this
-// if a deployment delivers and is read faster than this.
-const scannerGraceWindow = 30 * time.Second
-
-// scannerUASignatures are case-insensitive substrings found in the User-Agent
-// of automated clients: security gateways, link/image proxies, link-preview
-// bots, and generic HTTP libraries. Deliberately excludes real mail-client and
-// webmail-proxy agents (e.g. Gmail's image proxy fetches when a human actually
-// opens the mail), so genuine opens are not dropped.
-var scannerUASignatures = []string{
-	"bot", "crawl", "spider", "slurp", "preview", "scan", "fetch",
-	"proofpoint", "barracuda", "mimecast", "forcepoint", "fireeye",
-	"trendmicro", "symantec", "mcafee", "sophos", "cisco", "ironport",
-	"safelinks", "urldefense", "microsoftpreview", "bingpreview",
-	"curl", "wget", "python-requests", "go-http-client", "java/",
-	"libwww", "okhttp", "httpclient", "headlesschrome", "phantomjs",
-	"facebookexternalhit", "whatsapp", "telegrambot", "slackbot",
-	"discordbot", "skypeuripreview", "linkedinbot", "googlebot",
-}
-
-// isScannerUA reports whether a User-Agent looks like an automated client. An
-// empty User-Agent is also treated as automated: normal browsers always send one.
-func isScannerUA(ua string) bool {
-	ua = strings.ToLower(strings.TrimSpace(ua))
-	if ua == "" {
-		return true
-	}
-	for _, sig := range scannerUASignatures {
-		if strings.Contains(ua, sig) {
-			return true
-		}
-	}
-	return false
-}
-
-// isAutomated reports whether a tracking hit should be ignored as automated,
-// either because the User-Agent is a known scanner/bot or because it arrived
-// within scannerGraceWindow of the message being sent.
-func isAutomated(ua string, sentAt *time.Time) bool {
-	if isScannerUA(ua) {
-		return true
-	}
-	if sentAt != nil && time.Since(*sentAt) < scannerGraceWindow {
-		return true
-	}
-	return false
-}
-
 func (s *Server) handleOpen(w http.ResponseWriter, r *http.Request) {
 	token := chi.URLParam(r, "token")
 	if t, err := s.store.ResultByToken(r.Context(), token); err == nil {
 		rid := t.ResultID
-		// Ignore automated fetches (mail-security scanners, link/image proxies)
-		// that pre-fetch the pixel before — or instead of — the human recipient.
-		// Otherwise they register a false "opened" the moment the message is
-		// scanned, often before it even reaches the inbox.
-		if !isAutomated(r.UserAgent(), t.SentAt) {
-			// Record the event only on the first transition into this stage, so a
-			// target (or an attacker who knows the token) cannot flood the events table.
-			if changed, _ := s.store.AdvanceStatus(r.Context(), rid, "opened"); changed {
-				_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "email_opened", s.clientIP(r), r.UserAgent())
-			}
+		// Record the event only on the first transition into this stage, so a
+		// target (or an attacker who knows the token) cannot flood the events table.
+		if changed, _ := s.store.AdvanceStatus(r.Context(), rid, "opened"); changed {
+			_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "email_opened", s.clientIP(r), r.UserAgent())
 		}
 	}
 	w.Header().Set("Content-Type", "image/gif")
@@ -141,14 +82,8 @@ func (s *Server) handleClick(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rid := t.ResultID
-	// Ignore automated link-following (mail-security scanners, SafeLinks-style
-	// URL rewriters) that crawl every link before delivery. We still serve the
-	// landing page/redirect below so a later genuine click by the recipient is
-	// recorded normally — only the automated hit is skipped.
-	if !isAutomated(r.UserAgent(), t.SentAt) {
-		if changed, _ := s.store.AdvanceStatus(r.Context(), rid, "clicked"); changed {
-			_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "link_clicked", s.clientIP(r), r.UserAgent())
-		}
+	if changed, _ := s.store.AdvanceStatus(r.Context(), rid, "clicked"); changed {
+		_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "link_clicked", s.clientIP(r), r.UserAgent())
 	}
 
 	// Public campaign: the click is now recorded (above), so there is nothing
