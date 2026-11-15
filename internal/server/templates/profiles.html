@@ -17,6 +17,9 @@
         <div style="flex:1"><label>{{t "prof.port"}}</label><input name="smtp_port" type="number" min="1" max="65535" value="587"></div>
       </div>
       <p class="hint">{{t "prof.starttls_hint"}}</p>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:normal">
+        <input type="checkbox" name="use_ssl" value="1" style="width:auto;margin:0"> {{t "prof.use_ssl"}}
+      </label>
       <label>{{t "prof.from_address"}}</label><input name="from_address" required placeholder="{{t "prof.from_placeholder"}}">
       <label>{{t "prof.smtp_user"}}</label><input name="smtp_username">
       <label>{{t "prof.smtp_password"}}</label><input type="password" name="smtp_password">
@@ -33,7 +36,7 @@
       <tbody>
         {{range .Profiles}}
         <tr>
-          <td>{{.Name}}</td><td>{{.SMTPHost}}</td><td>{{.SMTPPort}}</td><td>{{.FromAddress}}</td>
+          <td>{{.Name}}</td><td>{{.SMTPHost}}</td><td>{{.SMTPPort}}{{if .UseSSL}} <span class="pill ok">SSL</span>{{end}}</td><td>{{.FromAddress}}</td>
           <td>{{if .HasPassword}}<span class="pill ok">{{t "prof.pill_has_pw"}}</span>{{else if .SMTPUser}}<span class="pill warn">{{t "prof.pill_no_pw"}}</span>{{else}}<span class="pill neutral">{{t "prof.pill_no_auth"}}</span>{{end}}</td>
           <td>
             <form method="post" action="/profiles/{{.ID}}/test" style="display:flex;gap:6px;margin:0">
@@ -52,6 +55,9 @@
                   <div style="flex:1"><label>{{t "prof.port"}}</label><input name="smtp_port" type="number" min="1" max="65535" value="{{.SMTPPort}}"></div>
                 </div>
                 <p class="hint">{{t "prof.starttls_hint"}}</p>
+                <label style="display:flex;align-items:center;gap:6px;font-weight:normal">
+                  <input type="checkbox" name="use_ssl" value="1" style="width:auto;margin:0"{{if .UseSSL}} checked{{end}}> {{t "prof.use_ssl"}}
+                </label>
                 <label>{{t "prof.from_address"}}</label><input name="from_address" value="{{.FromAddress}}" required>
                 <label>{{t "prof.smtp_user"}}</label><input name="smtp_username" value="{{.SMTPUser}}">
                 <label>{{t "prof.smtp_password_edit"}}</label><input type="password" name="smtp_password" placeholder="••••••••">

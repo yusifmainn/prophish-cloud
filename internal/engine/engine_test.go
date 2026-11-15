@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"net/smtp"
 	"strings"
 	"testing"
 
@@ -56,6 +57,66 @@ func TestAddrOnly(t *testing.T) {
 	}
 	if got := addrOnly("plain@example.com"); got != "plain@example.com" {
 		t.Errorf("got %q", got)
+	}
+}
+
+func TestPickAuthPrefersPlainThenLogin(t *testing.T) {
+	cfg := SMTPConfig{Username: "u", Password: "p", Host: "mail.example.com"}
+	if a, err := pickAuth("PLAIN LOGIN", cfg, true); err != nil {
+		t.Fatal(err)
+	} else if _, ok := a.(*plainAuth); !ok {
+		t.Errorf("PLAIN offered → want plainAuth, got %T", a)
+	}
+	if a, err := pickAuth("LOGIN", cfg, true); err != nil {
+		t.Fatal(err)
+	} else if _, ok := a.(*loginAuth); !ok {
+		t.Errorf("only LOGIN offered → want loginAuth, got %T", a)
+	}
+	if _, err := pickAuth("CRAM-MD5", cfg, true); err == nil {
+		t.Error("unsupported mechanism must error")
+	}
+}
+
+// TestAuthRequiresEncryptedChannel locks in the implicit-TLS fix: smtp.Client
+// does NOT set ServerInfo.TLS when it is handed an already-TLS connection (port
+// 465), so our auth mechanisms must trust the caller's `secure` flag — allowing
+// AUTH over implicit TLS while still refusing it on a genuinely plaintext link.
+func TestAuthRequiresEncryptedChannel(t *testing.T) {
+	host := "mail.example.com"
+	plaintext := &smtp.ServerInfo{Name: host, TLS: false}
+
+	// secure=true (implicit TLS): AUTH is allowed even though ServerInfo.TLS=false.
+	if _, _, err := (&plainAuth{username: "u", password: "p", host: host, secure: true}).Start(plaintext); err != nil {
+		t.Errorf("PLAIN over implicit TLS should be allowed: %v", err)
+	}
+	if _, _, err := (&loginAuth{username: "u", password: "p", host: host, secure: true}).Start(plaintext); err != nil {
+		t.Errorf("LOGIN over implicit TLS should be allowed: %v", err)
+	}
+
+	// secure=false and no server TLS: credentials must never be sent.
+	if _, _, err := (&plainAuth{username: "u", password: "p", host: host, secure: false}).Start(plaintext); err == nil {
+		t.Error("PLAIN on an unencrypted connection must be refused")
+	}
+	if _, _, err := (&loginAuth{username: "u", password: "p", host: host, secure: false}).Start(plaintext); err == nil {
+		t.Error("LOGIN on an unencrypted connection must be refused")
+	}
+}
+
+func TestPlainAuthResponseAndHostBinding(t *testing.T) {
+	host := "mail.example.com"
+	mech, resp, err := (&plainAuth{username: "user@x", password: "secret", host: host, secure: true}).
+		Start(&smtp.ServerInfo{Name: host, TLS: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mech != "PLAIN" || string(resp) != "\x00user@x\x00secret" {
+		t.Errorf("mech=%q resp=%q", mech, resp)
+	}
+	// A mismatched server name must be rejected so credentials are never sent to
+	// an unexpected host (e.g. after a redirect/MITM).
+	if _, _, err := (&plainAuth{username: "u", password: "p", host: host, secure: true}).
+		Start(&smtp.ServerInfo{Name: "evil.example.com", TLS: true}); err == nil {
+		t.Error("mismatched server name must be refused")
 	}
 }
 

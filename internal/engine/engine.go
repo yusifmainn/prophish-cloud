@@ -166,6 +166,7 @@ func (l *Launcher) Launch(ctx context.Context, campaignID string) error {
 	smtpCfg := SMTPConfig{
 		Host: profile.SMTPHost, Port: profile.SMTPPort,
 		Username: profile.SMTPUser, Password: password, From: profile.FromAddress,
+		UseSSL: profile.UseSSL,
 	}
 
 	// Merge headers: sending-profile headers first, template headers override.
@@ -341,6 +342,7 @@ func (l *Launcher) SendTestEmail(ctx context.Context, profileID, to string) erro
 	cfg := SMTPConfig{
 		Host: profile.SMTPHost, Port: profile.SMTPPort,
 		Username: profile.SMTPUser, Password: password, From: profile.FromAddress,
+		UseSSL: profile.UseSSL,
 	}
 	return Send(cfg, Message{
 		To:       to,

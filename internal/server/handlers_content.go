@@ -157,6 +157,9 @@ func (s *Server) handleProfileCreate(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/profiles", http.StatusSeeOther)
 		return
 	}
+	// Port 465 is implicit TLS (SMTPS) by convention, so treat it as SSL even if
+	// the operator did not tick the box; otherwise honour the explicit choice.
+	useSSL := r.FormValue("use_ssl") != "" || port == 465
 
 	var enc []byte
 	if password != "" {
@@ -168,7 +171,7 @@ func (s *Server) handleProfileCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	headers := parseHeaderLines(r.FormValue("headers"))
-	pid, err := s.store.CreateSendingProfile(r.Context(), name, host, port, user, from, enc, headers)
+	pid, err := s.store.CreateSendingProfile(r.Context(), name, host, port, user, from, enc, useSSL, headers)
 	if err != nil {
 		http.Error(w, "db error", http.StatusInternalServerError)
 		return
@@ -200,6 +203,9 @@ func (s *Server) handleProfileUpdate(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/profiles", http.StatusSeeOther)
 		return
 	}
+	// Port 465 is implicit TLS (SMTPS) by convention, so treat it as SSL even if
+	// the operator did not tick the box; otherwise honour the explicit choice.
+	useSSL := r.FormValue("use_ssl") != "" || port == 465
 
 	var enc []byte
 	replace := false
@@ -217,7 +223,7 @@ func (s *Server) handleProfileUpdate(w http.ResponseWriter, r *http.Request) {
 		replace = true // enc stays nil → stored password is cleared
 	}
 	headers := parseHeaderLines(r.FormValue("headers"))
-	if err := s.store.UpdateSendingProfile(r.Context(), id, name, host, port, user, from, enc, replace, headers); err != nil {
+	if err := s.store.UpdateSendingProfile(r.Context(), id, name, host, port, user, from, enc, replace, useSSL, headers); err != nil {
 		http.Error(w, "db error", http.StatusInternalServerError)
 		return
 	}

@@ -6,19 +6,19 @@ import (
 	"prophish/internal/models"
 )
 
-func (s *Store) CreateSendingProfile(c ctx, name, host string, port int, user, fromAddr string, passwordEnc []byte, headers map[string]string) (string, error) {
+func (s *Store) CreateSendingProfile(c ctx, name, host string, port int, user, fromAddr string, passwordEnc []byte, useSSL bool, headers map[string]string) (string, error) {
 	hb, _ := json.Marshal(orEmptyMap(headers))
 	var id string
 	err := s.db.QueryRow(c,
-		`INSERT INTO sending_profiles (name, smtp_host, smtp_port, smtp_username, from_address, password_enc, headers)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-		name, host, port, nullIfEmpty(user), fromAddr, passwordEnc, hb).Scan(&id)
+		`INSERT INTO sending_profiles (name, smtp_host, smtp_port, smtp_username, from_address, password_enc, use_ssl, headers)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+		name, host, port, nullIfEmpty(user), fromAddr, passwordEnc, useSSL, hb).Scan(&id)
 	return id, err
 }
 
 func (s *Store) ListSendingProfiles(c ctx) ([]models.SendingProfile, error) {
 	rows, err := s.db.Query(c,
-		`SELECT id, name, smtp_host, smtp_port, coalesce(smtp_username,''), from_address,
+		`SELECT id, name, smtp_host, smtp_port, coalesce(smtp_username,''), from_address, use_ssl,
 		        (password_enc IS NOT NULL AND length(password_enc) > 0), headers, created_at
 		   FROM sending_profiles ORDER BY name`)
 	if err != nil {
@@ -29,7 +29,7 @@ func (s *Store) ListSendingProfiles(c ctx) ([]models.SendingProfile, error) {
 	for rows.Next() {
 		var p models.SendingProfile
 		var hb []byte
-		if err := rows.Scan(&p.ID, &p.Name, &p.SMTPHost, &p.SMTPPort, &p.SMTPUser, &p.FromAddress, &p.HasPassword, &hb, &p.CreatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.SMTPHost, &p.SMTPPort, &p.SMTPUser, &p.FromAddress, &p.UseSSL, &p.HasPassword, &hb, &p.CreatedAt); err != nil {
 			return nil, err
 		}
 		p.Headers = map[string]string{}
@@ -42,21 +42,21 @@ func (s *Store) ListSendingProfiles(c ctx) ([]models.SendingProfile, error) {
 // UpdateSendingProfile edits a profile. When replacePassword is false the stored
 // password is left untouched (the edit form leaves the field blank to keep it);
 // when true, password_enc is set to passwordEnc — pass a nil blob to clear it.
-func (s *Store) UpdateSendingProfile(c ctx, id, name, host string, port int, user, fromAddr string, passwordEnc []byte, replacePassword bool, headers map[string]string) error {
+func (s *Store) UpdateSendingProfile(c ctx, id, name, host string, port int, user, fromAddr string, passwordEnc []byte, replacePassword bool, useSSL bool, headers map[string]string) error {
 	hb, _ := json.Marshal(orEmptyMap(headers))
 	if replacePassword {
 		_, err := s.db.Exec(c,
 			`UPDATE sending_profiles
-			    SET name=$2, smtp_host=$3, smtp_port=$4, smtp_username=$5, from_address=$6, password_enc=$7, headers=$8
+			    SET name=$2, smtp_host=$3, smtp_port=$4, smtp_username=$5, from_address=$6, password_enc=$7, use_ssl=$8, headers=$9
 			  WHERE id=$1`,
-			id, name, host, port, nullIfEmpty(user), fromAddr, passwordEnc, hb)
+			id, name, host, port, nullIfEmpty(user), fromAddr, passwordEnc, useSSL, hb)
 		return err
 	}
 	_, err := s.db.Exec(c,
 		`UPDATE sending_profiles
-		    SET name=$2, smtp_host=$3, smtp_port=$4, smtp_username=$5, from_address=$6, headers=$7
+		    SET name=$2, smtp_host=$3, smtp_port=$4, smtp_username=$5, from_address=$6, use_ssl=$7, headers=$8
 		  WHERE id=$1`,
-		id, name, host, port, nullIfEmpty(user), fromAddr, hb)
+		id, name, host, port, nullIfEmpty(user), fromAddr, useSSL, hb)
 	return err
 }
 
@@ -82,9 +82,9 @@ func (s *Store) GetSendingProfileWithSecret(c ctx, id string) (*models.SendingPr
 	var p models.SendingProfile
 	var enc, hb []byte
 	err := s.db.QueryRow(c,
-		`SELECT id, name, smtp_host, smtp_port, coalesce(smtp_username,''), from_address, headers, created_at, password_enc
+		`SELECT id, name, smtp_host, smtp_port, coalesce(smtp_username,''), from_address, use_ssl, headers, created_at, password_enc
 		   FROM sending_profiles WHERE id=$1`, id).
-		Scan(&p.ID, &p.Name, &p.SMTPHost, &p.SMTPPort, &p.SMTPUser, &p.FromAddress, &hb, &p.CreatedAt, &enc)
+		Scan(&p.ID, &p.Name, &p.SMTPHost, &p.SMTPPort, &p.SMTPUser, &p.FromAddress, &p.UseSSL, &hb, &p.CreatedAt, &enc)
 	if err != nil {
 		return nil, nil, err
 	}

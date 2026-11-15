@@ -87,6 +87,10 @@ type SendingProfile struct {
 	SMTPPort    int
 	SMTPUser    string
 	FromAddress string
+	// UseSSL selects implicit TLS (SMTPS): the connection is wrapped in TLS from
+	// the first byte, as required on port 465. When false, the mailer connects in
+	// plaintext and upgrades with STARTTLS when offered (ports 587/25).
+	UseSSL      bool
 	HasPassword bool
 	Headers     map[string]string
 	CreatedAt   time.Time
