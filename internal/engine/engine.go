@@ -344,11 +344,21 @@ func (l *Launcher) SendTestEmail(ctx context.Context, profileID, to string) erro
 		Username: profile.SMTPUser, Password: password, From: profile.FromAddress,
 		UseSSL: profile.UseSSL,
 	}
+	// Neutral content on purpose: the tool name and words like "phish" are strong
+	// spam/phishing-classifier triggers, and a one-line body reads as bulk, so a
+	// legitimate connectivity test was being rejected with "550 ... classified as
+	// SPAM". This is a plain, well-formed message that exercises the same path.
 	return Send(cfg, Message{
-		To:       to,
-		Subject:  "PROPhish test email",
-		TextBody: "Bu, PROPhish SMTP profilinin test mesajıdır. Göndərmə işləyir.",
-		HTMLBody: "<p>Bu, <strong>PROPhish</strong> SMTP profilinin test mesajıdır. Göndərmə işləyir.</p>",
-		Headers:  profile.Headers,
+		To:      to,
+		Subject: "SMTP konfiqurasiya yoxlaması",
+		TextBody: "Salam,\r\n\r\n" +
+			"Bu, poçt göndərmə parametrlərinin düzgün qurulduğunu yoxlamaq üçün göndərilən avtomatik mesajdır. " +
+			"Bu mesajı alırsınızsa, server bağlantısı və autentifikasiya uğurla işləyir.\r\n\r\n" +
+			"Əlavə bir addım tələb olunmur.",
+		HTMLBody: "<p>Salam,</p>" +
+			"<p>Bu, poçt göndərmə parametrlərinin düzgün qurulduğunu yoxlamaq üçün göndərilən avtomatik mesajdır. " +
+			"Bu mesajı alırsınızsa, server bağlantısı və autentifikasiya uğurla işləyir.</p>" +
+			"<p>Əlavə bir addım tələb olunmur.</p>",
+		Headers: profile.Headers,
 	})
 }

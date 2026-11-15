@@ -1,8 +1,10 @@
 package engine
 
 import (
+	"crypto/rand"
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"mime"
 	"net"
@@ -74,7 +76,7 @@ func Send(cfg SMTPConfig, msg Message) error {
 	}
 	defer c.Close()
 
-	if err := c.Hello(clientHostname()); err != nil {
+	if err := c.Hello(heloName(cfg.From)); err != nil {
 		return err
 	}
 
@@ -209,8 +211,12 @@ func (a *loginAuth) Next(fromServer []byte, more bool) ([]byte, error) {
 }
 
 func buildMIME(from string, m Message) string {
-	altBoundary := "prophish_alt_7f3a9c"
-	mixBoundary := "prophish_mix_4b1e8d"
+	// Neutral, per-message random boundaries. Static boundaries that embed the
+	// tool name ("prophish_…") leak into the raw message and let a content scanner
+	// match "phish" / fingerprint the sender — a needless spam signal.
+	tok := randToken()
+	altBoundary := "alt-" + tok
+	mixBoundary := "mix-" + tok
 	hasAttach := len(m.Attachments) > 0
 
 	var b strings.Builder
@@ -220,6 +226,9 @@ func buildMIME(from string, m Message) string {
 	fmt.Fprintf(&b, "To: %s\r\n", stripCRLF(m.To))
 	fmt.Fprintf(&b, "Subject: %s\r\n", mime.QEncoding.Encode("utf-8", m.Subject))
 	fmt.Fprintf(&b, "Date: %s\r\n", time.Now().Format(time.RFC1123Z))
+	// A missing Message-ID is a strong spam signal; give every message a unique,
+	// sender-domain-scoped one.
+	fmt.Fprintf(&b, "Message-ID: %s\r\n", messageID(from))
 	b.WriteString("MIME-Version: 1.0\r\n")
 	// Custom headers (reserved ones are skipped so they can't be overridden;
 	// key and value are sanitized so a malicious value cannot inject new headers).
@@ -280,7 +289,7 @@ func stripCRLF(s string) string {
 // isReservedHeader guards headers PROPhish sets itself.
 func isReservedHeader(k string) bool {
 	switch strings.ToLower(strings.TrimSpace(k)) {
-	case "from", "to", "subject", "date", "mime-version", "content-type", "content-transfer-encoding":
+	case "from", "to", "subject", "date", "message-id", "mime-version", "content-type", "content-transfer-encoding":
 		return true
 	}
 	return false
@@ -308,9 +317,47 @@ func addrOnly(a string) string {
 	return a
 }
 
-func clientHostname() string {
-	if h, err := net.LookupCNAME("localhost"); err == nil && h != "" {
-		return strings.TrimRight(h, ".")
+// heloName is the hostname announced in EHLO/HELO. A FQDN is far better for
+// deliverability than "localhost", so we announce the From address's domain —
+// the domain the operator is sending as. Falls back to "localhost" only when the
+// From address carries no usable domain.
+func heloName(from string) string {
+	if d := domainOf(from); d != "" {
+		return d
 	}
 	return "localhost"
+}
+
+// domainOf extracts the domain part of an email address, tolerating a
+// "Display Name <addr@domain>" form.
+func domainOf(addr string) string {
+	a := stripCRLF(addrOnly(addr))
+	if i := strings.LastIndex(a, "@"); i != -1 {
+		return strings.TrimSpace(a[i+1:])
+	}
+	return ""
+}
+
+// randToken returns a short random hex token, falling back to a time-based value
+// if the system RNG is unavailable.
+func randToken() string {
+	var r [12]byte
+	if _, err := rand.Read(r[:]); err != nil {
+		return strconv.FormatInt(time.Now().UnixNano(), 16)
+	}
+	return hex.EncodeToString(r[:])
+}
+
+// messageID builds a unique RFC 5322 Message-ID scoped to the sender's domain.
+func messageID(from string) string {
+	domain := domainOf(from)
+	if domain == "" {
+		domain = "localhost"
+	}
+	var r [16]byte
+	if _, err := rand.Read(r[:]); err != nil {
+		// Best-effort fallback; uniqueness degrades gracefully to time-based.
+		return fmt.Sprintf("<%d@%s>", time.Now().UnixNano(), domain)
+	}
+	return "<" + hex.EncodeToString(r[:]) + "@" + domain + ">"
 }
