@@ -249,6 +249,14 @@ func buildMIME(from string, m Message) string {
 	if !hasHeader(m.Headers, "Message-ID") {
 		fmt.Fprintf(&b, "Message-ID: %s\r\n", newMessageID(from))
 	}
+	// A List-Unsubscribe header is a recognized "legitimate bulk sender" signal
+	// that lowers spam scoring; point it at the sender's own address unless the
+	// caller supplied one.
+	if !hasHeader(m.Headers, "List-Unsubscribe") {
+		if ua := addrOnly(from); strings.Contains(ua, "@") {
+			fmt.Fprintf(&b, "List-Unsubscribe: <mailto:%s?subject=unsubscribe>\r\n", stripCRLF(ua))
+		}
+	}
 	b.WriteString("MIME-Version: 1.0\r\n")
 	// Custom headers (reserved ones are skipped so they can't be overridden;
 	// key and value are sanitized so a malicious value cannot inject new headers).
@@ -268,12 +276,18 @@ func buildMIME(from string, m Message) string {
 		fmt.Fprintf(&b, "--%s\r\n", mixBoundary)
 	}
 
-	// Alternative part (text + html).
+	// Alternative part (text + html). Always include a plain-text part: an
+	// HTML-only message is a notable spam signal, so derive text from the HTML
+	// when the caller supplied none.
+	textBody := m.TextBody
+	if strings.TrimSpace(textBody) == "" {
+		textBody = htmlToText(m.HTMLBody)
+	}
 	fmt.Fprintf(&b, "Content-Type: multipart/alternative; boundary=%q\r\n\r\n", altBoundary)
-	if m.TextBody != "" {
+	if strings.TrimSpace(textBody) != "" {
 		fmt.Fprintf(&b, "--%s\r\n", altBoundary)
 		b.WriteString("Content-Type: text/plain; charset=UTF-8\r\n\r\n")
-		b.WriteString(m.TextBody)
+		b.WriteString(textBody)
 		b.WriteString("\r\n")
 	}
 	fmt.Fprintf(&b, "--%s\r\n", altBoundary)
@@ -298,6 +312,78 @@ func buildMIME(from string, m Message) string {
 		fmt.Fprintf(&b, "--%s--\r\n", mixBoundary)
 	}
 	return b.String()
+}
+
+// htmlToText produces a readable plain-text approximation of an HTML body, used
+// as the text/plain alternative when the caller provides none. It is intentionally
+// simple: drop script/style, turn block-level tags into line breaks, strip the
+// remaining tags, unescape entities, and collapse excess whitespace.
+func htmlToText(html string) string {
+	s := html
+	// Remove <script>…</script> and <style>…</style> blocks wholesale.
+	for _, tag := range []string{"script", "style", "head", "title"} {
+		s = removeElement(s, tag)
+	}
+	// Block-level boundaries become newlines so words don't run together.
+	repl := strings.NewReplacer(
+		"</p>", "\n", "<br>", "\n", "<br/>", "\n", "<br />", "\n",
+		"</div>", "\n", "</tr>", "\n", "</li>", "\n", "</h1>", "\n",
+		"</h2>", "\n", "</h3>", "\n", "</h4>", "\n",
+	)
+	s = repl.Replace(s)
+	// Strip any remaining tags.
+	var out strings.Builder
+	inTag := false
+	for _, r := range s {
+		switch {
+		case r == '<':
+			inTag = true
+		case r == '>':
+			inTag = false
+		case !inTag:
+			out.WriteRune(r)
+		}
+	}
+	text := html5Unescape(out.String())
+	// Collapse runs of blank space/lines.
+	lines := strings.Split(text, "\n")
+	var kept []string
+	for _, ln := range lines {
+		ln = strings.TrimSpace(ln)
+		if ln != "" {
+			kept = append(kept, ln)
+		}
+	}
+	return strings.Join(kept, "\n")
+}
+
+// removeElement strips <tag …>…</tag> (case-insensitive) from s.
+func removeElement(s, tag string) string {
+	lower := strings.ToLower(s)
+	open := "<" + tag
+	close := "</" + tag + ">"
+	for {
+		i := strings.Index(lower, open)
+		if i < 0 {
+			return s
+		}
+		j := strings.Index(lower[i:], close)
+		if j < 0 {
+			// No closing tag: drop from the opening tag to the end.
+			return s[:i]
+		}
+		end := i + j + len(close)
+		s = s[:i] + s[end:]
+		lower = strings.ToLower(s)
+	}
+}
+
+// html5Unescape decodes the handful of entities common in email HTML.
+func html5Unescape(s string) string {
+	return strings.NewReplacer(
+		"&nbsp;", " ", "&amp;", "&", "&lt;", "<", "&gt;", ">",
+		"&quot;", "\"", "&#39;", "'", "&apos;", "'", "&mdash;", "—", "&ndash;", "–",
+	).Replace(s)
 }
 
 // stripCRLF removes carriage returns and newlines so a value written into an

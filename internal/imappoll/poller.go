@@ -25,6 +25,12 @@ import (
 const (
 	maxPerPoll = 200     // max messages processed per poll
 	maxBody    = 1 << 20 // 1 MB cap per fetched message body
+
+	// trackingHeader is the current per-message token header the mailer sets;
+	// legacyTrackingHeader is the previous, tool-identifying name, still read so
+	// reports of older messages keep resolving. Keep in sync with engine.trackingHeader.
+	trackingHeader       = "X-Entity-Ref-ID"
+	legacyTrackingHeader = "X-PROPhish-RID"
 )
 
 // Monitor periodically polls the configured IMAP mailbox.
@@ -124,12 +130,14 @@ func (m *Monitor) poll(ctx context.Context, cfg *store.IMAPConfig) error {
 
 	seqset := new(imap.SeqSet)
 	seqset.AddNum(uids...)
-	// Fetch ONLY the X-PROPhish-RID header (peeked, so it isn't marked read),
-	// never the whole message body — a hostile/oversized message can't be buffered.
+	// Fetch ONLY the tracking header (peeked, so it isn't marked read), never the
+	// whole message body — a hostile/oversized message can't be buffered. Both the
+	// current header name and the legacy one are requested so reports of messages
+	// sent before the rename still resolve.
 	section := &imap.BodySectionName{
 		BodyPartName: imap.BodyPartName{
 			Specifier: imap.HeaderSpecifier,
-			Fields:    []string{"X-PROPhish-RID"},
+			Fields:    []string{trackingHeader, legacyTrackingHeader},
 		},
 		Peek: true,
 	}
@@ -153,7 +161,10 @@ func (m *Monitor) poll(ctx context.Context, cfg *store.IMAPConfig) error {
 			// Bounded read, then parse only the TOP-LEVEL headers (not the whole
 			// body) so a quoted/forwarded copy of the header cannot forge a report.
 			if parsed, perr := mail.ReadMessage(io.LimitReader(r, maxBody)); perr == nil {
-				rid = strings.TrimSpace(parsed.Header.Get("X-PROPhish-RID"))
+				rid = strings.TrimSpace(parsed.Header.Get(trackingHeader))
+				if rid == "" {
+					rid = strings.TrimSpace(parsed.Header.Get(legacyTrackingHeader))
+				}
 			}
 		}
 
