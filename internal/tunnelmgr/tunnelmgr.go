@@ -18,6 +18,7 @@ import (
 	"os/exec"
 	"regexp"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"prophish/internal/store"
@@ -25,6 +26,33 @@ import (
 
 // ErrCap is returned when the concurrent-tunnel cap is reached.
 var ErrCap = errors.New("tunnel cap reached")
+
+// Restart backoff. A run that provisioned a URL (the tunnel worked and then
+// dropped) reconnects quickly. A run that never got a URL means provisioning
+// failed — a missing/incompatible binary, no egress, or (most commonly)
+// trycloudflare rate-limiting us with HTTP 429. Retrying such a failure quickly
+// only deepens the rate limit, so we back off hard and grow from there.
+const (
+	minBackoff     = time.Second
+	maxBackoff     = time.Minute
+	failBackoff    = 10 * time.Minute
+	maxFailBackoff = 30 * time.Minute
+)
+
+// nextBackoff returns how long to wait before the next restart, given the
+// current backoff and whether the just-finished run obtained a tunnel URL.
+func nextBackoff(current time.Duration, gotURL bool) time.Duration {
+	if gotURL {
+		return minBackoff
+	}
+	if current < failBackoff {
+		return failBackoff
+	}
+	if next := current * 2; next < maxFailBackoff {
+		return next
+	}
+	return maxFailBackoff
+}
 
 var urlRe = regexp.MustCompile(`https://[a-z0-9-]+\.trycloudflare\.com`)
 
@@ -102,11 +130,12 @@ func stopped(pr *proc) bool {
 }
 
 func (m *Manager) supervise(id string, pr *proc) {
-	backoff := time.Second
+	backoff := minBackoff
 	for {
 		if stopped(pr) {
 			return
 		}
+		var gotURL atomic.Bool
 		cmd := exec.Command(m.Bin, m.Args...)
 		out, err := cmd.StdoutPipe()
 		if err == nil {
@@ -125,34 +154,42 @@ func (m *Manager) supervise(id string, pr *proc) {
 				_ = cmd.Wait()
 				return
 			}
-			go m.scan(id, out)
+			done := make(chan struct{})
+			go func() { m.scan(id, out, &gotURL); close(done) }()
 			if werr := cmd.Wait(); werr != nil {
 				log.Printf("tunnelmgr: campaign %s: tunnel exited: %v", id, werr)
 			}
+			<-done // let scan drain the pipe so gotURL reflects this run
 		}
 		if stopped(pr) {
 			return
 		}
-		log.Printf("tunnelmgr: campaign %s: restarting tunnel in %s", id, backoff)
+		backoff = nextBackoff(backoff, gotURL.Load())
+		if gotURL.Load() {
+			log.Printf("tunnelmgr: campaign %s: restarting tunnel in %s", id, backoff)
+		} else {
+			// Most often trycloudflare rate-limiting (HTTP 429); hammering makes it
+			// worse, so wait a long time before trying again.
+			log.Printf("tunnelmgr: campaign %s: tunnel did not provision (rate limit or error) — backing off %s", id, backoff)
+		}
 		select {
 		case <-pr.stopCh:
 			return
 		case <-time.After(backoff):
 		}
-		backoff *= 2
-		if backoff > time.Minute {
-			backoff = time.Minute
-		}
 	}
 }
 
 // scan reads cloudflared output and saves every trycloudflare URL observed
-// (a supervised restart prints a new one, which replaces the old in the DB).
-func (m *Manager) scan(id string, r io.Reader) {
+// (a supervised restart prints a new one, which replaces the old in the DB). It
+// sets gotURL when a tunnel hostname is seen, so the supervisor can tell a
+// working-then-dropped tunnel from one that never provisioned.
+func (m *Manager) scan(id string, r io.Reader, gotURL *atomic.Bool) {
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 64*1024), 64*1024)
 	for sc.Scan() {
 		if u := ExtractURL(sc.Text()); u != "" {
+			gotURL.Store(true)
 			if err := m.Save(context.Background(), id, u); err != nil {
 				log.Printf("tunnelmgr: campaign %s: save url: %v", id, err)
 			} else {

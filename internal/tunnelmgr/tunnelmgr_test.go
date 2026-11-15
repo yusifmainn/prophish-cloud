@@ -20,6 +20,26 @@ func TestExtractURL(t *testing.T) {
 	}
 }
 
+func TestNextBackoff(t *testing.T) {
+	// A provisioned tunnel that dropped reconnects quickly.
+	if got := nextBackoff(maxFailBackoff, true); got != minBackoff {
+		t.Errorf("gotURL reconnect = %s, want %s", got, minBackoff)
+	}
+	// A run that never provisioned (429 / spawn error) jumps straight to the long
+	// fail backoff rather than retrying within seconds.
+	if got := nextBackoff(minBackoff, false); got != failBackoff {
+		t.Errorf("first failure = %s, want %s", got, failBackoff)
+	}
+	// Repeated failures grow...
+	if got := nextBackoff(failBackoff, false); got <= failBackoff {
+		t.Errorf("escalation = %s, want > %s", got, failBackoff)
+	}
+	// ...but are capped.
+	if got := nextBackoff(maxFailBackoff, false); got != maxFailBackoff {
+		t.Errorf("cap = %s, want %s", got, maxFailBackoff)
+	}
+}
+
 // TestStartSaveStop uses a stub binary (sh) that prints a URL and sleeps; it
 // verifies spawn → URL scrape → Save callback, the concurrency cap, and Stop.
 func TestStartSaveStop(t *testing.T) {
