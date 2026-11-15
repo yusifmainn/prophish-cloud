@@ -268,3 +268,42 @@ func headerBlock(raw string) string {
 	}
 	return raw
 }
+
+func TestBuildMIMEAddsTextPartAndListUnsubscribe(t *testing.T) {
+	// HTML-only message (no TextBody): a plain-text alternative must be derived.
+	raw := buildMIME("Aze Tourism <info@aze-tourism.online>", Message{
+		To:       "someone@example.com",
+		Subject:  "Hi",
+		HTMLBody: "<html><head><style>b{color:red}</style></head><body><p>Hello <b>World</b></p><a href=\"https://x.test\">link</a></body></html>",
+	})
+
+	if !strings.Contains(raw, "text/plain") {
+		t.Error("expected a text/plain alternative part for an HTML-only message")
+	}
+	if !strings.Contains(raw, "Hello World") {
+		t.Errorf("expected derived text to contain the visible words; got:\n%s", raw)
+	}
+	if !strings.Contains(raw, "List-Unsubscribe: <mailto:info@aze-tourism.online") {
+		t.Errorf("expected a List-Unsubscribe header; headers:\n%s", headerBlock(raw))
+	}
+	if !strings.Contains(raw, "Message-ID:") {
+		t.Error("expected a Message-ID header")
+	}
+}
+
+func TestHTMLToText(t *testing.T) {
+	got := htmlToText("<div>Line one</div><p>Line two &amp; more</p><br>Line three")
+	want := "Line one\nLine two & more\nLine three"
+	if got != want {
+		t.Errorf("htmlToText = %q, want %q", got, want)
+	}
+
+	// Script/style content must not appear in the derived text.
+	withStyle := htmlToText("<head><style>b{color:red}</style></head><body><p>Visible</p><script>alert(1)</script></body>")
+	if strings.Contains(withStyle, "color:red") || strings.Contains(withStyle, "alert(1)") {
+		t.Errorf("style/script leaked into text: %q", withStyle)
+	}
+	if !strings.Contains(withStyle, "Visible") {
+		t.Errorf("expected visible text to survive, got %q", withStyle)
+	}
+}
