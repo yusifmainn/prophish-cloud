@@ -31,6 +31,8 @@ type fakeSMTP struct {
 	authSeen string
 	gotData  bool
 	tlsUsed  bool
+	heloArg  string
+	dataBody string
 }
 
 func newFakeSMTP(t *testing.T, implicit bool) *fakeSMTP {
@@ -87,6 +89,14 @@ func (s *fakeSMTP) session(conn net.Conn, offerStartTLS bool) {
 		cmd := strings.ToUpper(strings.TrimSpace(line))
 		switch {
 		case strings.HasPrefix(cmd, "EHLO"), strings.HasPrefix(cmd, "HELO"):
+			// Record the greeting argument with original case.
+			if fields := strings.Fields(strings.TrimSpace(line)); len(fields) > 1 {
+				s.mu.Lock()
+				if s.heloArg == "" {
+					s.heloArg = fields[1]
+				}
+				s.mu.Unlock()
+			}
 			w("250-fake greets you\r\n")
 			if offerStartTLS {
 				w("250-STARTTLS\r\n")
@@ -123,6 +133,7 @@ func (s *fakeSMTP) session(conn net.Conn, offerStartTLS bool) {
 			w("250 ok\r\n")
 		case cmd == "DATA":
 			w("354 end with .\r\n")
+			var body strings.Builder
 			for {
 				dl, err := br.ReadString('\n')
 				if err != nil {
@@ -131,8 +142,10 @@ func (s *fakeSMTP) session(conn net.Conn, offerStartTLS bool) {
 				if strings.TrimRight(dl, "\r\n") == "." {
 					break
 				}
+				body.WriteString(dl)
 			}
 			s.mu.Lock()
+			s.dataBody = body.String()
 			s.gotData = true
 			s.mu.Unlock()
 			w("250 queued\r\n")
@@ -220,4 +233,38 @@ func TestSendStartTLS587(t *testing.T) {
 	if s.authSeen == "" {
 		t.Error("expected AUTH after STARTTLS")
 	}
+}
+
+// TestSendDeliverabilityHeaders verifies the anti-spam improvements: the client
+// greets with the sender's domain (never "localhost") and the message carries a
+// Message-ID header.
+func TestSendDeliverabilityHeaders(t *testing.T) {
+	s := newFakeSMTP(t, false)
+	if err := sendTo(t, s); err != nil {
+		t.Fatalf("send: %v", err)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.heloArg == "" || strings.EqualFold(s.heloArg, "localhost") {
+		t.Errorf("expected EHLO to use the sender domain, got %q", s.heloArg)
+	}
+	// From is "noreply@example.com", so the greeting should be example.com.
+	if !strings.EqualFold(s.heloArg, "example.com") {
+		t.Errorf("expected EHLO %q, got %q", "example.com", s.heloArg)
+	}
+	if !strings.Contains(s.dataBody, "Message-ID:") {
+		t.Error("expected a Message-ID header in the message")
+	}
+	if !strings.Contains(s.dataBody, "@example.com>") {
+		t.Errorf("expected Message-ID to use the sender domain; body headers:\n%s", headerBlock(s.dataBody))
+	}
+}
+
+// headerBlock returns just the header portion of a raw message for error output.
+func headerBlock(raw string) string {
+	if i := strings.Index(raw, "\r\n\r\n"); i != -1 {
+		return raw[:i]
+	}
+	return raw
 }
