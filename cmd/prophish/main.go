@@ -77,26 +77,40 @@ func main() {
 
 	launcher := engine.NewLauncher(st, cfg.EncryptionKey, cfg.PublicBaseURL, func() string { return detector.Detect(context.Background()).BaseURL() })
 
-	// Per-campaign quick tunnels: restart tunnels of managed (non-archived)
-	// campaigns; each restart yields a fresh trycloudflare URL (saved to the DB
-	// by the manager when cloudflared prints it).
+	// Background-worker context (cancelled on shutdown), created early so the
+	// named tunnel below is tied to it.
+	bgCtx, bgCancel := context.WithCancel(context.Background())
+	defer bgCancel()
+
 	tunnels := tunnelmgr.New(st)
-	if ids, err := st.ListTunnelManagedCampaigns(ctx); err != nil {
-		log.Printf("list tunnel-managed campaigns: %v", err)
-	} else {
-		for _, id := range ids {
-			if err := tunnels.Start(id); err != nil {
-				log.Printf("restart tunnel for campaign %s: %v", id, err)
-			}
+	if cfg.CloudflareTunnelToken != "" {
+		// Named-tunnel mode: one stable tunnel for the whole app (no trycloudflare
+		// rate limit, stable hostname). Campaigns use PROPHISH_PUBLIC_BASE_URL as
+		// their public URL; we do NOT spawn per-campaign quick tunnels.
+		log.Printf("cloudflare named tunnel configured — running a single named tunnel")
+		if cfg.PublicBaseURL == "" {
+			log.Printf("WARNING: PROPHISH_CLOUDFLARE_TUNNEL_TOKEN is set but PROPHISH_PUBLIC_BASE_URL is empty — set it to the tunnel's hostname")
 		}
-		if len(ids) > 0 {
-			log.Printf("restarted %d campaign tunnel(s)", len(ids))
+		go tunnels.RunNamed(bgCtx, cfg.CloudflareTunnelToken)
+	} else {
+		// Per-campaign quick tunnels: restart tunnels of managed (non-archived)
+		// campaigns; each restart yields a fresh trycloudflare URL (saved to the DB
+		// by the manager when cloudflared prints it).
+		if ids, err := st.ListTunnelManagedCampaigns(ctx); err != nil {
+			log.Printf("list tunnel-managed campaigns: %v", err)
+		} else {
+			for _, id := range ids {
+				if err := tunnels.Start(id); err != nil {
+					log.Printf("restart tunnel for campaign %s: %v", id, err)
+				}
+			}
+			if len(ids) > 0 {
+				log.Printf("restarted %d campaign tunnel(s)", len(ids))
+			}
 		}
 	}
 
 	// Background workers: scheduled-campaign launcher and the IMAP reported-email monitor.
-	bgCtx, bgCancel := context.WithCancel(context.Background())
-	defer bgCancel()
 	go launcher.RunScheduler(bgCtx)
 	go imappoll.New(st, cfg.EncryptionKey).Run(bgCtx)
 

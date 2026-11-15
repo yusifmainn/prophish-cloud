@@ -17,6 +17,7 @@ import (
 	"log"
 	"os/exec"
 	"regexp"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -81,6 +82,8 @@ type Manager struct {
 	Max  int      // concurrent tunnel cap
 	// Save persists a freshly-observed tunnel URL for the campaign.
 	Save func(ctx context.Context, campaignID, url string) error
+	// NamedCmd builds the command for the single named tunnel (overridable in tests).
+	NamedCmd func(token string) *exec.Cmd
 
 	mu    sync.Mutex
 	procs map[string]*proc
@@ -88,11 +91,15 @@ type Manager struct {
 
 // New builds a Manager bound to the store and the in-container public server.
 func New(st *store.Store) *Manager {
+	bin := "cloudflared"
 	return &Manager{
-		Bin:   "cloudflared",
+		Bin:   bin,
 		Args:  []string{"tunnel", "--no-autoupdate", "--url", "http://localhost:8080"},
 		Max:   25,
 		Save:  func(c context.Context, id, url string) error { return st.SetCampaignTunnel(c, id, url) },
+		NamedCmd: func(token string) *exec.Cmd {
+			return exec.Command(bin, "tunnel", "--no-autoupdate", "run", "--token", token)
+		},
 		procs: map[string]*proc{},
 	}
 }
@@ -216,6 +223,73 @@ func (m *Manager) Stop(campaignID string) {
 	m.mu.Unlock()
 	if cmd != nil && cmd.Process != nil {
 		_ = cmd.Process.Kill()
+	}
+}
+
+// RunNamed supervises a single named Cloudflare tunnel (`cloudflared tunnel run
+// --token <token>`) until ctx is cancelled. Unlike the per-campaign quick
+// tunnels, a named tunnel has a stable hostname configured in the Cloudflare
+// dashboard (which must route that hostname to this app's public server), so
+// there is no URL to scrape and no trycloudflare rate limit. Campaigns then use
+// that stable hostname as their public base URL. It restarts the process with
+// backoff if it exits, and returns when ctx is cancelled.
+func (m *Manager) RunNamed(ctx context.Context, token string) {
+	backoff := minBackoff
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+		cmd := m.NamedCmd(token)
+		out, err := cmd.StdoutPipe()
+		if err == nil {
+			cmd.Stderr = cmd.Stdout
+			err = cmd.Start()
+		}
+		if err != nil {
+			log.Printf("tunnelmgr: named tunnel spawn failed: %v", err)
+		} else {
+			go logNamed(out)
+			done := make(chan error, 1)
+			go func() { done <- cmd.Wait() }()
+			select {
+			case <-ctx.Done():
+				_ = cmd.Process.Kill()
+				<-done
+				return
+			case werr := <-done:
+				if werr != nil {
+					log.Printf("tunnelmgr: named tunnel exited: %v", werr)
+				}
+			}
+		}
+		if ctx.Err() != nil {
+			return
+		}
+		log.Printf("tunnelmgr: named tunnel restarting in %s", backoff)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(backoff):
+		}
+		if backoff *= 2; backoff > maxBackoff {
+			backoff = maxBackoff
+		}
+	}
+}
+
+// logNamed drains the named tunnel's output, surfacing only connection-ready and
+// error lines so the operator can confirm the tunnel is up without log spam.
+func logNamed(r io.Reader) {
+	sc := bufio.NewScanner(r)
+	sc.Buffer(make([]byte, 64*1024), 64*1024)
+	for sc.Scan() {
+		line := sc.Text()
+		switch {
+		case strings.Contains(line, "Registered tunnel connection"):
+			log.Printf("tunnelmgr: named tunnel connected")
+		case strings.Contains(line, "ERR"), strings.Contains(strings.ToLower(line), "error"):
+			log.Printf("tunnelmgr: named tunnel: %s", line)
+		}
 	}
 }
 
