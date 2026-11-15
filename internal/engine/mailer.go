@@ -1,12 +1,15 @@
 package engine
 
 import (
+	"crypto/rand"
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"mime"
 	"net"
 	"net/smtp"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -91,7 +94,7 @@ func sendImpl(cfg SMTPConfig, msg Message, tlsCfg *tls.Config, implicitTLS bool)
 	}
 	defer c.Close()
 
-	if err := c.Hello(clientHostname()); err != nil {
+	if err := c.Hello(heloName(cfg.From)); err != nil {
 		return err
 	}
 
@@ -230,8 +233,8 @@ func (a *loginAuth) Next(fromServer []byte, more bool) ([]byte, error) {
 }
 
 func buildMIME(from string, m Message) string {
-	altBoundary := "prophish_alt_7f3a9c"
-	mixBoundary := "prophish_mix_4b1e8d"
+	altBoundary := randomBoundary("alt_")
+	mixBoundary := randomBoundary("mix_")
 	hasAttach := len(m.Attachments) > 0
 
 	var b strings.Builder
@@ -241,6 +244,11 @@ func buildMIME(from string, m Message) string {
 	fmt.Fprintf(&b, "To: %s\r\n", stripCRLF(m.To))
 	fmt.Fprintf(&b, "Subject: %s\r\n", mime.QEncoding.Encode("utf-8", m.Subject))
 	fmt.Fprintf(&b, "Date: %s\r\n", time.Now().Format(time.RFC1123Z))
+	// A Message-ID is set unless the caller supplied one via custom headers;
+	// every normal client includes one, and its absence looks like spam.
+	if !hasHeader(m.Headers, "Message-ID") {
+		fmt.Fprintf(&b, "Message-ID: %s\r\n", newMessageID(from))
+	}
 	b.WriteString("MIME-Version: 1.0\r\n")
 	// Custom headers (reserved ones are skipped so they can't be overridden;
 	// key and value are sanitized so a malicious value cannot inject new headers).
@@ -298,6 +306,18 @@ func stripCRLF(s string) string {
 	return strings.NewReplacer("\r", "", "\n", "").Replace(s)
 }
 
+// hasHeader reports whether the caller already supplied a header with the given
+// name (case-insensitive), so we don't emit a duplicate.
+func hasHeader(headers map[string]string, name string) bool {
+	want := strings.ToLower(strings.TrimSpace(name))
+	for k := range headers {
+		if strings.ToLower(strings.TrimSpace(k)) == want {
+			return true
+		}
+	}
+	return false
+}
+
 // isReservedHeader guards headers PROPhish sets itself.
 func isReservedHeader(k string) bool {
 	switch strings.ToLower(strings.TrimSpace(k)) {
@@ -329,9 +349,53 @@ func addrOnly(a string) string {
 	return a
 }
 
-func clientHostname() string {
-	if h, err := net.LookupCNAME("localhost"); err == nil && h != "" {
-		return strings.TrimRight(h, ".")
+// heloName returns the hostname to present in the EHLO/HELO greeting. A real
+// mail client greets with a fully-qualified domain name; greeting as
+// "localhost" is a strong spam signal that many servers (Exchange/Outlook
+// included) penalize or reject. We use the sender's own domain, which matches
+// what a legitimate client for that address would send, falling back to the OS
+// hostname and finally "localhost" only if nothing better is available.
+func heloName(from string) string {
+	if d := addrDomain(from); d != "" {
+		return d
+	}
+	if h, err := os.Hostname(); err == nil && h != "" && h != "localhost" {
+		return h
 	}
 	return "localhost"
+}
+
+// addrDomain extracts the domain part of an email address, tolerating a
+// "Name <user@host>" display form.
+func addrDomain(addr string) string {
+	a := addrOnly(addr)
+	if i := strings.LastIndex(a, "@"); i != -1 && i+1 < len(a) {
+		return strings.TrimSpace(a[i+1:])
+	}
+	return ""
+}
+
+// newMessageID builds a unique RFC 5322 Message-ID. Every well-behaved mail
+// client sets one; its absence is a common spam-filter trigger.
+func newMessageID(from string) string {
+	domain := addrDomain(from)
+	if domain == "" {
+		domain = "localhost"
+	}
+	var buf [16]byte
+	if _, err := rand.Read(buf[:]); err != nil {
+		// Fall back to a time-based token; uniqueness is best-effort.
+		return fmt.Sprintf("<%d@%s>", time.Now().UnixNano(), domain)
+	}
+	return fmt.Sprintf("<%s@%s>", hex.EncodeToString(buf[:]), domain)
+}
+
+// randomBoundary returns an unpredictable MIME boundary. Static, tool-specific
+// boundary strings fingerprint the sender and can be matched by spam rules.
+func randomBoundary(prefix string) string {
+	var buf [12]byte
+	if _, err := rand.Read(buf[:]); err != nil {
+		return prefix + strconv.FormatInt(time.Now().UnixNano(), 16)
+	}
+	return prefix + hex.EncodeToString(buf[:])
 }
