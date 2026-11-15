@@ -565,6 +565,31 @@ func (s *Server) handleCampaignLaunch(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/campaigns/"+id, http.StatusSeeOther)
 		return
 	}
+
+	// Pre-flight the gates that would otherwise abort the ASYNC launch silently —
+	// the launch error only reaches the server log, so the operator is told
+	// "sending started" while the campaign quietly stays a relaunchable draft and
+	// no mail goes out. Surface the real reason instead.
+	//
+	// A tunnel-managed ("public" + cloudflared) campaign cannot send until its
+	// trycloudflare URL has been scraped into public_base_url. A free quick tunnel
+	// can take longer than the engine's 45s wait to provision — or fail with 429 —
+	// so refusing here (campaign stays a draft) and telling the operator to wait
+	// for the live URL shown on this page and relaunch is clearer than baking dead
+	// loopback links or aborting invisibly.
+	if camp.TunnelManaged && camp.PublicBaseURL == "" {
+		s.flashErr(r, "Cloudflare tunnel URL-i hələ hazır deyil — bu səhifədə tunel linki (https://…trycloudflare.com) görünənə qədər gözləyin, sonra yenidən 'İşə sal' basın. Uzun çəkirsə, quick tunnel limitə (429) düşmüş ola bilər; bir az sonra təkrar cəhd edin və ya sabit public URL istifadə edin.")
+		http.Redirect(w, r, "/campaigns/"+id, http.StatusSeeOther)
+		return
+	}
+	// The written authorization must cover "now"; otherwise the engine refuses to
+	// launch. Report that up front instead of hiding it in the log.
+	if ok, aerr := s.store.ActiveAuthorizationExists(r.Context(), camp.AuthorizationID, time.Now()); aerr == nil && !ok {
+		s.flashErr(r, "İşə salına bilmədi: aktiv avtorizasiya bu anı əhatə etmir — avtorizasiyanın başlama/bitmə tarixlərini yoxlayın.")
+		http.Redirect(w, r, "/campaigns/"+id, http.StatusSeeOther)
+		return
+	}
+
 	items, _ := s.store.PendingResults(r.Context(), id)
 	if len(items) == 0 {
 		s.flashErr(r, "Göndəriləcək hədəf yoxdur — kampaniyada boş qrup ola bilər.")
