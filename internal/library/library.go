@@ -30,8 +30,8 @@ func mustRead(name string) string {
 }
 
 // Kit is one catalog entry. Title/Summary/EmailSubject are localized (az/en/ru);
-// the landing and email HTML are brand-faithful and intentionally not localized
-// (the login screens employees really see are in the brand's own wording).
+// the landing and email HTML use the brands' real English wording, matching the
+// login screens and notifications employees actually see.
 type Kit struct {
 	ID       string // stable slug, used in URLs
 	Brand    string // display brand, e.g. "Microsoft 365"

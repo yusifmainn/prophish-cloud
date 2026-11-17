@@ -1,0 +1,87 @@
+From: Human Resources <hr@prosol.az>
+To: {{.Email}}
+Subject: Karabakh teambuilding: complete your registration
+Date: Tue, 17 Nov 2026 09:00:00 +0400
+MIME-Version: 1.0
+X-Mailer: HR Intranet Mailer
+Reply-To: no-reply@prosol.az
+Content-Type: multipart/alternative; boundary="PROPHISH_TB_BOUNDARY"
+
+--PROPHISH_TB_BOUNDARY
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Hi {{.FirstName}},
+
+This year's team building trip will take place in Karabakh. All employees
+are expected to take part, and registration is handled through the online
+reservation portal.
+
+To secure your place, complete the three-step registration form (personal
+details, ID document, and payment) by Friday:
+
+{{.URL}}
+
+Places are limited and will be allocated on a first-come, first-served
+basis. If you do not register in time, you will not be included in the
+transport and accommodation lists.
+
+Regards,
+HR Department
+This is an automated message. Please do not reply.
+
+--PROPHISH_TB_BOUNDARY
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<!doctype html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<style>
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse}
+  img{border:0;line-height:100%;outline:none;text-decoration:none}
+  body{margin:0;padding:0;width:100%}
+  @media screen and (max-width:620px){.wrap{width:100%!important}.px{padding-left:20px!important;padding-right:20px!important}}
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f8;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f4f6f8;font-size:1px;line-height:1px;">Registration for the Karabakh teambuilding trip is open. Complete the three-step form by Friday.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f6f8;">
+<tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid #e3e9f0;">
+    <tr><td bgcolor="#0b5cab" style="background-color:#0b5cab;padding:22px 32px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="font-family:'Segoe UI',Arial,sans-serif;color:#ffffff;font-size:20px;font-weight:bold;">Human Resources</td>
+        <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;color:#cfe4f5;font-size:12px;">Team Building 2026</td>
+      </tr></table>
+    </td></tr>
+    <tr><td class="px" style="padding:30px 32px 2px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;font-weight:bold;color:#1aa3a3;letter-spacing:1px;">CORPORATE EVENT</td></tr>
+    <tr><td class="px" style="padding:4px 32px 6px;font-family:'Segoe UI',Arial,sans-serif;font-size:22px;font-weight:bold;line-height:30px;color:#0b2740;">Karabakh teambuilding: registration is open</td></tr>
+    <tr><td class="px" style="padding:10px 32px 4px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#31475a;">Hi <b>{{.FirstName}}</b>,</td></tr>
+    <tr><td class="px" style="padding:10px 32px 6px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#31475a;">This year's team building trip will take place in <b>Karabakh</b>. All employees are expected to take part, and registration is handled through the online reservation portal.</td></tr>
+    <tr><td class="px" style="padding:12px 32px 4px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f6f8fb" style="background-color:#f6f8fb;border:1px solid #e3e9f0;">
+        <tr><td style="padding:14px 18px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;line-height:22px;color:#43596b;"><b>Event:</b> Karabakh Teambuilding 2026<br><b>Who:</b> All staff ({{.Email}})<br><b>Registration:</b> 3 steps: personal details, ID document, payment<br><b>Deadline:</b> Friday, end of day</td></tr>
+      </table>
+    </td></tr>
+    <tr><td class="px" style="padding:16px 32px 4px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#31475a;">Places are limited and will be allocated on a first-come, first-served basis. To secure your place, complete the registration form:</td></tr>
+    <tr><td align="center" style="padding:20px 32px 10px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td bgcolor="#0b5cab" align="center" style="background-color:#0b5cab;padding:13px 34px;">
+          <a href="{{.URL}}" style="font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">Complete registration</a>
+        </td>
+      </tr></table>
+    </td></tr>
+    <tr><td align="center" class="px" style="padding:4px 32px 24px;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:18px;color:#7b8a99;">If the button does not work, copy this address into your browser:<br><span style="color:#0b5cab;">{{.URL}}</span></td></tr>
+    <tr><td bgcolor="#f0f3f6" style="background-color:#f0f3f6;padding:18px 32px;font-family:'Segoe UI',Arial,sans-serif;font-size:11px;line-height:18px;color:#8a97a5;">Regards,<br>HR Department &middot; Human Resources<br>This is an automated message. Please do not reply.</td></tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>
+
+--PROPHISH_TB_BOUNDARY--

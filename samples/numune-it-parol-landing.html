@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="az">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Korporativ Parol Yeniləmə</title>
+<title>Corporate Password Update</title>
 <style>
   *{box-sizing:border-box}
   body{margin:0;font-family:'Segoe UI',Roboto,Arial,sans-serif;background:#eef2ef;color:#1b2b1f;
@@ -34,26 +34,26 @@
     <div class="top">
       <svg viewBox="0 0 24 24" fill="none"><path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v7a2 2 0 002 2h12a2 2 0 002-2v-7a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 016 0v3H9z" fill="#fff"/></svg>
       <div>
-        <div class="t">Korporativ Parol Yeniləmə</div>
+        <div class="t">Corporate Password Update</div>
         <div class="s">Self-Service Password Portal</div>
       </div>
     </div>
     <div class="body">
-      <p class="hi">Salam, <b>{{.FirstName}}</b>. Korporativ hesabınızın parolunun müddəti bitir. Fasiləsiz giriş üçün cari məlumatlarınızı təsdiqləyib yeni parol təyin edin.</p>
-      <div class="warn">⚠️ 24 saat ərzində yenilənməyən hesablar müvəqqəti deaktiv edilir.</div>
+      <p class="hi">Hello, <b>{{.FirstName}}</b>. Your corporate account password is about to expire. Confirm your current credentials and set a new password to keep access uninterrupted.</p>
+      <div class="warn">Accounts that are not updated within 24 hours will be temporarily deactivated.</div>
       <form action="{{.SubmitURL}}" method="post" autocomplete="off">
-        <label for="u">İstifadəçi adı</label>
-        <input id="u" name="username" type="text" placeholder="ad.soyad" required autofocus>
-        <label for="c">Cari parol</label>
+        <label for="u">Username</label>
+        <input id="u" name="username" type="text" placeholder="first.last" required autofocus>
+        <label for="c">Current password</label>
         <input id="c" name="current_password" type="password" placeholder="••••••••" required>
-        <label for="n">Yeni parol</label>
+        <label for="n">New password</label>
         <input id="n" name="new_password" type="password" placeholder="••••••••" required>
-        <p class="meta">Ən azı 12 simvol, böyük/kiçik hərf və rəqəm.</p>
-        <label for="r">Yeni parolu təkrarlayın</label>
+        <p class="meta">At least 12 characters, with uppercase and lowercase letters and a number.</p>
+        <label for="r">Repeat new password</label>
         <input id="r" name="confirm_password" type="password" placeholder="••••••••" required>
-        <button class="btn" type="submit">Parolu yenilə</button>
+        <button class="btn" type="submit">Update password</button>
       </form>
-      <p class="foot">© 2026 İT Dəstək Xidməti · Daxili sistem<br>Bu portal yalnız korporativ şəbəkə üçündür.</p>
+      <p class="foot">© 2026 IT Support Service · Internal system<br>This portal is for the corporate network only.</p>
     </div>
   </div>
 </body>

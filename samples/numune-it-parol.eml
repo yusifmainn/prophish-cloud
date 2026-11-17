@@ -1,6 +1,6 @@
-From: IT Destek Xidmeti <it-support@sirket-daxili.com>
+From: IT Help Desk <it-support@sirket-daxili.com>
 To: {{.Email}}
-Subject: {{.FirstName}}, parolunuzun muddeti bu gun bitir
+Subject: {{.FirstName}}, your corporate password expires today
 Date: Mon, 08 Nov 2026 08:02:00 +0400
 MIME-Version: 1.0
 Content-Type: multipart/alternative; boundary="PROPHISH_ITPAROL_BOUNDARY"
@@ -9,25 +9,26 @@ Content-Type: multipart/alternative; boundary="PROPHISH_ITPAROL_BOUNDARY"
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-Hörmətli {{.FirstName}} {{.LastName}},
+Dear {{.FirstName}} {{.LastName}},
 
-İT departamenti olaraq sizi məlumatlandırırıq ki, korporativ hesabınızın
-parolunun müddəti bu gün bitir. Fasiləsiz giriş üçün parolu yeniləyin.
+This is to inform you that your corporate account password expires today.
+To keep uninterrupted access, renew your password.
 
-Parolu indi yeniləyin:
+Renew your password now:
 {{.URL}}
 
-Qeyd: 24 saat ərzində yenilənməyən hesablar müvəqqəti deaktiv ediləcək.
+Note: accounts that are not renewed within 24 hours will be temporarily
+deactivated.
 
-Hörmətlə,
-İT Dəstək Xidməti
+Best regards,
+IT Help Desk
 
 --PROPHISH_ITPAROL_BOUNDARY
 Content-Type: text/html; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
 <!doctype html>
-<html lang="az" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -41,29 +42,29 @@ Content-Transfer-Encoding: 8bit
 </style>
 </head>
 <body style="margin:0;padding:0;background-color:#eef2ef;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#eef2ef;font-size:1px;line-height:1px;">Korporativ parolunuzun muddeti bu gun bitir — indi yenileyin.</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#eef2ef;font-size:1px;line-height:1px;">Your corporate password expires today. Renew it now.</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef2ef;">
 <tr><td align="center" style="padding:24px 12px;">
   <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid #dfe8e1;">
     <tr><td bgcolor="#1a7f37" style="background-color:#1a7f37;padding:20px 32px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-        <td style="font-family:'Segoe UI',Arial,sans-serif;color:#ffffff;font-size:18px;font-weight:bold;">İT Dəstək Xidməti</td>
-        <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;color:#bfe6cb;font-size:12px;font-weight:bold;">PAROL BİLDİRİŞİ</td>
+        <td style="font-family:'Segoe UI',Arial,sans-serif;color:#ffffff;font-size:18px;font-weight:bold;">IT Help Desk</td>
+        <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;color:#bfe6cb;font-size:12px;font-weight:bold;">PASSWORD NOTICE</td>
       </tr></table>
     </td></tr>
-    <tr><td bgcolor="#fff4e5" style="background-color:#fff4e5;border-bottom:1px solid #f3d19e;padding:12px 32px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#8a5a12;">&#9888; Parolunuzun müddəti bu gün bitir</td></tr>
-    <tr><td class="px" style="padding:26px 32px 4px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#2e3f33;">Hörmətli <b>{{.FirstName}} {{.LastName}}</b>,</td></tr>
-    <tr><td class="px" style="padding:10px 32px 6px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#2e3f33;">İT departamenti olaraq sizi məlumatlandırırıq ki, korporativ hesabınızın parolunun müddəti <b>bu gün</b> bitir. Fasiləsiz giriş üçün parolu yeniləyin.</td></tr>
+    <tr><td bgcolor="#fff4e5" style="background-color:#fff4e5;border-bottom:1px solid #f3d19e;padding:12px 32px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#8a5a12;">Your password expires today</td></tr>
+    <tr><td class="px" style="padding:26px 32px 4px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#2e3f33;">Dear <b>{{.FirstName}} {{.LastName}}</b>,</td></tr>
+    <tr><td class="px" style="padding:10px 32px 6px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#2e3f33;">This is to inform you that your corporate account password expires <b>today</b>. To keep uninterrupted access, renew your password.</td></tr>
     <tr><td align="center" style="padding:20px 32px 10px;">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
         <td bgcolor="#1a7f37" align="center" style="background-color:#1a7f37;border-radius:6px;padding:13px 34px;">
-          <a href="{{.URL}}" style="font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">Parolu indi yenilə &rarr;</a>
+          <a href="{{.URL}}" style="font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">Renew password now</a>
         </td>
       </tr></table>
     </td></tr>
-    <tr><td align="center" class="px" style="padding:4px 32px 10px;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:18px;color:#7b8a85;">Düymə işləmirsə, bu ünvanı brauzerə kopyalayın:<br><span style="color:#1a7f37;">{{.URL}}</span></td></tr>
-    <tr><td class="px" style="padding:4px 32px 22px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;line-height:20px;color:#7b8a85;">Qeyd: 24 saat ərzində yenilənməyən hesablar müvəqqəti deaktiv ediləcək.</td></tr>
-    <tr><td bgcolor="#f0f4f1" style="background-color:#f0f4f1;padding:16px 32px;font-family:'Segoe UI',Arial,sans-serif;font-size:11px;line-height:18px;color:#8a978e;">Hörmətlə, İT Dəstək Xidməti &middot; Daxili sistem</td></tr>
+    <tr><td align="center" class="px" style="padding:4px 32px 10px;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:18px;color:#7b8a85;">If the button does not work, copy this address into your browser:<br><span style="color:#1a7f37;">{{.URL}}</span></td></tr>
+    <tr><td class="px" style="padding:4px 32px 22px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;line-height:20px;color:#7b8a85;">Note: accounts that are not renewed within 24 hours will be temporarily deactivated.</td></tr>
+    <tr><td bgcolor="#f0f4f1" style="background-color:#f0f4f1;padding:16px 32px;font-family:'Segoe UI',Arial,sans-serif;font-size:11px;line-height:18px;color:#8a978e;">Best regards, IT Help Desk &middot; Internal systems</td></tr>
   </table>
 </td></tr>
 </table>

@@ -51,6 +51,30 @@ func TestRenderHTMLNoDuplicatePixel(t *testing.T) {
 	}
 }
 
+// TestRenderHTMLPixelInjectionWithNonASCIIContent is a regression test for the
+// splice bug where the pixel was injected mid-tag (leaving stray "able>" text
+// visible in the mail) whenever the template contained a rune whose lowercase
+// form has a different byte length, such as the Azerbaijani/Turkish İ.
+func TestRenderHTMLPixelInjectionWithNonASCIIContent(t *testing.T) {
+	tmpl := "<!doctype html>\n<html lang=\"az\">\n<head><meta charset=\"utf-8\"></head>\n" +
+		"<body>\n<table role=\"presentation\" width=\"100%\"><tr><td>BİTMƏK ÜZRƏ İT</td></tr></table>\n" +
+		"</body>\n</html>\n"
+	pixel := string(pixelTag("https://p.example.com", "tok"))
+	out, err := renderHTML(tmpl, TargetData{TrackingPixel: pixelTag("https://p.example.com", "tok")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := strings.Count(out, "/p/tok.png"); n != 1 {
+		t.Fatalf("expected pixel exactly once, got %d:\n%s", n, out)
+	}
+	if !strings.Contains(out, pixel+"</body>") {
+		t.Errorf("pixel must be spliced immediately before </body>:\n%s", out)
+	}
+	if !strings.Contains(out, "</table>\n"+pixel+"</body>") {
+		t.Errorf("pixel split the surrounding markup instead of landing between </table> and </body>:\n%s", out)
+	}
+}
+
 func TestAddrOnly(t *testing.T) {
 	if got := addrOnly("IT Support <it@example.com>"); got != "it@example.com" {
 		t.Errorf("got %q", got)

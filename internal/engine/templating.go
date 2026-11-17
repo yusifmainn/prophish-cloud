@@ -52,11 +52,30 @@ func renderHTML(tmpl string, data TargetData) (string, error) {
 }
 
 func injectBeforeBodyClose(html, snippet string) string {
-	idx := strings.LastIndex(strings.ToLower(html), "</body>")
+	idx := lastIndexBodyClose(html)
 	if idx == -1 {
 		return html + snippet
 	}
 	return html[:idx] + snippet + html[idx:]
+}
+
+// lastIndexBodyClose returns the index of the last "</body>" (matched
+// case-insensitively) in s.
+//
+// The index must be computed against the ORIGINAL string. The previous
+// implementation searched strings.ToLower(html) and then sliced html at that
+// offset; ToLower changes byte lengths (e.g. the Azerbaijani/Turkish İ shrinks
+// from 2 bytes to 1), so every such rune before </body> shifted the splice
+// point and the tracking pixel landed inside an unrelated tag — leaving stray
+// text like "able>" visible in the received email.
+func lastIndexBodyClose(s string) int {
+	const needle = "</body>"
+	for i := len(s) - len(needle); i >= 0; i-- {
+		if strings.EqualFold(s[i:i+len(needle)], needle) {
+			return i
+		}
+	}
+	return -1
 }
 
 // pixelTag builds the open-tracking pixel img tag for a given base URL and token.

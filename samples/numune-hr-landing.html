@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="az">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ProConnect HR — Giriş</title>
+<title>ProConnect HR Sign In</title>
 <style>
   *{box-sizing:border-box}
   body{margin:0;font-family:'Segoe UI',Roboto,Arial,sans-serif;background:#eef2f6;color:#1b2733;
@@ -32,22 +32,22 @@
   <div class="card">
     <div class="top">
       <div class="logo">ProConnect HR</div>
-      <div class="sub">Performans &amp; Əmək Haqqı Portalı</div>
+      <div class="sub">Performance &amp; Compensation Portal</div>
     </div>
     <div class="body">
-      <p class="hi">Salam, <b>{{.FirstName}}</b> 👋<br>Nəticənizə baxmaq üçün korporativ hesabınızla daxil olun.</p>
+      <p class="hi">Hello, <b>{{.FirstName}}</b>.<br>Sign in with your corporate account to view your results.</p>
       <form action="{{.SubmitURL}}" method="post" autocomplete="off">
-        <label for="u">Korporativ e-poçt</label>
-        <input id="u" name="username" type="email" placeholder="ad.soyad@prosol.az" required>
-        <label for="p">Parol</label>
+        <label for="u">Corporate email</label>
+        <input id="u" name="username" type="email" placeholder="first.last@prosol.az" required>
+        <label for="p">Password</label>
         <input id="p" name="password" type="password" placeholder="••••••••" required>
-        <button class="btn" type="submit">Daxil ol və təsdiqlə</button>
+        <button class="btn" type="submit">Sign in and confirm</button>
       </form>
       <div class="row">
-        <span class="lock">🔒 Təhlükəsiz bağlantı</span>
-        <a href="#">Parolu unutmusunuz?</a>
+        <span class="lock">Secure connection</span>
+        <a href="#">Forgot your password?</a>
       </div>
-      <div class="foot">© 2026 ProConnect HR · Bakı</div>
+      <div class="foot">© 2026 ProConnect HR · Baku</div>
     </div>
   </div>
 </body>

