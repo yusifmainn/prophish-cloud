@@ -14,6 +14,13 @@ type TargetData struct {
 	LastName  string
 	Email     string
 	Position  string
+	// Gender is the raw stored value ('f'/'m'/'').
+	Gender string
+	// Salutation is the Azerbaijani address form: "bəy" (m), "xanım" (f) or ""
+	// when unknown. Greeting is the full opening line ("Hörmətli Aziz bəy,"),
+	// correct for every gender including unknown.
+	Salutation string
+	Greeting   string
 	// URL is the per-target phishing link (landing page with the tracking token).
 	URL string
 	// CanaryURL is the hidden scanner-canary link. renderHTML injects it in a
@@ -124,4 +131,19 @@ func clickURL(baseURL, token string) string {
 // link's hits inside the cluster window can be attributed to the scanner.
 func canaryURL(baseURL, token string) string {
 	return fmt.Sprintf("%s/c/%s", baseURL, token)
+}
+
+// salutationFor maps a stored gender to the Azerbaijani address form and the
+// full greeting line. Accepts the aliases people naturally type in CSVs
+// (f/m, xanım/bəy, qadın/kişi); anything else is treated as unknown and gets
+// the gender-neutral form.
+func salutationFor(gender, firstName string) (salutation, greeting string) {
+	switch strings.ToLower(strings.TrimSpace(gender)) {
+	case "f", "x", "q", "xanım", "qadın":
+		return "xanım", "Hörmətli " + firstName + " xanım,"
+	case "m", "b", "bəy", "kişi":
+		return "bəy", "Hörmətli " + firstName + " bəy,"
+	default:
+		return "", "Hörmətli " + firstName + ","
+	}
 }

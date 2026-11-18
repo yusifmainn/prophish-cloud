@@ -18,7 +18,6 @@ func init() {
 		"Email boş ola bilməz.":                                                                   {"en": "Email cannot be empty.", "ru": "Email не может быть пустым."},
 		"Göndəriləcək hədəf yoxdur — kampaniyada boş qrup ola bilər.":                             {"en": "No targets to send to — the campaign may contain an empty group.", "ru": "Нет целей для отправки — в кампании может быть пустая группа."},
 		"Göndərmə dayandırıldı — qalan emaillar getməyəcək.":                                      {"en": "Sending stopped — the remaining emails will not go out.", "ru": "Отправка остановлена — оставшиеся письма не будут отправлены."},
-		"Heç bir sətir import olunmadı — formatı (email,first_name,last_name,position) yoxlayın.": {"en": "No rows were imported — check the format (email,first_name,last_name,position).", "ru": "Ни одна строка не импортирована — проверьте формат (email,first_name,last_name,position)."},
 		"Hədəf silindi.":                                                                          {"en": "Target deleted.", "ru": "Цель удалена."},
 		"Hədəf silinmədi — bir kampaniyada istifadə olunub.":                                      {"en": "Target not deleted — it is used in a campaign.", "ru": "Цель не удалена — она используется в кампании."},
 		"Hədəf yeniləndi.":                                                                        {"en": "Target updated.", "ru": "Цель обновлена."},

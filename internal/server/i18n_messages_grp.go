@@ -12,12 +12,18 @@ func init() {
 		"grp.last_name":             {"az": "Soyad", "en": "Surname", "ru": "Фамилия"},
 		"grp.targets_empty":         {"az": "Hələ hədəf yoxdur. Aşağıdan tək-tək və ya CSV ilə əlavə edin.", "en": "No targets yet. Add them below one by one or via CSV.", "ru": "Целей пока нет. Добавьте их ниже по одной или через CSV."},
 
+		// ---- Gender (address form) ----
+		"grp.gender":    {"az": "Cins", "en": "Gender", "ru": "Пол"},
+		"grp.gender_m":  {"az": "Kişi (bəy)", "en": "Male (bəy)", "ru": "Мужской (bəy)"},
+		"grp.gender_f":  {"az": "Qadın (xanım)", "en": "Female (xanım)", "ru": "Женский (xanım)"},
+		"grp.gender_un": {"az": "Qeyd olunmayıb", "en": "Not set", "ru": "Не указан"},
+
 		// ---- Add single target ----
 		"grp.add_single": {"az": "Tək hədəf əlavə et", "en": "Add a single target", "ru": "Добавить одну цель"},
 
 		// ---- CSV import ----
 		"grp.csv_import": {"az": "CSV import", "en": "CSV import", "ru": "Импорт CSV"},
-		"grp.csv_hint":   {"az": "Sütun sırası: <code>email, first_name, last_name, position</code>. Birinci sətir başlıq ola bilər. Nəticə yuxarıda banner kimi göstəriləcək.", "en": "Column order: <code>email, first_name, last_name, position</code>. The first row may be a header. The result is shown as a banner above.", "ru": "Порядок столбцов: <code>email, first_name, last_name, position</code>. Первая строка может быть заголовком. Результат показывается в виде баннера выше."},
+		"grp.csv_hint":   {"az": "Sütun sırası: <code>email, first_name, last_name, position, gender</code>. <b>gender</b> sütunu məcburidir (<code>f</code> = qadın/xanım, <code>m</code> = kişi/bəy); boş və ya yanlış qalan sətirlər import olunmur. Birinci sətir başlıq ola bilər.", "en": "Column order: <code>email, first_name, last_name, position, gender</code>. The <b>gender</b> column is required (<code>f</code> = female/xanım, <code>m</code> = male/bəy); rows without a valid value are rejected. The first row may be a header.", "ru": "Порядок столбцов: <code>email, first_name, last_name, position, gender</code>. Столбец <b>gender</b> обязателен (<code>f</code> = женский/ханым, <code>m</code> = мужской/бей); строки без верного значения не импортируются. Первая строка может быть заголовком."},
 		"grp.upload":     {"az": "Yüklə", "en": "Upload", "ru": "Загрузить"},
 	})
 }

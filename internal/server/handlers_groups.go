@@ -25,6 +25,19 @@ func (s *Server) handleGroupDetail(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// normGender collapses the gender spellings the UI and CSVs produce into the
+// stored form: 'f', 'm' or '' (unknown).
+func normGender(v string) string {
+	switch strings.ToLower(strings.TrimSpace(v)) {
+	case "f", "x", "q", "xanım", "qadın":
+		return "f"
+	case "m", "b", "bəy", "kişi":
+		return "m"
+	default:
+		return ""
+	}
+}
+
 func (s *Server) handleTargetAdd(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	email := strings.TrimSpace(strings.ToLower(r.FormValue("email")))
@@ -34,7 +47,8 @@ func (s *Server) handleTargetAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := s.store.AddTarget(r.Context(), id,
 		email, strings.TrimSpace(r.FormValue("first_name")),
-		strings.TrimSpace(r.FormValue("last_name")), strings.TrimSpace(r.FormValue("position"))); err != nil {
+		strings.TrimSpace(r.FormValue("last_name")), strings.TrimSpace(r.FormValue("position")),
+		normGender(r.FormValue("gender"))); err != nil {
 		s.flashErr(r, "Hədəf əlavə olunmadı.")
 	} else {
 		s.flashOK(r, "Hədəf əlavə edildi.")
@@ -42,7 +56,9 @@ func (s *Server) handleTargetAdd(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/groups/"+id, http.StatusSeeOther)
 }
 
-// handleTargetImport ingests a CSV with header: email,first_name,last_name,position
+// handleTargetImport ingests a CSV with header:
+// email,first_name,last_name,position,gender — the gender column (f/m, also
+// accepted: xanım/bəy) is REQUIRED; rows without a valid value are rejected.
 const maxImportTargets = 100_000
 
 func (s *Server) handleTargetImport(w http.ResponseWriter, r *http.Request) {
@@ -69,8 +85,9 @@ func (s *Server) handleTargetImport(w http.ResponseWriter, r *http.Request) {
 	cr.FieldsPerRecord = -1
 	cr.TrimLeadingSpace = true
 
-	var batch [][4]string
+	var batch [][5]string
 	total := 0
+	rejected := 0
 	inserted := 0
 	first := true
 	for {
@@ -105,7 +122,17 @@ func (s *Server) handleTargetImport(w http.ResponseWriter, r *http.Request) {
 		if len(rec) > 3 {
 			pos = strings.TrimSpace(rec[3])
 		}
-		batch = append(batch, [4]string{email, fn, ln, pos})
+		gender := ""
+		if len(rec) > 4 {
+			gender = normGender(rec[4])
+		}
+		if gender == "" {
+			// Gender is mandatory: a row without a valid f/m value is rejected so
+			// no recipient silently gets the neutral greeting.
+			rejected++
+			continue
+		}
+		batch = append(batch, [5]string{email, fn, ln, pos, gender})
 		total++
 		// Flush in bounded chunks so memory stays flat regardless of file size.
 		if len(batch) >= 5000 {
@@ -122,14 +149,20 @@ func (s *Server) handleTargetImport(w http.ResponseWriter, r *http.Request) {
 		n, _ := s.store.AddTargetsBatch(r.Context(), id, batch)
 		inserted += n
 	}
-	if total > 0 {
+	switch {
+	case total == 0 && rejected > 0:
+		s.flashErr(r, s.tf(r, "flash.targets_gender_rejected", rejected))
+	case total > 0:
 		if skipped := total - inserted; skipped > 0 {
 			s.flashOK(r, s.tf(r, "flash.targets_added_dup", inserted, skipped))
 		} else {
 			s.flashOK(r, s.tf(r, "flash.targets_added", inserted))
 		}
-	} else {
-		s.flashErr(r, "Heç bir sətir import olunmadı — formatı (email,first_name,last_name,position) yoxlayın.")
+		if rejected > 0 {
+			s.flashErr(r, s.tf(r, "flash.targets_gender_rejected", rejected))
+		}
+	default:
+		s.flashErr(r, s.tf(r, "flash.targets_format"))
 	}
 	http.Redirect(w, r, "/groups/"+id, http.StatusSeeOther)
 }
@@ -193,7 +226,8 @@ func (s *Server) handleTargetUpdate(w http.ResponseWriter, r *http.Request) {
 	if err := s.store.UpdateTarget(r.Context(), tid, email,
 		strings.TrimSpace(r.FormValue("first_name")),
 		strings.TrimSpace(r.FormValue("last_name")),
-		strings.TrimSpace(r.FormValue("position"))); err != nil {
+		strings.TrimSpace(r.FormValue("position")),
+		normGender(r.FormValue("gender"))); err != nil {
 		s.flashErr(r, "Hədəf yenilənmədi — bu email qrupda artıq ola bilər.")
 		http.Redirect(w, r, "/groups/"+t.GroupID, http.StatusSeeOther)
 		return

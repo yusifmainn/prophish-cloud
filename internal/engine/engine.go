@@ -227,10 +227,12 @@ func (l *Launcher) Launch(ctx context.Context, campaignID string) error {
 			LastName:      it.Last,
 			Email:         it.Email,
 			Position:      it.Position,
+			Gender:        it.Gender,
 			URL:           clickURL(baseURL, it.Token),
 			CanaryURL:     canaryURL(baseURL, it.Token),
 			TrackingPixel: pixelTag(baseURL, it.Token),
 		}
+		data.Salutation, data.Greeting = salutationFor(it.Gender, it.First)
 		// Campaign-level opt-out: without a pixel the render step cannot inject
 		// one, so no "opened" events are recorded for this campaign.
 		if !camp.TrackOpens {

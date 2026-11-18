@@ -65,6 +65,30 @@ func TestRenderHTMLNoPixelWhenOptedOut(t *testing.T) {
 	}
 }
 
+// TestSalutationFor covers the gendered greeting every template relies on.
+func TestSalutationFor(t *testing.T) {
+	cases := []struct {
+		gender, name, wantSal, wantGreet string
+	}{
+		{"m", "Aziz", "bəy", "Hörmətli Aziz bəy,"},
+		{"M", "Aziz", "bəy", "Hörmətli Aziz bəy,"},
+		{"bəy", "Aziz", "bəy", "Hörmətli Aziz bəy,"},
+		{"kişi", "Aziz", "bəy", "Hörmətli Aziz bəy,"},
+		{"f", "Aysel", "xanım", "Hörmətli Aysel xanım,"},
+		{"F", "Aysel", "xanım", "Hörmətli Aysel xanım,"},
+		{"xanım", "Aysel", "xanım", "Hörmətli Aysel xanım,"},
+		{"qadın", "Aysel", "xanım", "Hörmətli Aysel xanım,"},
+		{"", "Samir", "", "Hörmətli Samir,"},
+		{"?", "Samir", "", "Hörmətli Samir,"},
+	}
+	for _, c := range cases {
+		sal, greet := salutationFor(c.gender, c.name)
+		if sal != c.wantSal || greet != c.wantGreet {
+			t.Errorf("salutationFor(%q, %q) = (%q, %q), want (%q, %q)", c.gender, c.name, sal, greet, c.wantSal, c.wantGreet)
+		}
+	}
+}
+
 // TestRenderHTMLCanaryInjection covers the scanner-canary: a footer copyright
 // link the engine injects before </body> unless the template already carries
 // {{.CanaryURL}}.

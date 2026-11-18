@@ -22,7 +22,7 @@
       <div class="litem-head">
         <div class="litem-main">
           <div class="t">{{.Email}}</div>
-          <div class="s">{{if or .FirstName .LastName}}{{.FirstName}} {{.LastName}}{{end}}{{if .Position}} · {{.Position}}{{end}}</div>
+          <div class="s">{{if or .FirstName .LastName}}{{.FirstName}} {{.LastName}}{{end}}{{if eq .Gender "m"}} · {{t "grp.gender_m"}}{{else if eq .Gender "f"}} · {{t "grp.gender_f"}}{{end}}{{if .Position}} · {{.Position}}{{end}}</div>
         </div>
         <form method="post" action="/targets/{{.ID}}/delete" data-confirm="{{tf "grp.target_delete_confirm" .Email}}">
           <button type="submit" class="iconbtn danger" title="{{t "common.delete"}}">✕</button>
@@ -37,7 +37,17 @@
               <div><label>{{t "common.name"}}</label><input name="first_name" value="{{.FirstName}}"></div>
               <div><label>{{t "grp.last_name"}}</label><input name="last_name" value="{{.LastName}}"></div>
             </div>
-            <label>{{t "common.position"}}</label><input name="position" value="{{.Position}}">
+            <div class="formgrid">
+              <div>
+                <label>{{t "grp.gender"}}</label>
+                <select name="gender">
+                  <option value="" {{if eq .Gender ""}}selected{{end}}>{{t "grp.gender_un"}}</option>
+                  <option value="m" {{if eq .Gender "m"}}selected{{end}}>{{t "grp.gender_m"}}</option>
+                  <option value="f" {{if eq .Gender "f"}}selected{{end}}>{{t "grp.gender_f"}}</option>
+                </select>
+              </div>
+              <div><label>{{t "common.position"}}</label><input name="position" value="{{.Position}}"></div>
+            </div>
             <button type="submit">{{t "common.save"}}</button>
           </form>
         </div>
@@ -56,7 +66,17 @@
         <div><label>{{t "common.name"}}</label><input name="first_name"></div>
         <div><label>{{t "grp.last_name"}}</label><input name="last_name"></div>
       </div>
-      <label>{{t "common.position"}}</label><input name="position">
+      <div class="formgrid">
+        <div>
+          <label>{{t "grp.gender"}}</label>
+          <select name="gender">
+            <option value="" selected>{{t "grp.gender_un"}}</option>
+            <option value="m">{{t "grp.gender_m"}}</option>
+            <option value="f">{{t "grp.gender_f"}}</option>
+          </select>
+        </div>
+        <div><label>{{t "common.position"}}</label><input name="position"></div>
+      </div>
       <button type="submit">{{t "common.add"}}</button>
     </form>
   </div>

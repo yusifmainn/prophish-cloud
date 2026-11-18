@@ -33,7 +33,7 @@ func (s *Store) CreateResults(c ctx, campaignID string, targetIDs []string, toke
 // PendingResults returns results that still need an email sent, with target + campaign data.
 func (s *Store) PendingResults(c ctx, campaignID string) ([]SendItem, error) {
 	rows, err := s.db.Query(c,
-		`SELECT r.id, r.result_token, t.email, coalesce(t.first_name,''), coalesce(t.last_name,''), coalesce(t.position,'')
+		`SELECT r.id, r.result_token, t.email, coalesce(t.first_name,''), coalesce(t.last_name,''), coalesce(t.position,''), t.gender
 		   FROM campaign_results r JOIN targets t ON t.id = r.target_id
 		  WHERE r.campaign_id=$1 AND r.status='scheduled'`, campaignID)
 	if err != nil {
@@ -43,7 +43,7 @@ func (s *Store) PendingResults(c ctx, campaignID string) ([]SendItem, error) {
 	var out []SendItem
 	for rows.Next() {
 		var it SendItem
-		if err := rows.Scan(&it.ResultID, &it.Token, &it.Email, &it.First, &it.Last, &it.Position); err != nil {
+		if err := rows.Scan(&it.ResultID, &it.Token, &it.Email, &it.First, &it.Last, &it.Position, &it.Gender); err != nil {
 			return nil, err
 		}
 		out = append(out, it)
@@ -189,6 +189,8 @@ type SendItem struct {
 	First    string
 	Last     string
 	Position string
+	// Gender is 'f' (xanım), 'm' (bəy) or '' (unknown → neutral greeting).
+	Gender string
 }
 
 // Tracked is the public-server view of a tracking token.
