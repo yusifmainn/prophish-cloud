@@ -232,25 +232,40 @@ func (s *Server) handleCanary(w http.ResponseWriter, r *http.Request) {
 	// purpose: repeat probes are exactly the data we want to see.
 	rid := t.ResultID
 	_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "scanner_probe", s.clientIP(r), r.UserAgent())
-	// Retrospective retraction: a SLOW sequential crawler may have had its real
-	// link/submit hit counted BEFORE this probe landed. If such an event sits
-	// inside the pair window, pull it back — demote the status and log the
-	// suspected counterpart — so a scanner click never stands. (The fast
-	// concurrent case is already caught by the probe re-read in
-	// countInteraction.) A human click retracted this way is rare: it would
-	// have to land within the burst window before the probe.
-	if ev, err := s.store.LastCountedHit(r.Context(), t.ResultID); err == nil && ev != nil &&
-		time.Since(ev.CreatedAt) < scannerPairWindow {
-		base := "sent"
-		if opened, _ := s.store.HasRecentEvent(r.Context(), t.ResultID, "email_opened", 24*time.Hour); opened {
-			base = "opened"
+	// Retrospective retraction, two layers:
+	//
+	//  1. PRE-DELIVERY (unbounded lookback to the FIRST probe): the first canary
+	//     probe fires when the gateway scans the message — at or before delivery
+	//     to the inbox. A human cannot click a link in a message they have not
+	//     received, so ANY counted link/submit event stamped BEFORE the first
+	//     probe is the scanner's own fetch (a slow burst that raced ahead of its
+	//     canary), not a person. Retract it no matter how far back it is.
+	//  2. RECENT BURST (pair window before THIS probe): a slow sequential crawl
+	//     of a later rescan may have had its real-link hit counted moments before
+	//     this probe landed. Pull that back too.
+	//
+	// Hits between the first probe and a later rescan are NOT touched: by then
+	// the human HAS the message, so those clicks can be genuine.
+	if first, err := s.store.FirstProbeTime(r.Context(), rid); err == nil {
+		if first == nil {
+			first = t.ScannerProbeAt // probes predate probe-event logging (0011)
 		}
-		_ = s.store.DemoteStatus(r.Context(), t.ResultID, base)
-		suspected := "suspected_click"
-		if ev.Type == "data_submitted" {
-			suspected = "suspected_submit"
+		if first != nil {
+			if hits, herr := s.store.CountedHitsAround(r.Context(), rid, *first, scannerPairWindow); herr == nil && len(hits) > 0 {
+				base := "sent"
+				if opened, _ := s.store.HasRecentEvent(r.Context(), rid, "email_opened", 8760*time.Hour); opened {
+					base = "opened"
+				}
+				_ = s.store.DemoteStatus(r.Context(), rid, base)
+				for _, h := range hits {
+					suspected := "suspected_click"
+					if h.Type == "data_submitted" {
+						suspected = "suspected_submit"
+					}
+					s.recordSuspected(r, t.CampaignID, rid, suspected)
+				}
+			}
 		}
-		s.recordSuspected(r, t.CampaignID, t.ResultID, suspected)
 	}
 	s.serveTracked(w, r, t, token)
 }
