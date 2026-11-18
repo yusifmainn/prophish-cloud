@@ -6,18 +6,17 @@ import (
 )
 
 // AddTarget inserts a single target, ignoring duplicates within the same group.
-func (s *Store) AddTarget(c ctx, groupID, email, first, last, position, gender string) error {
+func (s *Store) AddTarget(c ctx, groupID, email, first, last, position string) error {
 	_, err := s.db.Exec(c,
-		`INSERT INTO targets (group_id, email, first_name, last_name, position, gender)
-		 VALUES ($1,$2,$3,$4,$5,$6)
+		`INSERT INTO targets (group_id, email, first_name, last_name, position)
+		 VALUES ($1,$2,$3,$4,$5)
 		 ON CONFLICT (group_id, email) DO NOTHING`,
-		groupID, email, nullIfEmpty(first), nullIfEmpty(last), nullIfEmpty(position), gender)
+		groupID, email, nullIfEmpty(first), nullIfEmpty(last), nullIfEmpty(position))
 	return err
 }
 
-// AddTargetsBatch inserts many targets in a single transaction. Each row is
-// email, first_name, last_name, position, gender.
-func (s *Store) AddTargetsBatch(c ctx, groupID string, rows [][5]string) (int, error) {
+// AddTargetsBatch inserts many targets in a single transaction.
+func (s *Store) AddTargetsBatch(c ctx, groupID string, rows [][4]string) (int, error) {
 	tx, err := s.db.Begin(c)
 	if err != nil {
 		return 0, err
@@ -27,9 +26,9 @@ func (s *Store) AddTargetsBatch(c ctx, groupID string, rows [][5]string) (int, e
 	b := &pgx.Batch{}
 	for _, r := range rows {
 		b.Queue(
-			`INSERT INTO targets (group_id, email, first_name, last_name, position, gender)
-			 VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (group_id, email) DO NOTHING`,
-			groupID, r[0], nullIfEmpty(r[1]), nullIfEmpty(r[2]), nullIfEmpty(r[3]), r[4])
+			`INSERT INTO targets (group_id, email, first_name, last_name, position)
+			 VALUES ($1,$2,$3,$4,$5) ON CONFLICT (group_id, email) DO NOTHING`,
+			groupID, r[0], nullIfEmpty(r[1]), nullIfEmpty(r[2]), nullIfEmpty(r[3]))
 	}
 	br := tx.SendBatch(c, b)
 	inserted := 0
@@ -54,7 +53,7 @@ func (s *Store) AddTargetsBatch(c ctx, groupID string, rows [][5]string) (int, e
 
 func (s *Store) ListTargets(c ctx, groupID string) ([]models.Target, error) {
 	rows, err := s.db.Query(c,
-		`SELECT id, group_id, email, coalesce(first_name,''), coalesce(last_name,''), coalesce(position,''), gender, created_at
+		`SELECT id, group_id, email, coalesce(first_name,''), coalesce(last_name,''), coalesce(position,''), created_at
 		   FROM targets WHERE group_id=$1 ORDER BY email`, groupID)
 	if err != nil {
 		return nil, err
@@ -63,7 +62,7 @@ func (s *Store) ListTargets(c ctx, groupID string) ([]models.Target, error) {
 	var out []models.Target
 	for rows.Next() {
 		var t models.Target
-		if err := rows.Scan(&t.ID, &t.GroupID, &t.Email, &t.FirstName, &t.LastName, &t.Position, &t.Gender, &t.CreatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.GroupID, &t.Email, &t.FirstName, &t.LastName, &t.Position, &t.CreatedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, t)
@@ -74,9 +73,9 @@ func (s *Store) ListTargets(c ctx, groupID string) ([]models.Target, error) {
 func (s *Store) GetTarget(c ctx, id string) (*models.Target, error) {
 	var t models.Target
 	err := s.db.QueryRow(c,
-		`SELECT id, group_id, email, coalesce(first_name,''), coalesce(last_name,''), coalesce(position,''), gender, created_at
+		`SELECT id, group_id, email, coalesce(first_name,''), coalesce(last_name,''), coalesce(position,''), created_at
 		   FROM targets WHERE id=$1`, id).
-		Scan(&t.ID, &t.GroupID, &t.Email, &t.FirstName, &t.LastName, &t.Position, &t.Gender, &t.CreatedAt)
+		Scan(&t.ID, &t.GroupID, &t.Email, &t.FirstName, &t.LastName, &t.Position, &t.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -85,10 +84,10 @@ func (s *Store) GetTarget(c ctx, id string) (*models.Target, error) {
 
 // UpdateTarget edits one target. The UNIQUE(group_id,email) constraint still
 // applies, so an edit to a duplicate email returns an error the caller surfaces.
-func (s *Store) UpdateTarget(c ctx, id, email, first, last, position, gender string) error {
+func (s *Store) UpdateTarget(c ctx, id, email, first, last, position string) error {
 	_, err := s.db.Exec(c,
-		`UPDATE targets SET email=$2, first_name=$3, last_name=$4, position=$5, gender=$6 WHERE id=$1`,
-		id, email, nullIfEmpty(first), nullIfEmpty(last), nullIfEmpty(position), gender)
+		`UPDATE targets SET email=$2, first_name=$3, last_name=$4, position=$5 WHERE id=$1`,
+		id, email, nullIfEmpty(first), nullIfEmpty(last), nullIfEmpty(position))
 	return err
 }
 

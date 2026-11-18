@@ -129,8 +129,6 @@ type emailPreviewData struct {
 	LastName      string
 	Email         string
 	Position      string
-	Salutation    string
-	Greeting      string
 	URL           string
 	TrackingPixel template.HTML
 }
@@ -152,7 +150,6 @@ func (s *Server) handleTemplatePreview(w http.ResponseWriter, r *http.Request) {
 	sample := emailPreviewData{
 		FirstName: "Aysel", LastName: "Məmmədova",
 		Email: "aysel.mammadova@numune.az", Position: "Mühasib", URL: "#",
-		Salutation: "xanım", Greeting: "Hörmətli Aysel xanım,",
 	}
 	t, err := template.New("tpl").Option("missingkey=zero").Parse(tmpl.HTMLBody)
 	if err == nil {

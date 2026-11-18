@@ -8,14 +8,13 @@ type ResultDetail struct {
 	FirstName string
 	LastName  string
 	Position  string
-	Gender    string
 	Status    string
 	SentAt    *time.Time
 }
 
 func (s *Store) ListResultsDetailed(c ctx, campaignID string) ([]ResultDetail, error) {
 	rows, err := s.db.Query(c,
-		`SELECT t.email, coalesce(t.first_name,''), coalesce(t.last_name,''), coalesce(t.position,''), t.gender,
+		`SELECT t.email, coalesce(t.first_name,''), coalesce(t.last_name,''), coalesce(t.position,''),
 		        r.status, r.sent_at
 		   FROM campaign_results r JOIN targets t ON t.id = r.target_id
 		  WHERE r.campaign_id=$1
@@ -27,7 +26,7 @@ func (s *Store) ListResultsDetailed(c ctx, campaignID string) ([]ResultDetail, e
 	var out []ResultDetail
 	for rows.Next() {
 		var d ResultDetail
-		if err := rows.Scan(&d.Email, &d.FirstName, &d.LastName, &d.Position, &d.Gender, &d.Status, &d.SentAt); err != nil {
+		if err := rows.Scan(&d.Email, &d.FirstName, &d.LastName, &d.Position, &d.Status, &d.SentAt); err != nil {
 			return nil, err
 		}
 		out = append(out, d)

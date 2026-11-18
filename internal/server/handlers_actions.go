@@ -146,13 +146,13 @@ func (s *Server) handleCampaignExport(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	w.Header().Set("Content-Disposition", "attachment; filename=\"campaign_"+id+".csv\"")
 	cw := csv.NewWriter(w)
-	_ = cw.Write([]string{"email", "first_name", "last_name", "position", "gender", "status", "sent_at"})
+	_ = cw.Write([]string{"email", "first_name", "last_name", "position", "status", "sent_at"})
 	for _, d := range rows {
 		sent := ""
 		if d.SentAt != nil {
 			sent = d.SentAt.Format(time.RFC3339)
 		}
-		_ = cw.Write([]string{csvSafe(d.Email), csvSafe(d.FirstName), csvSafe(d.LastName), csvSafe(d.Position), d.Gender, d.Status, sent})
+		_ = cw.Write([]string{csvSafe(d.Email), csvSafe(d.FirstName), csvSafe(d.LastName), csvSafe(d.Position), d.Status, sent})
 	}
 	cw.Flush()
 }

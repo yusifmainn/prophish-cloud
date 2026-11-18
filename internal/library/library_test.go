@@ -9,9 +9,8 @@ import (
 
 // sample mirrors the variable set the engine/public server inject at render time.
 type sample struct {
-	FirstName, LastName, Email, Position, Gender, Salutation, Greeting string
-	URL, SubmitURL                                                     string
-	TrackingPixel                                                      template.HTML
+	FirstName, LastName, Email, Position, URL, SubmitURL string
+	TrackingPixel                                        template.HTML
 }
 
 var langs = []string{"az", "en", "ru"}
@@ -19,8 +18,7 @@ var langs = []string{"az", "en", "ru"}
 func sampleData() sample {
 	return sample{
 		FirstName: "Aysel", LastName: "Məmmədova", Email: "a@numune.az",
-		Position: "Mühasib", Gender: "f", Salutation: "xanım", Greeting: "Hörmətli Aysel xanım,",
-		URL: "https://example.test/t/x", SubmitURL: "https://example.test/s/x",
+		Position: "Mühasib", URL: "https://example.test/t/x", SubmitURL: "https://example.test/s/x",
 		TrackingPixel: template.HTML(`<img src="x">`),
 	}
 }

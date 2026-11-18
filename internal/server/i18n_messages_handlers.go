@@ -13,10 +13,8 @@ func init() {
 		"flash.campaigns_deleted":  {"az": "%d kampaniya silindi.", "en": "%d campaign(s) deleted.", "ru": "Удалено кампаний: %d."},
 		"flash.deleted_n":          {"az": "%d element silindi.", "en": "%d item(s) deleted.", "ru": "Удалено элементов: %d."},
 		"flash.deleted_some_inuse": {"az": "%d silindi, %d element istifadədə olduğu üçün silinmədi.", "en": "%d deleted; %d item(s) are in use and were not deleted.", "ru": "Удалено: %d; %d элемент(ов) используются и не удалены."},
-		"flash.targets_added_dup":        {"az": "%d hədəf əlavə edildi, %d təkrar/dublikat ötürüldü.", "en": "%d target(s) added, %d duplicate(s) skipped.", "ru": "Добавлено целей: %d, пропущено дубликатов: %d."},
-		"flash.targets_added":            {"az": "%d hədəf əlavə edildi.", "en": "%d target(s) added.", "ru": "Добавлено целей: %d."},
-		"flash.targets_gender_rejected":  {"az": "%d sətir import olunmadı — gender sütununda yalnız f (xanım) və ya m (bəy) qəbuledilir.", "en": "%d row(s) were not imported — the gender column only accepts f (xanım) or m (bəy).", "ru": "%d строк не импортировано — столбец gender принимает только f (xanım) или m (bəy)."},
-		"flash.targets_format":           {"az": "Heç bir sətir import olunmadı — formatı (email,first_name,last_name,position,gender) və gender sütununu (f/m) yoxlayın.", "en": "No rows were imported — check the format (email,first_name,last_name,position,gender) and the gender column (f/m).", "ru": "Ни одна строка не импортирована — проверьте формат (email,first_name,last_name,position,gender) и столбец gender (f/m)."},
+		"flash.targets_added_dup":  {"az": "%d hədəf əlavə edildi, %d təkrar/dublikat ötürüldü.", "en": "%d target(s) added, %d duplicate(s) skipped.", "ru": "Добавлено целей: %d, пропущено дубликатов: %d."},
+		"flash.targets_added":      {"az": "%d hədəf əlavə edildi.", "en": "%d target(s) added.", "ru": "Добавлено целей: %d."},
 		"flash.page_save_tmpl_err": {"az": "Səhifə saxlanmadı — şablon xətası (ehtimal ki, mətndə artıq {{ }} var): %s", "en": "Page not saved — template error (the text probably already contains {{ }}): %s", "ru": "Страница не сохранена — ошибка шаблона (вероятно, в тексте уже есть {{ }}): %s"},
 		"flash.html_save_tmpl_err": {"az": "HTML saxlanmadı — şablon xətası (ehtimal ki, mətndə artıq {{ }} var): %s", "en": "HTML not saved — template error (the text probably already contains {{ }}): %s", "ru": "HTML не сохранён — ошибка шаблона (вероятно, в тексте уже есть {{ }}): %s"},
 

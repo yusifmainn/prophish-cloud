@@ -92,7 +92,6 @@ func (s *Server) handleLibraryEmailPreview(w http.ResponseWriter, r *http.Reques
 	writeInlinePreview(w, k.EmailHTML(), emailPreviewData{
 		FirstName: "Aysel", LastName: "Məmmədova",
 		Email: "aysel.mammadova@numune.az", Position: "Mühasib", URL: "#",
-		Salutation: "xanım", Greeting: "Hörmətli Aysel xanım,",
 	})
 }
 

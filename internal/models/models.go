@@ -48,8 +48,6 @@ type Target struct {
 	FirstName string
 	LastName  string
 	Position  string
-	// Gender is 'f' (xanım), 'm' (bəy) or '' (unknown — gender-neutral greeting).
-	Gender    string
 	CreatedAt time.Time
 }
 
