@@ -62,11 +62,14 @@ var pixelGIF, _ = base64.StdEncoding.DecodeString("R0lGODlhAQABAIAAAAAAAP///yH5B
 
 // scannerGraceWindow is how long after a message is sent we treat pixel/link
 // hits as automated. Mail-security scanners and link proxies fetch the content
-// within seconds of the message passing through them — long before a human
-// recipient could realistically open and act on it. A hit inside this window is
-// almost certainly a scanner, so it does not count as an open/click. Tune this
-// if a deployment delivers and is read faster than this.
-const scannerGraceWindow = 30 * time.Second
+// within seconds-to-minutes of the message passing through them — long before a
+// human recipient could realistically open and act on it. The scanner receives
+// the mail a few seconds AFTER our SMTP send completes, so its fetch lands
+// noticeably later than t=0; a live trace showed a Safe Links-style fetch at
+// send+31s, just past a 30s window. 120s keeps the window comfortably ahead of
+// observed scanner latency while still far shorter than any plausible human
+// reaction time in a real deployment.
+const scannerGraceWindow = 120 * time.Second
 
 // scannerUASignatures are case-insensitive substrings found in the User-Agent
 // of automated clients: security gateways, link/image proxies, link-preview
