@@ -93,3 +93,27 @@ func TestRecentlyProbed(t *testing.T) {
 		t.Error("a probe inside the pair window must suppress hits as automated")
 	}
 }
+
+func TestIsOpenAutomated(t *testing.T) {
+	// Image proxies send sparse/empty UAs on a genuine open — opens must NOT be
+	// UA-filtered, only timing-filtered.
+	if isOpenAutomated(nil, nil) {
+		t.Error("a proxy fetch long after send with no probe is a real open (must not be automated)")
+	}
+	sent := time.Now().Add(-time.Hour)
+	if isOpenAutomated(&sent, nil) {
+		t.Error("an open an hour after send must count (must not be automated)")
+	}
+	justSent := time.Now().Add(-2 * time.Second)
+	if !isOpenAutomated(&justSent, nil) {
+		t.Error("an image fetch 2s after send is a scanner prefetch")
+	}
+	probe := time.Now().Add(-time.Second)
+	if !isOpenAutomated(&sent, &probe) {
+		t.Error("an image fetch inside the scanner burst is automated")
+	}
+	staleProbe := time.Now().Add(-time.Minute)
+	if isOpenAutomated(&sent, &staleProbe) {
+		t.Error("an open a minute after the burst is human")
+	}
+}

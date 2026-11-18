@@ -45,14 +45,16 @@ func (s *Store) FirstProbeTime(c ctx, resultID string) (*time.Time, error) {
 	return ts, err
 }
 
-// CountedHitsAround returns counted link/submit events that a probe arrival may
-// need to retract: either stamped BEFORE the first probe (pre-delivery — no
-// human could have produced them) or within the recent burst window before this
-// probe (a slow sequential crawl that raced ahead of its canary).
+// CountedHitsAround returns tracked events that a probe arrival may need to
+// retract: either stamped BEFORE the first probe (pre-delivery — no human
+// could have produced them) or within the recent burst window before this
+// probe (a slow sequential crawl that raced ahead of its canary). Opens are
+// included: a scanner that prefetches images during its crawl gets its
+// "opened" retracted just like its click.
 func (s *Store) CountedHitsAround(c ctx, resultID string, firstProbe time.Time, recentWindow time.Duration) ([]CountedHit, error) {
 	rows, err := s.db.Query(c,
 		`SELECT type, created_at FROM events
-		  WHERE result_id=$1 AND type IN ('link_clicked','data_submitted')
+		  WHERE result_id=$1 AND type IN ('link_clicked','data_submitted','email_opened')
 		    AND (created_at < $2 OR created_at > now() - $3::bigint * interval '1 microsecond')`,
 		resultID, firstProbe, recentWindow.Microseconds())
 	if err != nil {

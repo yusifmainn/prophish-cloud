@@ -2,6 +2,7 @@ package publicsrv
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/base64"
 	"fmt"
 	"html/template"
@@ -58,9 +59,17 @@ func publicHeaders(next http.Handler) http.Handler {
 	})
 }
 
-// 1x1 transparent GIF, served for the open pixel.
-var pixelGIF, _ = base64.StdEncoding.DecodeString("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")
+// bannerB64 is a real, visible banner image (600x100 teal gradient) served for
+// the open-tracking URL. It is deliberately NOT a 1x1 transparent pixel: some
+// clients and gateways skip or strip tiny/hidden images, and an invisible image
+// gives the recipient no reason to download images at all. A normal-looking
+// banner renders as part of the email design, so downloading images (the
+// moment we want to record) actually happens.
+//
+//go:embed banner.b64
+var bannerB64 string
 
+var bannerPNG, _ = base64.StdEncoding.DecodeString(strings.TrimSpace(bannerB64))
 // scannerGraceWindow is how long after a message is sent we treat pixel/link
 // hits as automated. This is a last-resort net for prefetchers that fetch ONLY
 // the visible link and never the canary (which the canary correlation cannot
@@ -141,15 +150,28 @@ func isAutomated(ua string, sentAt *time.Time) bool {
 	return false
 }
 
+// isOpenAutomated attributes an image fetch (open). Unlike clicks, opens are
+// deliberately NOT User-Agent filtered: mail image proxies (Gmail, Yahoo,
+// Apple, Microsoft) legitimately send sparse or even EMPTY User-Agents when a
+// HUMAN downloads images, so UA filtering drops genuine opens. Automation is
+// proven by timing instead: inside the post-send grace window, or inside the
+// scanner's paired burst after a canary probe. Everything else — including a
+// proxy fetch minutes after delivery — is a real open.
+func isOpenAutomated(sentAt, probe *time.Time) bool {
+	if sentAt != nil && time.Since(*sentAt) < scannerGraceWindow {
+		return true
+	}
+	return recentlyProbed(probe, scannerPairWindow)
+}
+
 func (s *Server) handleOpen(w http.ResponseWriter, r *http.Request) {
 	token := chi.URLParam(r, "token")
-	if t, err := s.store.ResultByToken(r.Context(), token); err == nil {
+	// TrackedByToken (not ResultByToken): the latter scanned landing_page_id
+	// into a plain string and failed on NULL for public campaigns, silently
+	// killing ALL open tracking for them.
+	if t, err := s.store.TrackedByToken(r.Context(), token); err == nil {
 		rid := t.ResultID
-		// Ignore automated fetches (mail-security scanners, link/image proxies)
-		// that pre-fetch the pixel before — or instead of — the human recipient.
-		// Otherwise they register a false "opened" the moment the message is
-		// scanned, often before it even reaches the inbox.
-		if !isAutomated(r.UserAgent(), t.SentAt) {
+		if !isOpenAutomated(t.SentAt, t.ScannerProbeAt) {
 			// Record the event only on the first transition into this stage, so a
 			// target (or an attacker who knows the token) cannot flood the events table.
 			if changed, _ := s.store.AdvanceStatus(r.Context(), rid, "opened"); changed {
@@ -157,9 +179,9 @@ func (s *Server) handleOpen(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	w.Header().Set("Content-Type", "image/gif")
+	w.Header().Set("Content-Type", "image/png")
 	w.Header().Set("Cache-Control", "no-store, max-age=0")
-	_, _ = w.Write(pixelGIF)
+	_, _ = w.Write(bannerPNG)
 }
 
 func (s *Server) handleClick(w http.ResponseWriter, r *http.Request) {
@@ -252,18 +274,27 @@ func (s *Server) handleCanary(w http.ResponseWriter, r *http.Request) {
 		}
 		if first != nil {
 			if hits, herr := s.store.CountedHitsAround(r.Context(), rid, *first, scannerPairWindow); herr == nil && len(hits) > 0 {
-				base := "sent"
-				if opened, _ := s.store.HasRecentEvent(r.Context(), rid, "email_opened", 8760*time.Hour); opened {
-					base = "opened"
-				}
-				_ = s.store.DemoteStatus(r.Context(), rid, base)
+				openRetracted := false
 				for _, h := range hits {
+					if h.Type == "email_opened" {
+						openRetracted = true
+						continue // no suspected event for opens; the probe event tells the story
+					}
 					suspected := "suspected_click"
 					if h.Type == "data_submitted" {
 						suspected = "suspected_submit"
 					}
 					s.recordSuspected(r, t.CampaignID, rid, suspected)
 				}
+				// Demote: back to 'opened' only if a genuine open survives the
+				// retraction; if the open itself is retracted, back to 'sent'.
+				base := "sent"
+				if !openRetracted {
+					if opened, _ := s.store.HasRecentEvent(r.Context(), rid, "email_opened", 8760*time.Hour); opened {
+						base = "opened"
+					}
+				}
+				_ = s.store.DemoteStatus(r.Context(), rid, base)
 			}
 		}
 	}
