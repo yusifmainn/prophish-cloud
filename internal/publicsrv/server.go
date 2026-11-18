@@ -62,15 +62,15 @@ func publicHeaders(next http.Handler) http.Handler {
 var pixelGIF, _ = base64.StdEncoding.DecodeString("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")
 
 // scannerGraceWindow is how long after a message is sent we treat pixel/link
-// hits as automated. Mail-security scanners and link proxies fetch the content
-// within seconds-to-minutes of the message passing through them — long before a
-// human recipient could realistically open and act on it. The scanner receives
-// the mail a few seconds AFTER our SMTP send completes, so its fetch lands
-// noticeably later than t=0; a live trace showed a Safe Links-style fetch at
-// send+31s, past the old 30s window. 60s keeps the window ahead of that
-// observed scanner latency while staying far shorter than any plausible human
-// reaction time in a real deployment.
-const scannerGraceWindow = 60 * time.Second
+// hits as automated. This is a last-resort net for prefetchers that fetch ONLY
+// the visible link and never the canary (which the canary correlation cannot
+// see); the primary scanner defense is the canary cluster window, which works
+// no matter how late delivery lags SMTP. A short window suffices: a human
+// cannot receive a message and act on it in 15 seconds, while any automated
+// fetch tied to the sending path fires immediately. A live trace showed the
+// canary-crawling scanner's own fetches land at delivery time — well past this
+// window — and those are covered by the cluster window instead.
+const scannerGraceWindow = 15 * time.Second
 
 // scannerClusterWindow is the canary-correlation horizon. A hidden canary link
 // in every email fires when a mail-security scanner crawls all links in the
