@@ -227,6 +227,13 @@ func (s *Server) handleCanary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = s.store.MarkScannerProbe(r.Context(), t.ResultID)
+	// Log every probe as an event. scanner_probe_at keeps only the LATEST probe;
+	// the event log preserves each hit with its UA/IP, which is what lets us
+	// measure the interval between the canary fetch and the scanner's real-link
+	// fetch — the number the cluster window must cover. Not deduplicated on
+	// purpose: repeat probes are exactly the data we want to see.
+	rid := t.ResultID
+	_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "scanner_probe", s.clientIP(r), r.UserAgent())
 	// Retrospective retraction: a SLOW sequential crawler may have had its real
 	// link/submit hit counted BEFORE this probe landed. If such an event sits
 	// inside the cluster window, pull it back — demote the status and log the

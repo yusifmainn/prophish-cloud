@@ -85,6 +85,7 @@ func init() {
 		"event.error":              {"az": "Xəta (göndərilmədi)", "en": "Error (not sent)", "ru": "Ошибка (не отправлено)"},
 		"event.suspected_click":    {"az": "Şübhəli klik (skaner, sayılmadı)", "en": "Suspected click (scanner, not counted)", "ru": "Подозрительный клик (сканер, не засчитан)"},
 		"event.suspected_submit":   {"az": "Şübhəli göndəriş (skaner, sayılmadı)", "en": "Suspected submit (scanner, not counted)", "ru": "Подозрительная отправка (сканер, не засчитана)"},
+		"event.scanner_probe":      {"az": "Skaner probe (canary açıldı)", "en": "Scanner probe (canary fired)", "ru": "Проба сканера (canary сработал)"},
 
 		// ---- Audit-log action labels (keyed by action code) ----
 		"action.auth.login":           {"az": "Daxil oldu", "en": "Logged in", "ru": "Вход выполнен"},
