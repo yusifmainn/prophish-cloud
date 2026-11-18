@@ -77,9 +77,13 @@ const scannerGraceWindow = 60 * time.Second
 // message; a real link/form hit within this window of a canary probe is part of
 // the SAME automated crawl, no matter how long after sending the scan happened
 // (delivery can lag SMTP by minutes in drip/queued sends, so a fixed post-send
-// window can never cover it). Kept short so a genuinely fast human click is only
-// at risk briefly right after a scanner crawl, not for the whole aftermath.
-const scannerClusterWindow = 5 * time.Minute
+// window can never cover it). The window only needs to cover the gap between
+// the scanner's own fetches — observed live: 3ms between the canary and the
+// real-link hit — so 90s is a ~30000x safety margin. Keeping it short matters
+// in the other direction too: a HUMAN click inside the window is also treated
+// as the crawl, and a later probe can retract an already-counted hit, so a wide
+// window both suppresses and retracts genuine fast clicks.
+const scannerClusterWindow = 90 * time.Second
 
 // scannerRaceWait is how long countInteraction waits and re-reads the canary
 // probe before counting a hit. Scanners fetch the canary and the real link
