@@ -81,15 +81,15 @@ func TestIsAutomatedTimingWindow(t *testing.T) {
 }
 
 func TestRecentlyProbed(t *testing.T) {
-	if recentlyProbed(nil) {
+	if recentlyProbed(nil, scannerPairWindow) {
 		t.Error("no probe must mean not probed")
 	}
-	stale := time.Now().Add(-scannerClusterWindow - time.Minute)
-	if recentlyProbed(&stale) {
-		t.Error("a probe older than the cluster window must not suppress hits")
+	stale := time.Now().Add(-scannerPairWindow - time.Minute)
+	if recentlyProbed(&stale, scannerPairWindow) {
+		t.Error("a probe older than the pair window must not suppress hits")
 	}
-	fresh := time.Now().Add(-time.Minute)
-	if !recentlyProbed(&fresh) {
-		t.Error("a probe inside the cluster window must suppress hits as automated")
+	fresh := time.Now().Add(-time.Second)
+	if !recentlyProbed(&fresh, scannerPairWindow) {
+		t.Error("a probe inside the pair window must suppress hits as automated")
 	}
 }

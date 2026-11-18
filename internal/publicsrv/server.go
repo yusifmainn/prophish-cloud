@@ -72,18 +72,16 @@ var pixelGIF, _ = base64.StdEncoding.DecodeString("R0lGODlhAQABAIAAAAAAAP///yH5B
 // window — and those are covered by the cluster window instead.
 const scannerGraceWindow = 15 * time.Second
 
-// scannerClusterWindow is the canary-correlation horizon. A hidden canary link
-// in every email fires when a mail-security scanner crawls all links in the
-// message; a real link/form hit within this window of a canary probe is part of
-// the SAME automated crawl, no matter how long after sending the scan happened
-// (delivery can lag SMTP by minutes in drip/queued sends, so a fixed post-send
-// window can never cover it). The window only needs to cover the gap between
-// the scanner's own fetches — observed live: 3ms between the canary and the
-// real-link hit — so 90s is a ~30000x safety margin. Keeping it short matters
-// in the other direction too: a HUMAN click inside the window is also treated
-// as the crawl, and a later probe can retract an already-counted hit, so a wide
-// window both suppresses and retracts genuine fast clicks.
-const scannerClusterWindow = 90 * time.Second
+// scannerPairWindow is the burst window the canary correlation covers. A
+// scanner crawl is a paired burst: it fetches the canary and the real link
+// back-to-back — observed live: 3ms apart. So a real link/form hit is only
+// attributed to the scanner if a canary probe fired within this window BEFORE
+// the hit; a hit arriving after the burst (no fresh probe) is a HUMAN click
+// and must count, even seconds after delivery. 10s is a ~3000x margin over the
+// observed 3ms burst while keeping the scanner's own fuses covered; the probe
+// event log (migration 0011) measures this interval across deployments so the
+// window can be re-tuned against real data.
+const scannerPairWindow = 10 * time.Second
 
 // scannerRaceWait is how long countInteraction waits and re-reads the canary
 // probe before counting a hit. Scanners fetch the canary and the real link
@@ -93,10 +91,10 @@ const scannerClusterWindow = 90 * time.Second
 // the probe land before the decision; a human never notices a 2s delay.
 const scannerRaceWait = 2 * time.Second
 
-// recentlyProbed reports whether a canary probe fired within the cluster
-// window — i.e. this hit belongs to an automated crawl, not the recipient.
-func recentlyProbed(probe *time.Time) bool {
-	return probe != nil && time.Since(*probe) < scannerClusterWindow
+// recentlyProbed reports whether a canary probe fired within `window` before
+// now — i.e. this hit is part of the scanner's paired burst, not the recipient.
+func recentlyProbed(probe *time.Time, window time.Duration) bool {
+	return probe != nil && time.Since(*probe) < window
 }
 
 // scannerUASignatures are case-insensitive substrings found in the User-Agent
@@ -189,11 +187,11 @@ func (s *Server) countInteraction(r *http.Request, t *store.TrackedFull, status,
 	// flight right now (scanners open all links concurrently), so re-read the
 	// probe after a short wait before deciding the hit is human.
 	probe := t.ScannerProbeAt
-	if !recentlyProbed(probe) {
+	if !recentlyProbed(probe, scannerPairWindow) {
 		time.Sleep(scannerRaceWait)
 		probe, _ = s.store.ProbeTime(r.Context(), rid)
 	}
-	if recentlyProbed(probe) {
+	if recentlyProbed(probe, scannerPairWindow) {
 		s.recordSuspected(r, t.CampaignID, rid, suspectedType)
 		return
 	}
@@ -208,7 +206,7 @@ func (s *Server) countInteraction(r *http.Request, t *store.TrackedFull, status,
 // attributed to a scanner crawl. Deduplicated inside the cluster window so a
 // scanner replaying the link cannot flood the events table.
 func (s *Server) recordSuspected(r *http.Request, campaignID, rid, suspectedType string) {
-	if recent, _ := s.store.HasRecentEvent(r.Context(), rid, suspectedType, scannerClusterWindow); !recent {
+	if recent, _ := s.store.HasRecentEvent(r.Context(), rid, suspectedType, scannerPairWindow); !recent {
 		_ = s.store.RecordEvent(r.Context(), campaignID, &rid, suspectedType, s.clientIP(r), r.UserAgent())
 	}
 }
@@ -236,14 +234,13 @@ func (s *Server) handleCanary(w http.ResponseWriter, r *http.Request) {
 	_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "scanner_probe", s.clientIP(r), r.UserAgent())
 	// Retrospective retraction: a SLOW sequential crawler may have had its real
 	// link/submit hit counted BEFORE this probe landed. If such an event sits
-	// inside the cluster window, pull it back — demote the status and log the
+	// inside the pair window, pull it back — demote the status and log the
 	// suspected counterpart — so a scanner click never stands. (The fast
 	// concurrent case is already caught by the probe re-read in
-	// countInteraction.) A human click retracted this way is rare: scanners
-	// crawl at delivery, and the hit would have to precede the probe within the
-	// window.
+	// countInteraction.) A human click retracted this way is rare: it would
+	// have to land within the burst window before the probe.
 	if ev, err := s.store.LastCountedHit(r.Context(), t.ResultID); err == nil && ev != nil &&
-		time.Since(ev.CreatedAt) < scannerClusterWindow {
+		time.Since(ev.CreatedAt) < scannerPairWindow {
 		base := "sent"
 		if opened, _ := s.store.HasRecentEvent(r.Context(), t.ResultID, "email_opened", 24*time.Hour); opened {
 			base = "opened"
