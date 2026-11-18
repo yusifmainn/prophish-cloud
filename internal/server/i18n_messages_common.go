@@ -83,6 +83,8 @@ func init() {
 		"event.email_reported":     {"az": "Phishing kimi bildirdi", "en": "Reported as phishing", "ru": "Сообщил о фишинге"},
 		"event.training_completed": {"az": "Təlim tamamladı", "en": "Training completed", "ru": "Обучение завершено"},
 		"event.error":              {"az": "Xəta (göndərilmədi)", "en": "Error (not sent)", "ru": "Ошибка (не отправлено)"},
+		"event.suspected_click":    {"az": "Şübhəli klik (skaner, sayılmadı)", "en": "Suspected click (scanner, not counted)", "ru": "Подозрительный клик (сканер, не засчитан)"},
+		"event.suspected_submit":   {"az": "Şübhəli göndəriş (skaner, sayılmadı)", "en": "Suspected submit (scanner, not counted)", "ru": "Подозрительная отправка (сканер, не засчитана)"},
 
 		// ---- Audit-log action labels (keyed by action code) ----
 		"action.auth.login":           {"az": "Daxil oldu", "en": "Logged in", "ru": "Вход выполнен"},

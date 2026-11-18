@@ -65,6 +65,58 @@ func TestRenderHTMLNoPixelWhenOptedOut(t *testing.T) {
 	}
 }
 
+// TestRenderHTMLCanaryInjection covers the scanner-canary: a hidden link the
+// engine injects at the very START of the body (before the real tracking link)
+// unless the template already carries {{.CanaryURL}}.
+func TestRenderHTMLCanaryInjection(t *testing.T) {
+	data := TargetData{URL: clickURL("https://p.example.com", "tok"),
+		CanaryURL: canaryURL("https://p.example.com", "tok")}
+
+	// Template without an explicit canary: one is injected right after <body>.
+	out, err := renderHTML(`<html><body><a href="{{.URL}}">click</a></body></html>`, data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := strings.Count(out, "/c/tok"); n != 1 {
+		t.Fatalf("expected canary once, got %d:\n%s", n, out)
+	}
+	bodyIdx := strings.Index(strings.ToLower(out), "<body>")
+	canaryIdx := strings.Index(out, "/c/tok")
+	clickIdx := strings.Index(out, "/t/tok")
+	if bodyIdx == -1 || canaryIdx == -1 || canaryIdx < bodyIdx || clickIdx < canaryIdx {
+		t.Errorf("canary must appear right after <body>, before the real link:\n%s", out)
+	}
+
+	// Template with an explicit {{.CanaryURL}}: no duplicate injection.
+	out2, err := renderHTML(`<html><body>{{.CanaryURL}}<a href="{{.URL}}">click</a></body></html>`, data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := strings.Count(out2, "/c/tok"); n != 1 {
+		t.Errorf("expected canary exactly once with explicit placeholder, got %d:\n%s", n, out2)
+	}
+}
+
+// TestRenderHTMLCanaryInjectionWithNonASCIIContent mirrors the pixel splice
+// regression: the canary injection point must be computed on original bytes so
+// multi-byte runes before <body> cannot shift it mid-tag.
+func TestRenderHTMLCanaryInjectionWithNonASCIIContent(t *testing.T) {
+	tmpl := "<!doctype html>\n<html lang=\"az\">\n<head><title>BİTMƏ İ</title></head>\n" +
+		"<body style=\"margin:0\">\n<p>Salam</p>\n</body>\n</html>\n"
+	out, err := renderHTML(tmpl, TargetData{
+		CanaryURL: canaryURL("https://p.example.com", "tok"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := strings.Count(out, "/c/tok"); n != 1 {
+		t.Fatalf("expected canary exactly once, got %d:\n%s", n, out)
+	}
+	if !strings.Contains(out, `<body style="margin:0">`+canarySnippet(canaryURL("https://p.example.com", "tok"))) {
+		t.Errorf("canary must be spliced immediately after the <body ...> tag:\n%s", out)
+	}
+}
+
 // TestRenderHTMLPixelInjectionWithNonASCIIContent is a regression test for the
 // splice bug where the pixel was injected mid-tag (leaving stray "able>" text
 // visible in the mail) whenever the template contained a rune whose lowercase

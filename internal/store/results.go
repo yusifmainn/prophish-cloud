@@ -62,6 +62,16 @@ func (s *Store) MarkResultError(c ctx, resultID string) error {
 	return err
 }
 
+// MarkScannerProbe records that the hidden canary link for this result was
+// fetched — a strong signal that a mail-security scanner is probing this
+// recipient. Always refreshed to the LATEST probe so the cluster window slides
+// with repeat crawls. The canary fetch itself is never counted as a click.
+func (s *Store) MarkScannerProbe(c ctx, resultID string) error {
+	_, err := s.db.Exec(c,
+		`UPDATE campaign_results SET scanner_probe_at=now() WHERE id=$1`, resultID)
+	return err
+}
+
 // ResultByToken resolves a tracking token to its result + campaign (for the public server).
 func (s *Store) ResultByToken(c ctx, token string) (*Tracked, error) {
 	var t Tracked

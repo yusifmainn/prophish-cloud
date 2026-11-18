@@ -79,3 +79,17 @@ func TestIsAutomatedTimingWindow(t *testing.T) {
 		t.Error("with no sent time, a human UA should not be treated as automated")
 	}
 }
+
+func TestRecentlyProbed(t *testing.T) {
+	if recentlyProbed(nil) {
+		t.Error("no probe must mean not probed")
+	}
+	stale := time.Now().Add(-scannerClusterWindow - time.Minute)
+	if recentlyProbed(&stale) {
+		t.Error("a probe older than the cluster window must not suppress hits")
+	}
+	fresh := time.Now().Add(-time.Minute)
+	if !recentlyProbed(&fresh) {
+		t.Error("a probe inside the cluster window must suppress hits as automated")
+	}
+}

@@ -16,6 +16,10 @@ type TargetData struct {
 	Position  string
 	// URL is the per-target phishing link (landing page with the tracking token).
 	URL string
+	// CanaryURL is the hidden scanner-canary link. renderHTML injects it in a
+	// display:none block at the very start of the body when a template omits
+	// {{.CanaryURL}}; humans never see it, mail-security scanners fetch it.
+	CanaryURL string
 	// TrackingPixel is an <img> that registers an "opened" event; inject it in HTML emails.
 	TrackingPixel template.HTML
 }
@@ -48,7 +52,42 @@ func renderHTML(tmpl string, data TargetData) (string, error) {
 	if data.TrackingPixel != "" && !strings.Contains(out, string(data.TrackingPixel)) {
 		out = injectBeforeBodyClose(out, string(data.TrackingPixel))
 	}
+	// Ensure the hidden scanner-canary link is present even if the author forgot
+	// {{.CanaryURL}}. It goes at the very START of the body so crawlers that
+	// fetch links in document order hit it BEFORE the real tracking link and the
+	// scan is marked before its "click" arrives.
+	if data.CanaryURL != "" && !strings.Contains(out, data.CanaryURL) {
+		out = injectAfterBodyOpen(out, canarySnippet(data.CanaryURL))
+	}
 	return out, nil
+}
+
+// canarySnippet builds the hidden canary anchor. Deliberately not wrapped in
+// display:none on the anchor itself (some link checkers skip those): the outer
+// div hides it visually while the href stays in the raw HTML for every
+// extractor, rewriter, and DOM crawler to find.
+func canarySnippet(url string) string {
+	return fmt.Sprintf(`<div style="display:none;font-size:0;line-height:0;max-height:0;overflow:hidden;mso-hide:all"><a href="%s">&#160;</a></div>`, url)
+}
+
+// injectAfterBodyOpen inserts snippet right after the opening <body...> tag.
+// The search is case-insensitive and done on the ORIGINAL string byte-by-byte
+// (not via strings.ToLower, which shifts byte lengths for some runes and would
+// corrupt the splice point — see lastIndexBodyClose).
+func injectAfterBodyOpen(html, snippet string) string {
+	const open = "<body"
+	for i := 0; i+len(open) <= len(html); i++ {
+		if strings.EqualFold(html[i:i+len(open)], open) {
+			// Find the end of the tag (the closing '>' of <body ...>).
+			for j := i + len(open); j < len(html); j++ {
+				if html[j] == '>' {
+					return html[:j+1] + snippet + html[j+1:]
+				}
+			}
+			return html + snippet // unterminated tag: append instead
+		}
+	}
+	return snippet + html // no <body>: prepend
 }
 
 func injectBeforeBodyClose(html, snippet string) string {
@@ -96,4 +135,11 @@ func pixelTag(baseURL, token string) template.HTML {
 // clickURL builds the per-target landing-page link.
 func clickURL(baseURL, token string) string {
 	return fmt.Sprintf("%s/t/%s", baseURL, token)
+}
+
+// canaryURL builds the per-target hidden scanner-canary link. A hit on it never
+// counts as a click — it marks the recipient as scanner-probed so the real
+// link's hits inside the cluster window can be attributed to the scanner.
+func canaryURL(baseURL, token string) string {
+	return fmt.Sprintf("%s/c/%s", baseURL, token)
 }

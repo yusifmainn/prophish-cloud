@@ -42,6 +42,7 @@ func (s *Server) Router() http.Handler {
 
 	r.Get("/p/{token}.png", s.handleOpen) // open-tracking pixel
 	r.Get("/t/{token}", s.handleClick)    // landing page (click)
+	r.Get("/c/{token}", s.handleCanary)   // hidden scanner-canary link
 	r.Post("/s/{token}", s.handleSubmit)  // form submission (fact only)
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok")) })
 	return r
@@ -70,6 +71,21 @@ var pixelGIF, _ = base64.StdEncoding.DecodeString("R0lGODlhAQABAIAAAAAAAP///yH5B
 // observed scanner latency while staying far shorter than any plausible human
 // reaction time in a real deployment.
 const scannerGraceWindow = 60 * time.Second
+
+// scannerClusterWindow is the canary-correlation horizon. A hidden canary link
+// in every email fires when a mail-security scanner crawls all links in the
+// message; a real link/form hit within this window of a canary probe is part of
+// the SAME automated crawl, no matter how long after sending the scan happened
+// (delivery can lag SMTP by minutes in drip/queued sends, so a fixed post-send
+// window can never cover it). Kept short so a genuinely fast human click is only
+// at risk briefly right after a scanner crawl, not for the whole aftermath.
+const scannerClusterWindow = 5 * time.Minute
+
+// recentlyProbed reports whether a canary probe fired within the cluster
+// window — i.e. this hit belongs to an automated crawl, not the recipient.
+func recentlyProbed(probe *time.Time) bool {
+	return probe != nil && time.Since(*probe) < scannerClusterWindow
+}
 
 // scannerUASignatures are case-insensitive substrings found in the User-Agent
 // of automated clients: security gateways, link/image proxies, link-preview
@@ -143,18 +159,56 @@ func (s *Server) handleClick(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	rid := t.ResultID
-	// Ignore automated link-following (mail-security scanners, SafeLinks-style
-	// URL rewriters) that crawl every link before delivery. We still serve the
-	// landing page/redirect below so a later genuine click by the recipient is
-	// recorded normally — only the automated hit is skipped.
-	if !isAutomated(r.UserAgent(), t.SentAt) {
-		if changed, _ := s.store.AdvanceStatus(r.Context(), rid, "clicked"); changed {
-			_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "link_clicked", s.clientIP(r), r.UserAgent())
-		}
-	}
+	s.countInteraction(r, t, "clicked", "link_clicked", "suspected_click")
+	s.serveTracked(w, r, t, token)
+}
 
-	// Public campaign: the click is now recorded (above), so there is nothing
+// countInteraction advances a result's status for a tracked hit (click or
+// submit), attributing it to the recipient only when it does NOT look automated
+// — neither a known scanner UA, nor inside the post-send grace window, nor
+// inside the canary cluster window. Suppressed human-looking hits are logged as
+// suspected_* (deduped) so the operator sees what was filtered and why.
+func (s *Server) countInteraction(r *http.Request, t *store.TrackedFull, status, eventType, suspectedType string) {
+	rid := t.ResultID
+	if isAutomated(r.UserAgent(), t.SentAt) {
+		return
+	}
+	if recentlyProbed(t.ScannerProbeAt) {
+		if recent, _ := s.store.HasRecentEvent(r.Context(), rid, suspectedType, scannerClusterWindow); !recent {
+			_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, suspectedType, s.clientIP(r), r.UserAgent())
+		}
+		return
+	}
+	// Record the event only on the first transition into this stage, so a
+	// target (or an attacker who knows the token) cannot flood the events table.
+	if changed, _ := s.store.AdvanceStatus(r.Context(), rid, status); changed {
+		_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, eventType, s.clientIP(r), r.UserAgent())
+	}
+}
+
+// handleCanary serves the hidden canary link the engine injects into every HTML
+// email (a display:none anchor no human sees). Mail-security scanners fetch
+// every link in a message, so a hit here marks the recipient as scanned. The
+// response mirrors a real click — same redirect or landing page — so the probe
+// is indistinguishable from genuine traffic and cannot be filtered out by the
+// scanner itself. The hit is never counted as a click.
+func (s *Server) handleCanary(w http.ResponseWriter, r *http.Request) {
+	token := chi.URLParam(r, "token")
+	t, err := s.store.TrackedByToken(r.Context(), token)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	_ = s.store.MarkScannerProbe(r.Context(), t.ResultID)
+	s.serveTracked(w, r, t, token)
+}
+
+// serveTracked renders the post-click experience for both real clicks and
+// canary probes: public campaigns redirect to the configured real site, local
+// campaigns render the landing page. Identical output for both keeps the
+// canary indistinguishable.
+func (s *Server) serveTracked(w http.ResponseWriter, r *http.Request, t *store.TrackedFull, token string) {
+	// Public campaign: the click is recorded (by the caller), so there is nothing
 	// hosted to show — send the target straight on to the configured real site.
 	// No landing page, no form, nothing to submit. A 302 keeps the method GET and
 	// our no-referrer policy (set by publicHeaders) prevents the tracking token
@@ -203,10 +257,7 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	// IMPORTANT: we intentionally do NOT read or store r.PostForm values.
 	// Only the fact of submission is recorded, for awareness reporting.
-	rid := t.ResultID
-	if changed, _ := s.store.AdvanceStatus(r.Context(), rid, "submitted"); changed {
-		_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "data_submitted", s.clientIP(r), r.UserAgent())
-	}
+	s.countInteraction(r, t, "submitted", "data_submitted", "suspected_submit")
 
 	redirect := t.RedirectURL
 	if redirect == "" {
