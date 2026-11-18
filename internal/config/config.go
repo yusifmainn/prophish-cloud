@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,6 +28,12 @@ type Config struct {
 	TrustedProxies  []*net.IPNet   // CIDRs whose X-Forwarded-For is trusted on the public listener
 	AdminAllowCIDRs []*net.IPNet   // CIDRs allowed to reach the ADMIN panel (empty = no restriction; loopback always allowed)
 	Location        *time.Location // display/scheduling time zone (PROPHISH_TIMEZONE), defaults to UTC
+	// OpenScannerGrace is how long after SEND a pixel/link hit is treated as an
+	// automated scanner prefetch rather than a human open/click. Default 30s.
+	// Raise it for tenants with deferred inbound delivery (greylisting, Safe
+	// Attachments detonation) so a delivery-time image prefetch is not miscounted
+	// as an open. Set via PROPHISH_OPEN_SCANNER_GRACE (seconds).
+	OpenScannerGrace time.Duration
 }
 
 // Load reads configuration from the process environment. If a .env file exists in the
@@ -42,6 +49,7 @@ func Load() (*Config, error) {
 		SecureCookies:   strings.EqualFold(getenv("PROPHISH_SECURE_COOKIES", "false"), "true"),
 		TrustedProxies:  parseCIDRs(getenv("PROPHISH_TRUSTED_PROXIES", "")),
 		AdminAllowCIDRs: parseCIDRs(getenv("PROPHISH_ADMIN_ALLOW_CIDRS", "")),
+		OpenScannerGrace: parseSeconds(getenv("PROPHISH_OPEN_SCANNER_GRACE", ""), 30*time.Second),
 	}
 
 	if c.DatabaseURL == "" {
@@ -79,6 +87,20 @@ func Load() (*Config, error) {
 	c.Location = loc
 
 	return c, nil
+}
+
+// parseSeconds parses a non-negative integer number of seconds into a Duration,
+// falling back to def when the value is empty, unparseable, or negative.
+func parseSeconds(s string, def time.Duration) time.Duration {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return def
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 0 {
+		return def
+	}
+	return time.Duration(n) * time.Second
 }
 
 // parseCIDRs parses a comma-separated list of CIDRs (ignoring unparseable ones).

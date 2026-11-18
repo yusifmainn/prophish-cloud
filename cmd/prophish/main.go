@@ -116,7 +116,7 @@ func main() {
 
 	publicServer := &http.Server{
 		Addr:              cfg.PublicAddr,
-		Handler:           publicsrv.NewServer(st, cfg.PublicBaseURL, cfg.TrustedProxies).Router(),
+		Handler:           publicsrv.NewServer(st, cfg.PublicBaseURL, cfg.TrustedProxies, cfg.OpenScannerGrace).Router(),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       20 * time.Second,
 		WriteTimeout:      20 * time.Second,

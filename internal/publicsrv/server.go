@@ -24,10 +24,16 @@ type Server struct {
 	store   *store.Store
 	baseURL string
 	trusted []*net.IPNet // proxies whose X-Forwarded-For we honor
+	// grace is how long after SEND a pixel/link hit is treated as an automated
+	// scanner prefetch rather than a human interaction (see scannerGraceWindowDefault).
+	grace time.Duration
 }
 
-func NewServer(st *store.Store, baseURL string, trusted []*net.IPNet) *Server {
-	return &Server{store: st, baseURL: strings.TrimRight(baseURL, "/"), trusted: trusted}
+func NewServer(st *store.Store, baseURL string, trusted []*net.IPNet, grace time.Duration) *Server {
+	if grace <= 0 {
+		grace = scannerGraceWindowDefault
+	}
+	return &Server{store: st, baseURL: strings.TrimRight(baseURL, "/"), trusted: trusted, grace: grace}
 }
 
 func (s *Server) Router() http.Handler {
@@ -60,13 +66,19 @@ func publicHeaders(next http.Handler) http.Handler {
 // 1x1 transparent GIF, served for the open pixel.
 var pixelGIF, _ = base64.StdEncoding.DecodeString("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")
 
-// scannerGraceWindow is how long after a message is sent we treat pixel/link
-// hits as automated. Mail-security scanners and link proxies fetch the content
-// within seconds of the message passing through them — long before a human
-// recipient could realistically open and act on it. A hit inside this window is
-// almost certainly a scanner, so it does not count as an open/click. Tune this
-// if a deployment delivers and is read faster than this.
-const scannerGraceWindow = 30 * time.Second
+// scannerGraceWindowDefault is how long after a message is sent we treat
+// pixel/link hits as automated, unless overridden per deployment
+// (PROPHISH_OPEN_SCANNER_GRACE). Mail-security scanners and link proxies fetch
+// the content within seconds of the message passing through them — long before
+// a human recipient could realistically open and act on it. A hit inside this
+// window is almost certainly a scanner, so it does not count as an open/click.
+//
+// The window is measured from SEND (sent_at), not delivery — the server cannot
+// observe delivery. Tenants with deferred inbound delivery (greylisting, Safe
+// Attachments "detonation", large drip sends) may see a scanner's image
+// prefetch arrive AFTER this window and be counted as an open; raise
+// PROPHISH_OPEN_SCANNER_GRACE there, or disable open tracking for the campaign.
+const scannerGraceWindowDefault = 30 * time.Second
 
 // scannerUASignatures are case-insensitive substrings found in the User-Agent
 // of automated clients: security gateways, link/image proxies, link-preview
@@ -84,12 +96,17 @@ var scannerUASignatures = []string{
 	"discordbot", "skypeuripreview", "linkedinbot", "googlebot",
 }
 
-// isScannerUA reports whether a User-Agent looks like an automated client. An
-// empty User-Agent is also treated as automated: normal browsers always send one.
-func isScannerUA(ua string) bool {
+// hasScannerSignature reports whether a NON-empty User-Agent contains a known
+// automated-client signature. Unlike isScannerUA it does NOT treat an empty
+// User-Agent as automated, because an empty UA means different things on the
+// two paths: for a page navigation it is a bot (browsers always send a UA),
+// but for an image fetch it is routine — Microsoft 365 / Outlook-on-the-web /
+// "new Outlook" / Gmail proxy the remote image server-side and that fetch
+// commonly carries no User-Agent.
+func hasScannerSignature(ua string) bool {
 	ua = strings.ToLower(strings.TrimSpace(ua))
 	if ua == "" {
-		return true
+		return false
 	}
 	for _, sig := range scannerUASignatures {
 		if strings.Contains(ua, sig) {
@@ -99,38 +116,104 @@ func isScannerUA(ua string) bool {
 	return false
 }
 
-// isAutomated reports whether a tracking hit should be ignored as automated,
-// either because the User-Agent is a known scanner/bot or because it arrived
-// within scannerGraceWindow of the message being sent.
-func isAutomated(ua string, sentAt *time.Time) bool {
-	if isScannerUA(ua) {
-		return true
+// isScannerUA reports whether a User-Agent looks like an automated client. An
+// empty User-Agent is also treated as automated: normal browsers always send
+// one. Used by the CLICK/landing path (handleClick), where a hit with no UA is
+// a bot. The open-pixel path is deliberately more lenient — see openAutomatedReason.
+func isScannerUA(ua string) bool {
+	return strings.TrimSpace(ua) == "" || hasScannerSignature(ua)
+}
+
+// withinGrace reports whether a hit arrived within the grace window of send.
+func withinGrace(sentAt *time.Time, grace time.Duration) bool {
+	return sentAt != nil && time.Since(*sentAt) < grace
+}
+
+// isAutomated reports whether a CLICK/landing hit should be ignored as
+// automated, either because the User-Agent is a known scanner/bot (empty UA
+// included) or because it arrived within the grace window of the message being
+// sent.
+func isAutomated(ua string, sentAt *time.Time, grace time.Duration) bool {
+	return isScannerUA(ua) || withinGrace(sentAt, grace)
+}
+
+// openAutomatedReason classifies an OPEN-PIXEL hit. It returns a short reason
+// string when the hit should NOT count as a human open, or "" when it counts.
+//
+// Crucially, an EMPTY User-Agent is NOT disqualifying here. The previous
+// behaviour treated empty-UA as an automatic scanner, which silently dropped
+// EVERY open from Microsoft 365 / Outlook-on-the-web / "new Outlook" / Gmail —
+// their image proxies fetch the pixel server-side with no User-Agent — so
+// standalone opens never registered while clicks (a real browser, full UA) did.
+//
+// Instead we rely on two signals that still separate scanners from humans:
+//   - a known vendor/bot UA signature  -> always automated ("scanner-ua")
+//   - the grace window                 -> a hit moments after send is a
+//     delivery-time scanner prefetch ("grace-window"); a hit after the window
+//     is the provider's proxy fetching because the recipient opened the mail.
+func openAutomatedReason(ua string, sentAt *time.Time, grace time.Duration) string {
+	if hasScannerSignature(ua) {
+		return "scanner-ua"
 	}
-	if sentAt != nil && time.Since(*sentAt) < scannerGraceWindow {
-		return true
+	if withinGrace(sentAt, grace) {
+		return "grace-window"
 	}
-	return false
+	return ""
 }
 
 func (s *Server) handleOpen(w http.ResponseWriter, r *http.Request) {
 	token := chi.URLParam(r, "token")
-	if t, err := s.store.ResultByToken(r.Context(), token); err == nil {
-		rid := t.ResultID
-		// Ignore automated fetches (mail-security scanners, link/image proxies)
-		// that pre-fetch the pixel before — or instead of — the human recipient.
-		// Otherwise they register a false "opened" the moment the message is
-		// scanned, often before it even reaches the inbox.
-		if !isAutomated(r.UserAgent(), t.SentAt) {
-			// Record the event only on the first transition into this stage, so a
-			// target (or an attacker who knows the token) cannot flood the events table.
-			if changed, _ := s.store.AdvanceStatus(r.Context(), rid, "opened"); changed {
-				_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "email_opened", s.clientIP(r), r.UserAgent())
-			}
-		}
+	// Always serve the pixel; recording is best-effort and must never block it.
+	defer func() {
+		w.Header().Set("Content-Type", "image/gif")
+		w.Header().Set("Cache-Control", "no-store, max-age=0")
+		_, _ = w.Write(pixelGIF)
+	}()
+
+	t, err := s.store.ResultByToken(r.Context(), token)
+	if err != nil {
+		// Unknown/expired token — log it (never the token itself) so stray or
+		// forged pixel hits are visible, then just serve the blank pixel.
+		log.Printf("open pixel: unknown token ip=%s ua=%q", s.clientIP(r), r.UserAgent())
+		return
 	}
-	w.Header().Set("Content-Type", "image/gif")
-	w.Header().Set("Cache-Control", "no-store, max-age=0")
-	_, _ = w.Write(pixelGIF)
+	rid := t.ResultID
+	ua := r.UserAgent()
+	ip := s.clientIP(r)
+
+	// Ignore automated fetches (mail-security scanners, link/image proxies) that
+	// pre-fetch the pixel before — or instead of — the human recipient; they
+	// would otherwise register a false "opened" the moment the message is scanned.
+	// Every decision is logged (with the User-Agent and time-since-send, never
+	// the token) so an operator can SEE whether a client's fetch arrives and why
+	// it is or isn't counted — the only way to observe opens, since a later click
+	// jumps straight to "clicked" and leaves no trace of whether an open happened.
+	if reason := openAutomatedReason(ua, t.SentAt, s.grace); reason != "" {
+		log.Printf("open pixel ignored (%s): result=%s ip=%s since_send=%s ua=%q", reason, rid, ip, sinceSend(t.SentAt), ua)
+		return
+	}
+	// Record the event only on the FIRST transition into this stage, so a target
+	// (or an attacker who knows the token) cannot flood the events table.
+	changed, aerr := s.store.AdvanceStatus(r.Context(), rid, "opened")
+	switch {
+	case aerr != nil:
+		log.Printf("open pixel error: result=%s ip=%s: %v", rid, ip, aerr)
+	case changed:
+		_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "email_opened", ip, ua)
+		log.Printf("open pixel recorded: result=%s ip=%s since_send=%s ua=%q", rid, ip, sinceSend(t.SentAt), ua)
+	default:
+		// Already opened/clicked/submitted — a repeat fetch, not a new open.
+		log.Printf("open pixel noop (status=%s): result=%s ip=%s ua=%q", t.Status, rid, ip, ua)
+	}
+}
+
+// sinceSend renders how long ago a message was sent, for log lines (or "n/a"
+// when the send time is unknown).
+func sinceSend(sentAt *time.Time) string {
+	if sentAt == nil {
+		return "n/a"
+	}
+	return time.Since(*sentAt).Round(time.Second).String()
 }
 
 func (s *Server) handleClick(w http.ResponseWriter, r *http.Request) {
@@ -141,14 +224,23 @@ func (s *Server) handleClick(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rid := t.ResultID
+	ua := r.UserAgent()
+	ip := s.clientIP(r)
 	// Ignore automated link-following (mail-security scanners, SafeLinks-style
 	// URL rewriters) that crawl every link before delivery. We still serve the
 	// landing page/redirect below so a later genuine click by the recipient is
-	// recorded normally — only the automated hit is skipped.
-	if !isAutomated(r.UserAgent(), t.SentAt) {
-		if changed, _ := s.store.AdvanceStatus(r.Context(), rid, "clicked"); changed {
-			_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "link_clicked", s.clientIP(r), r.UserAgent())
-		}
+	// recorded normally — only the automated hit is skipped. Unlike the open
+	// pixel, an empty User-Agent here is itself a bot signal (a real browser
+	// navigation always sends one), so isAutomated still drops it.
+	if isAutomated(ua, t.SentAt, s.grace) {
+		log.Printf("click ignored (automated): result=%s ip=%s since_send=%s ua=%q", rid, ip, sinceSend(t.SentAt), ua)
+	} else if changed, aerr := s.store.AdvanceStatus(r.Context(), rid, "clicked"); aerr != nil {
+		log.Printf("click error: result=%s ip=%s: %v", rid, ip, aerr)
+	} else if changed {
+		_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "link_clicked", ip, ua)
+		log.Printf("click recorded: result=%s ip=%s since_send=%s ua=%q", rid, ip, sinceSend(t.SentAt), ua)
+	} else {
+		log.Printf("click noop (status=%s): result=%s ip=%s ua=%q", t.Status, rid, ip, ua)
 	}
 
 	// Public campaign: the click is now recorded (above), so there is nothing

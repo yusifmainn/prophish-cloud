@@ -58,24 +58,63 @@ func TestIsScannerUA(t *testing.T) {
 
 func TestIsAutomatedTimingWindow(t *testing.T) {
 	humanUA := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+	grace := scannerGraceWindowDefault
 
 	justSent := time.Now().Add(-2 * time.Second)
-	if !isAutomated(humanUA, &justSent) {
+	if !isAutomated(humanUA, &justSent, grace) {
 		t.Error("a human-looking hit moments after send should be treated as automated (scanner prefetch)")
 	}
 
 	longAfter := time.Now().Add(-10 * time.Minute)
-	if isAutomated(humanUA, &longAfter) {
+	if isAutomated(humanUA, &longAfter, grace) {
 		t.Error("a human-looking hit well after send should count as a real interaction")
 	}
 
 	// A scanner UA is automated regardless of timing.
-	if !isAutomated("curl/8.4.0", &longAfter) {
+	if !isAutomated("curl/8.4.0", &longAfter, grace) {
 		t.Error("a scanner UA should be automated even long after send")
 	}
 
 	// No sent timestamp: fall back to UA only.
-	if isAutomated(humanUA, nil) {
+	if isAutomated(humanUA, nil, grace) {
 		t.Error("with no sent time, a human UA should not be treated as automated")
+	}
+
+	// CLICK path: an empty User-Agent is a bot (real browsers always send one),
+	// so it stays automated even long after send.
+	if !isAutomated("", &longAfter, grace) {
+		t.Error("an empty UA on the click path should be treated as automated even long after send")
+	}
+}
+
+// TestOpenAutomatedReason pins the OPEN-pixel behaviour: empty / mail-proxy
+// fetches must count as genuine opens once they arrive after the grace window,
+// while delivery-time prefetches and known scanners are still dropped. This is
+// the fix for opens never registering behind Microsoft 365 / Outlook image
+// proxies (which fetch the pixel server-side with no User-Agent).
+func TestOpenAutomatedReason(t *testing.T) {
+	grace := scannerGraceWindowDefault
+	justSent := time.Now().Add(-2 * time.Second)
+	longAfter := time.Now().Add(-10 * time.Minute)
+	humanUA := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+
+	cases := []struct {
+		name   string
+		ua     string
+		sentAt *time.Time
+		want   string // "" means it counts as a real open
+	}{
+		{"empty UA after grace counts (M365/Outlook proxy open)", "", &longAfter, ""},
+		{"empty UA within grace is a delivery-time prefetch", "", &justSent, "grace-window"},
+		{"human UA after grace counts", humanUA, &longAfter, ""},
+		{"human UA within grace is a prefetch", humanUA, &justSent, "grace-window"},
+		{"known scanner UA is always dropped", "curl/8.4.0", &longAfter, "scanner-ua"},
+		{"safelinks UA is always dropped", "Mozilla/5.0 SafeLinks", &longAfter, "scanner-ua"},
+		{"empty UA with no sent time counts (cannot be a prefetch)", "", nil, ""},
+	}
+	for _, c := range cases {
+		if got := openAutomatedReason(c.ua, c.sentAt, grace); got != c.want {
+			t.Errorf("%s: openAutomatedReason(%q)=%q, want %q", c.name, c.ua, got, c.want)
+		}
 	}
 }
