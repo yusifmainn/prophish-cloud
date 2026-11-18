@@ -51,6 +51,20 @@ func TestRenderHTMLNoDuplicatePixel(t *testing.T) {
 	}
 }
 
+// TestRenderHTMLNoPixelWhenOptedOut covers the campaign-level switch: when the
+// engine passes an empty TrackingPixel (campaign with open tracking disabled),
+// renderHTML must not inject any pixel.
+func TestRenderHTMLNoPixelWhenOptedOut(t *testing.T) {
+	out, err := renderHTML(`<html><body><p>Hello {{.FirstName}}</p></body></html>`,
+		TargetData{FirstName: "Eli", URL: clickURL("https://p.example.com", "tok")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out, "/p/tok.png") {
+		t.Errorf("no pixel must be injected when open tracking is disabled:\n%s", out)
+	}
+}
+
 // TestRenderHTMLPixelInjectionWithNonASCIIContent is a regression test for the
 // splice bug where the pixel was injected mid-tag (leaving stray "able>" text
 // visible in the mail) whenever the template contained a rune whose lowercase

@@ -230,6 +230,11 @@ func (l *Launcher) Launch(ctx context.Context, campaignID string) error {
 			URL:           clickURL(baseURL, it.Token),
 			TrackingPixel: pixelTag(baseURL, it.Token),
 		}
+		// Campaign-level opt-out: without a pixel the render step cannot inject
+		// one, so no "opened" events are recorded for this campaign.
+		if !camp.TrackOpens {
+			data.TrackingPixel = ""
+		}
 
 		subject, e1 := renderText(tmpl.Subject, data)
 		htmlBody, e2 := renderHTML(tmpl.HTMLBody, data)

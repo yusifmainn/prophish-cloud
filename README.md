@@ -126,7 +126,7 @@ Dayandırmaq: `docker compose down` · Məlumatı da silmək: `docker compose do
 1. **Müştəri** əlavə edin (*Müştərilər*).
 2. Müştəri səhifəsində **İcazə (Authorization/RoE)** qeyd edin — scope, imzalayan, sənəd istinadı, etibarlılıq tarixləri. *Bu olmadan kampaniya göndərilmir.*
 3. **Hədəf qrupu** yaradın və işçiləri əlavə edin (tək-tək və ya **CSV import**: `email, first_name, last_name, position`).
-4. **Email şablonu** yaradın. Dəyişənlər: `{{.FirstName}}`, `{{.LastName}}`, `{{.Email}}`, `{{.Position}}`, `{{.URL}}` (phishing linki), `{{.TrackingPixel}}` (açılma pikseli — qeyd etməsəniz avtomatik əlavə olunur).
+4. **Email şablonu** yaradın. Dəyişənlər: `{{.FirstName}}`, `{{.LastName}}`, `{{.Email}}`, `{{.Position}}`, `{{.URL}}` (phishing linki), `{{.TrackingPixel}}` (açılma pikseli — qeyd etməsəniz avtomatik əlavə olunur; kampaniya yaratarkən "Açılma izləməsi" seçimi ilə tam söndürülə bilər, məs. şəkil yükləyən security gateway olan mühitdə).
 5. **Landing səhifəsi** yaradın. Forma `action="{{.SubmitURL}}" method="post"` olmalıdır. (Dəyərlər saxlanılmır.)
 6. **SMTP profili** əlavə edin (host, port, from, istifadəçi/parol).
 7. **Kampaniya** yaradın: müştəri + icazə + qrup(lar) + şablon + səhifə + SMTP → *draft*.

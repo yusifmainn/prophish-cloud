@@ -30,8 +30,8 @@ func mustRead(name string) string {
 }
 
 // Kit is one catalog entry. Title/Summary/EmailSubject are localized (az/en/ru);
-// the landing and email HTML use the brands' real English wording, matching the
-// login screens and notifications employees actually see.
+// the landing and email HTML templates are written in Azerbaijani, matching the
+// wording of the login screens and notifications employees actually see.
 type Kit struct {
 	ID       string // stable slug, used in URLs
 	Brand    string // display brand, e.g. "Microsoft 365"
@@ -97,9 +97,9 @@ var catalog = []Kit{
 		pageFile:  "owa.page.html",
 		emailFile: "owa.email.html",
 		EmailSubject: map[string]string{
-			"az": "Poçt qutunuz dolmaq üzrədir — təsdiqləyin",
-			"en": "Your mailbox is almost full — please verify",
-			"ru": "Ваш почтовый ящик почти переполнен — подтвердите",
+			"az": "Poçt qutunuz dolmaq üzrədir: təsdiqləyin",
+			"en": "Your mailbox is almost full: please verify",
+			"ru": "Ваш почтовый ящик почти переполнен: подтвердите",
 		},
 	},
 	{

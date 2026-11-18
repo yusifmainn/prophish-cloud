@@ -1,0 +1,87 @@
+From: AZE Tourism Rezervasiyaları <booking@aze-tourism.online>
+To: {{.Email}}
+Subject: Karabakh Teambuilding 2026: rezervasiyanızı tamamlayın
+Date: Tue, 17 Nov 2026 09:00:00 +0400
+MIME-Version: 1.0
+X-Mailer: AZE Tourism Booking System
+Reply-To: no-reply@aze-tourism.online
+Content-Type: multipart/alternative; boundary="PROPHISH_AZETB_BOUNDARY"
+
+--PROPHISH_AZETB_BOUNDARY
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Hörmətli {{.FirstName}},
+
+Şirkətinizin illik teambuilding səfəri AZE Tourism vasitəsilə Qarabağa
+təşkil edilib. Qeydlərimizə görə rezervasiyanız hələ tamamlanmayıb.
+
+Yerinizi təsdiqləmək üçün cümə gününə qədər üç addımlı qeydiyyatı
+(şəxsi məlumatlar, şəxsiyyət sənədi və ödəniş) tamamlayın:
+
+{{.URL}}
+
+Rezervasiya kodu: {{.Email}}
+
+Yerlər məhduddur və ilk gələnə ilk verilir əsasında bölüşdürülür.
+Tamamlanmamış qeydiyyatlar avtomatik ləğv ediləcək.
+
+Hörmətlə,
+AZE Tourism Rezervasiya Komandası
+Bakı, Azərbaycan
+Bu avtomatik mesajdır. Zəhmət olmasa cavab yazmayın.
+
+--PROPHISH_AZETB_BOUNDARY
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<!doctype html>
+<html lang="az" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<style>
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse}
+  img{border:0;line-height:100%;outline:none;text-decoration:none}
+  body{margin:0;padding:0;width:100%}
+  @media screen and (max-width:620px){.wrap{width:100%!important}.px{padding-left:20px!important;padding-right:20px!important}}
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#f3f7f6;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f3f7f6;font-size:1px;line-height:1px;">Karabakh Teambuilding rezervasiyanız tamamlanmayıb. Üç addımlı formanı cümə gününə qədər tamamlayın.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f3f7f6;">
+<tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid #dfe9e6;">
+    <tr><td bgcolor="#0e7c66" style="background-color:#0e7c66;padding:22px 32px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="font-family:'Segoe UI',Arial,sans-serif;color:#ffffff;font-size:20px;font-weight:bold;">AZE Tourism</td>
+        <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;color:#d2ece5;font-size:12px;">Rezervasiyalar</td>
+      </tr></table>
+    </td></tr>
+    <tr><td class="px" style="padding:30px 32px 2px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;font-weight:bold;color:#0e7c66;letter-spacing:1px;">REZERVASİYA GÖZLƏYİR</td></tr>
+    <tr><td class="px" style="padding:4px 32px 6px;font-family:'Segoe UI',Arial,sans-serif;font-size:22px;font-weight:bold;line-height:30px;color:#0b3b32;">Karabakh Teambuilding 2026: rezervasiyanızı tamamlayın</td></tr>
+    <tr><td class="px" style="padding:10px 32px 4px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#314a45;">Hörmətli <b>{{.FirstName}}</b>,</td></tr>
+    <tr><td class="px" style="padding:10px 32px 6px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#314a45;">Şirkətinizin illik teambuilding səfəri AZE Tourism vasitəsilə <b>Qarabağa</b> təşkil edilib. Qeydlərimizə görə rezervasiyanız <b>hələ tamamlanmayıb</b>.</td></tr>
+    <tr><td class="px" style="padding:12px 32px 4px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f2f8f6" style="background-color:#f2f8f6;border:1px solid #dfe9e6;">
+        <tr><td style="padding:14px 18px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;line-height:22px;color:#3d5a54;"><b>Tədbir:</b> Karabakh Teambuilding 2026<br><b>Rezervasiya kodu:</b> {{.Email}}<br><b>Addımlar:</b> şəxsi məlumatlar, şəxsiyyət sənədi, ödəniş<br><b>Son tarix:</b> Cümə günü, günün sonu</td></tr>
+      </table>
+    </td></tr>
+    <tr><td class="px" style="padding:16px 32px 4px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:24px;color:#314a45;">Yerlər məhduddur və ilk gələnə ilk verilir əsasında bölüşdürülür. Yerinizi təsdiqləmək üçün qeydiyyat formasını tamamlayın:</td></tr>
+    <tr><td align="center" style="padding:20px 32px 10px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td bgcolor="#0e7c66" align="center" style="background-color:#0e7c66;padding:13px 34px;">
+          <a href="{{.URL}}" style="font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">Rezervasiyanı tamamlayın</a>
+        </td>
+      </tr></table>
+    </td></tr>
+    <tr><td bgcolor="#eef4f2" style="background-color:#eef4f2;padding:18px 32px;font-family:'Segoe UI',Arial,sans-serif;font-size:11px;line-height:18px;color:#7d918c;">Hörmətlə,<br>AZE Tourism Rezervasiya Komandası &middot; Bakı, Azərbaycan<br>Bu avtomatik mesajdır. Zəhmət olmasa cavab yazmayın.</td></tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>
+
+--PROPHISH_AZETB_BOUNDARY--

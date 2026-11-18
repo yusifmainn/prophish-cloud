@@ -126,7 +126,7 @@ func (s *Server) campaignPageData(r *http.Request) map[string]any {
 		"RecommendHost":   recommend,
 		"HostPublicURL":   hostURL,
 		"ListenerMode":    mode,
-		"Sel":             map[string]any{"Name": "", "ClientID": "", "AuthID": "", "TemplateID": "", "PageID": "", "ProfileID": "", "GroupIDs": map[string]bool{}, "PublicBaseURL": "", "Kind": "local", "RedirectURL": ""},
+		"Sel":             map[string]any{"Name": "", "ClientID": "", "AuthID": "", "TemplateID": "", "PageID": "", "ProfileID": "", "GroupIDs": map[string]bool{}, "PublicBaseURL": "", "Kind": "local", "RedirectURL": "", "TrackOpens": true},
 	}
 }
 
@@ -228,6 +228,7 @@ func (s *Server) handleCampaignCreate(w http.ResponseWriter, r *http.Request) {
 	if kind != "public" {
 		kind = "local"
 	}
+	trackOpens := r.FormValue("track_opens") == "on"
 	redirectInput := strings.TrimSpace(r.FormValue("redirect_url"))
 	publicURL, wantTunnel, listenerMode, urlOK := s.resolveListenerMode(r)
 
@@ -241,7 +242,7 @@ func (s *Server) handleCampaignCreate(w http.ResponseWriter, r *http.Request) {
 			"Name": name, "ClientID": clientID, "AuthID": authID,
 			"TemplateID": templateID, "PageID": pageID, "ProfileID": profileID,
 			"GroupIDs": strset(groupIDs), "PublicBaseURL": r.FormValue("public_base_url"),
-			"Kind": kind, "RedirectURL": redirectInput,
+			"Kind": kind, "RedirectURL": redirectInput, "TrackOpens": trackOpens,
 		}
 		s.render(w, r, http.StatusBadRequest, "campaigns.html", data)
 	}
@@ -295,7 +296,7 @@ func (s *Server) handleCampaignCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	campaignID, err := s.store.CreateCampaign(r.Context(), clientID, authID, name, templateID, pageArg, profileID, s.currentUserID(r), publicURL, kind, redirectArg, wantTunnel)
+	campaignID, err := s.store.CreateCampaign(r.Context(), clientID, authID, name, templateID, pageArg, profileID, s.currentUserID(r), publicURL, kind, redirectArg, wantTunnel, trackOpens)
 	if err != nil {
 		http.Error(w, "db error", http.StatusInternalServerError)
 		return
@@ -365,7 +366,7 @@ func (s *Server) handleCampaignEditForm(w http.ResponseWriter, r *http.Request) 
 		"Name": camp.Name, "ClientID": camp.ClientID, "AuthID": camp.AuthorizationID,
 		"TemplateID": camp.TemplateID, "PageID": camp.LandingPageID, "ProfileID": camp.SendingProfileID,
 		"GroupIDs": strset(gids), "PublicBaseURL": camp.PublicBaseURL,
-		"Kind": camp.Kind, "RedirectURL": camp.RedirectURL,
+		"Kind": camp.Kind, "RedirectURL": camp.RedirectURL, "TrackOpens": camp.TrackOpens,
 	}
 	s.render(w, r, http.StatusOK, "campaigns.html", data)
 }
@@ -396,6 +397,7 @@ func (s *Server) handleCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 	if kind != "public" {
 		kind = "local"
 	}
+	trackOpens := r.FormValue("track_opens") == "on"
 	redirectInput := strings.TrimSpace(r.FormValue("redirect_url"))
 	publicURL, wantTunnel, listenerMode, urlOK := s.resolveListenerMode(r)
 
@@ -408,7 +410,7 @@ func (s *Server) handleCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 			"Name": name, "ClientID": clientID, "AuthID": authID,
 			"TemplateID": templateID, "PageID": pageID, "ProfileID": profileID,
 			"GroupIDs": strset(groupIDs), "PublicBaseURL": r.FormValue("public_base_url"),
-			"Kind": kind, "RedirectURL": redirectInput,
+			"Kind": kind, "RedirectURL": redirectInput, "TrackOpens": trackOpens,
 		}
 		s.render(w, r, http.StatusBadRequest, "campaigns.html", data)
 	}
@@ -455,7 +457,7 @@ func (s *Server) handleCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := s.store.UpdateCampaignConfig(r.Context(), id, name, authID, templateID, pageArg, profileID, publicURL, kind, redirectArg, wantTunnel)
+	ok, err := s.store.UpdateCampaignConfig(r.Context(), id, name, authID, templateID, pageArg, profileID, publicURL, kind, redirectArg, wantTunnel, trackOpens)
 	if err != nil {
 		http.Error(w, "db error", http.StatusInternalServerError)
 		return

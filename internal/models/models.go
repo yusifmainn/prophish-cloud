@@ -112,6 +112,10 @@ type Campaign struct {
 	// RedirectURL is the external destination a "public" campaign redirects a
 	// click to. Empty for "local" campaigns.
 	RedirectURL string
+	// TrackOpens controls whether the open-tracking pixel is injected into the
+	// sent emails. False = no "opened" events are recorded (click tracking is
+	// unaffected).
+	TrackOpens bool
 	LaunchAt    *time.Time
 	SendBy      *time.Time
 	CompletedAt *time.Time

