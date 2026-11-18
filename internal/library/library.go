@@ -168,17 +168,17 @@ var catalog = []Kit{
 		Category: "notice",
 		Title:    map[string]string{"az": "AZE Tourism komanda səfəri", "en": "AZE Tourism team trip", "ru": "Командировка AZE Tourism"},
 		Summary: map[string]string{
-			"az": "«Rezervasiyanı tamamlayın» komanda səfəri məktubu. Public kampaniyada klik real sayta yönlənir — açılış səhifəsi göstərilmir.",
-			"en": "A «complete your reservation» team-trip lure. In a public campaign the click redirects to the real site — no landing page is shown.",
-			"ru": "Письмо «завершите бронирование» о командировке. В публичной кампании клик ведёт на реальный сайт — страница не показывается.",
+			"az": "«Qarabağı birlikdə kəşf edək!» komanda səfəri dəvətnaməsi. Public kampaniyada klik real sayta yönlənir — açılış səhifəsi göstərilmir.",
+			"en": "A “let's explore Karabakh together!” team-trip invitation. In a public campaign the click redirects to the real site — no landing page is shown.",
+			"ru": "Приглашение «давайте исследовать Карабах вместе!» о командировке. В публичной кампании клик ведёт на реальный сайт — страница не показывается.",
 		},
 		// Email-only kit: meant for kind="public" campaigns, where the click is
 		// recorded and 302-redirected to the campaign's real URL.
 		emailFile: "azetourism.email.html",
 		EmailSubject: map[string]string{
-			"az": "Qarabag Team Building 2026 — rezervasiyanızı tamamlayın",
-			"en": "Karabakh Team Building 2026 — complete your reservation",
-			"ru": "Karabakh Team Building 2026 — завершите бронирование",
+			"az": "Qarabağ Team Building 2026 | Proqram haqqında məlumat",
+			"en": "Karabakh Team Building 2026 | About the program",
+			"ru": "Karabakh Team Building 2026 | Информация о программе",
 		},
 	},
 }
