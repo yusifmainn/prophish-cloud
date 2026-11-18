@@ -46,20 +46,25 @@ func TestCatalogIntegrity(t *testing.T) {
 		}
 
 		// Landing page: present, privacy-preserving, and a valid html/template.
-		lp := k.LandingHTML()
-		if lp == "" {
-			t.Fatalf("kit %s: empty landing HTML", k.ID)
-		}
-		if !strings.Contains(lp, "{{.SubmitURL}}") {
-			t.Errorf("kit %s: landing form does not post to {{.SubmitURL}}", k.ID)
-		}
-		if !strings.Contains(strings.ToLower(lp), `method="post"`) {
-			t.Errorf("kit %s: landing form is not method=post", k.ID)
-		}
-		if lt, err := template.New("lp").Option("missingkey=zero").Parse(lp); err != nil {
-			t.Errorf("kit %s: landing parse: %v", k.ID, err)
-		} else if err := lt.Execute(discard{}, sampleData()); err != nil {
-			t.Errorf("kit %s: landing execute: %v", k.ID, err)
+		// Email-only kits (public-campaign lures) ship no page by design.
+		if k.HasLandingPage() {
+			lp := k.LandingHTML()
+			if lp == "" {
+				t.Fatalf("kit %s: empty landing HTML", k.ID)
+			}
+			if !strings.Contains(lp, "{{.SubmitURL}}") {
+				t.Errorf("kit %s: landing form does not post to {{.SubmitURL}}", k.ID)
+			}
+			if !strings.Contains(strings.ToLower(lp), `method="post"`) {
+				t.Errorf("kit %s: landing form is not method=post", k.ID)
+			}
+			if lt, err := template.New("lp").Option("missingkey=zero").Parse(lp); err != nil {
+				t.Errorf("kit %s: landing parse: %v", k.ID, err)
+			} else if err := lt.Execute(discard{}, sampleData()); err != nil {
+				t.Errorf("kit %s: landing execute: %v", k.ID, err)
+			}
+		} else if !k.HasEmail() {
+			t.Errorf("kit %s: neither landing page nor email — an empty kit", k.ID)
 		}
 
 		if !k.HasEmail() {

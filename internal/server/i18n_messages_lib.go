@@ -41,6 +41,11 @@ func init() {
 			"en": "«%s» landing page was added from the library.",
 			"ru": "Целевая страница «%s» добавлена из библиотеки.",
 		},
+		"lib.flash_used_tpl": {
+			"az": "«%s» email şablonu kitabxanadan əlavə edildi (açılış səhifəsi yoxdur — public kampaniya üçün nəzərdə tutulub).",
+			"en": "«%s» email template was added from the library (no landing page — meant for a public campaign).",
+			"ru": "Шаблон письма «%s» добавлен из библиотеки (целевая страница не нужна — для публичной кампании).",
+		},
 
 		// Audit-log label for the "Use" action.
 		"action.library.use": {"az": "Kitabxanadan əlavə", "en": "Added from library", "ru": "Добавлено из библиотеки"},

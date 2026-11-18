@@ -20,6 +20,9 @@ type libKitVM struct {
 	Title    string
 	Summary  string
 	HasEmail bool
+	// HasLanding marks kits that ship a landing page; email-only kits show the
+	// email preview as the card thumbnail instead of a page preview.
+	HasLanding bool
 }
 
 // handleLibraryList renders the gallery of built-in simulation kits.
@@ -28,12 +31,13 @@ func (s *Server) handleLibraryList(w http.ResponseWriter, r *http.Request) {
 	var kits []libKitVM
 	for _, k := range library.Catalog() {
 		kits = append(kits, libKitVM{
-			ID:       k.ID,
-			Brand:    k.Brand,
-			Category: k.Category,
-			Title:    library.Pick(k.Title, lang),
-			Summary:  library.Pick(k.Summary, lang),
-			HasEmail: k.HasEmail(),
+			ID:         k.ID,
+			Brand:      k.Brand,
+			Category:   k.Category,
+			Title:      library.Pick(k.Title, lang),
+			Summary:    library.Pick(k.Summary, lang),
+			HasEmail:   k.HasEmail(),
+			HasLanding: k.HasLandingPage(),
 		})
 	}
 	s.render(w, r, http.StatusOK, "library.html", map[string]any{"Kits": kits})
@@ -61,10 +65,16 @@ func writeInlinePreview(w http.ResponseWriter, body string, data any) {
 }
 
 // handleLibraryPagePreview renders a kit's landing page with sample target data.
+// Email-only kits have no page; fall back to the email preview so the link (and
+// the gallery card thumbnail) still shows something meaningful.
 func (s *Server) handleLibraryPagePreview(w http.ResponseWriter, r *http.Request) {
 	k, ok := library.Get(chi.URLParam(r, "id"))
 	if !ok {
 		http.NotFound(w, r)
+		return
+	}
+	if !k.HasLandingPage() {
+		s.handleLibraryEmailPreview(w, r)
 		return
 	}
 	writeInlinePreview(w, k.LandingHTML(), previewTarget{
@@ -88,7 +98,9 @@ func (s *Server) handleLibraryEmailPreview(w http.ResponseWriter, r *http.Reques
 // handleLibraryUse instantiates a kit: it copies the landing page (and matching
 // email template, if any) into ordinary, fully editable records so the operator
 // can tweak them before a campaign. Created content is global (client_id NULL),
-// exactly like the manual "New page"/"New template" forms.
+// exactly like the manual "New page"/"New template" forms. Email-only kits
+// (for kind="public" campaigns, which redirect instead of hosting a page)
+// create just the email template.
 func (s *Server) handleLibraryUse(w http.ResponseWriter, r *http.Request) {
 	k, ok := library.Get(chi.URLParam(r, "id"))
 	if !ok {
@@ -97,6 +109,25 @@ func (s *Server) handleLibraryUse(w http.ResponseWriter, r *http.Request) {
 	}
 	lang := langFromRequest(r)
 	name := library.Pick(k.Title, lang)
+
+	// Email-only kit: instantiate the lure and send the operator to the new
+	// template — there is deliberately no landing page (the campaign redirects).
+	if !k.HasLandingPage() {
+		if !k.HasEmail() {
+			http.NotFound(w, r)
+			return
+		}
+		tid, err := s.store.CreateTemplate(r.Context(), nil, name,
+			library.Pick(k.EmailSubject, lang), k.EmailHTML(), "", nil)
+		if err != nil {
+			http.Error(w, "db error", http.StatusInternalServerError)
+			return
+		}
+		s.audit(r, "library.use", "template", tid, k.Brand)
+		s.flashOK(r, s.tf(r, "lib.flash_used_tpl", name))
+		http.Redirect(w, r, "/templates/"+tid, http.StatusSeeOther)
+		return
+	}
 
 	html := k.LandingHTML()
 	if err := validLandingHTML(html); err != nil {

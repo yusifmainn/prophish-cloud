@@ -29,8 +29,13 @@
     {{range .Kits}}
     <div class="card libcard">
       <div class="libthumb">
+        {{if .HasLanding}}
         <iframe src="/library/{{.ID}}/preview/page" title="{{.Title}}" scrolling="no" tabindex="-1" loading="lazy"></iframe>
         <a class="mask" href="/library/{{.ID}}/preview/page" target="_blank" rel="noopener" aria-label="{{t "lib.preview_page"}}"></a>
+        {{else if .HasEmail}}
+        <iframe src="/library/{{.ID}}/preview/email" title="{{.Title}}" scrolling="no" tabindex="-1" loading="lazy"></iframe>
+        <a class="mask" href="/library/{{.ID}}/preview/email" target="_blank" rel="noopener" aria-label="{{t "lib.preview_email"}}"></a>
+        {{end}}
       </div>
       <div class="libbody">
         <div class="brand">{{.Brand}}</div>

@@ -1,7 +1,8 @@
 // Package library is a built-in, read-only catalog of ready-made phishing
 // simulation "kits": high-fidelity recreations of the login pages real
 // attackers imitate (Microsoft 365, Outlook Web App, Google, OneDrive) plus a
-// generic IT password-expiry portal, each paired with a matching email lure.
+// generic IT password-expiry portal and a team-trip reservation lure, most
+// paired with a matching email lure.
 //
 // The pages are faithful to the real brand UI on purpose — a training exercise
 // only measures a real risk if the decoy looks like what employees actually
@@ -55,6 +56,11 @@ func (k Kit) LandingHTML() string { return mustRead(k.pageFile) }
 
 // HasEmail reports whether the kit ships a matching email template.
 func (k Kit) HasEmail() bool { return k.emailFile != "" }
+
+// HasLandingPage reports whether the kit ships a landing page. Email-only
+// kits (e.g. a lure meant for a "public" campaign that redirects the click to
+// a real website) have no page to instantiate.
+func (k Kit) HasLandingPage() bool { return k.pageFile != "" }
 
 // EmailHTML returns the kit's email body ("" when the kit has no email).
 func (k Kit) EmailHTML() string {
@@ -154,6 +160,25 @@ var catalog = []Kit{
 			"az": "Parolunuzun müddəti bu gün bitir",
 			"en": "Your password expires today",
 			"ru": "Срок действия вашего пароля истекает сегодня",
+		},
+	},
+	{
+		ID:       "azetourism",
+		Brand:    "AZE Tourism",
+		Category: "notice",
+		Title:    map[string]string{"az": "AZE Tourism komanda səfəri", "en": "AZE Tourism team trip", "ru": "Командировка AZE Tourism"},
+		Summary: map[string]string{
+			"az": "«Rezervasiyanı tamamlayın» komanda səfəri məktubu. Public kampaniyada klik real sayta yönlənir — açılış səhifəsi göstərilmir.",
+			"en": "A «complete your reservation» team-trip lure. In a public campaign the click redirects to the real site — no landing page is shown.",
+			"ru": "Письмо «завершите бронирование» о командировке. В публичной кампании клик ведёт на реальный сайт — страница не показывается.",
+		},
+		// Email-only kit: meant for kind="public" campaigns, where the click is
+		// recorded and 302-redirected to the campaign's real URL.
+		emailFile: "azetourism.email.html",
+		EmailSubject: map[string]string{
+			"az": "Qarabag Team Building 2026 — rezervasiyanızı tamamlayın",
+			"en": "Karabakh Team Building 2026 — complete your reservation",
+			"ru": "Karabakh Team Building 2026 — завершите бронирование",
 		},
 	},
 }
