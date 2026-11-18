@@ -45,6 +45,14 @@ services:
       # REQUIRED: set a 32-byte base64 secret in .env (openssl rand -base64 32).
       PROPHISH_SESSION_KEY: ${PROPHISH_SESSION_KEY:?set PROPHISH_SESSION_KEY in .env}
       PROPHISH_SECURE_COOKIES: ${PROPHISH_SECURE_COOKIES:-false}
+      # CIDRs whose X-Forwarded-For the PUBLIC listener trusts when resolving a
+      # tracking hit's real client IP. MUST include loopback when campaigns use
+      # the built-in Cloudflare tunnel: cloudflared runs inside this container
+      # and forwards every visitor from 127.0.0.1, so without this every click /
+      # open is recorded as ::1 and the real source (recipient vs. mail-security
+      # scanner) is invisible. The container runs only prophish + cloudflared,
+      # so trusting its loopback is safe.
+      PROPHISH_TRUSTED_PROXIES: ${PROPHISH_TRUSTED_PROXIES:-127.0.0.1/32,::1/128}
       # Operator time zone for scheduling + display (IANA name). Defaults to UTC.
       PROPHISH_TIMEZONE: ${PROPHISH_TIMEZONE:-UTC}
     ports:
