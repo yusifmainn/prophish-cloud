@@ -72,6 +72,29 @@ func (s *Store) MarkScannerProbe(c ctx, resultID string) error {
 	return err
 }
 
+// ProbeTime returns the current scanner_probe_at for a result. The public
+// server re-reads it after a short wait so a canary fetch racing the real link
+// (both in flight concurrently) is still seen before a hit is counted.
+func (s *Store) ProbeTime(c ctx, resultID string) (*time.Time, error) {
+	var ts *time.Time
+	err := s.db.QueryRow(c,
+		`SELECT scanner_probe_at FROM campaign_results WHERE id=$1`, resultID).Scan(&ts)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	return ts, err
+}
+
+// DemoteStatus resets a result's lifecycle status (clicked/submitted →
+// sent/opened) when a counted hit is retracted as part of a scanner crawl.
+// A direct UPDATE on purpose: the forward-only AdvanceStatus is exactly what a
+// retraction must bypass.
+func (s *Store) DemoteStatus(c ctx, resultID, status string) error {
+	_, err := s.db.Exec(c,
+		`UPDATE campaign_results SET status=$2 WHERE id=$1`, resultID, status)
+	return err
+}
+
 // ResultByToken resolves a tracking token to its result + campaign (for the public server).
 func (s *Store) ResultByToken(c ctx, token string) (*Tracked, error) {
 	var t Tracked

@@ -81,6 +81,14 @@ const scannerGraceWindow = 60 * time.Second
 // at risk briefly right after a scanner crawl, not for the whole aftermath.
 const scannerClusterWindow = 5 * time.Minute
 
+// scannerRaceWait is how long countInteraction waits and re-reads the canary
+// probe before counting a hit. Scanners fetch the canary and the real link
+// CONCURRENTLY (observed gap between the two hits: 3ms — both requests are in
+// flight at once), so a hit's initial row read predates the probe's commit and
+// the naive probe check misses it. Re-reading after a couple of seconds lets
+// the probe land before the decision; a human never notices a 2s delay.
+const scannerRaceWait = 2 * time.Second
+
 // recentlyProbed reports whether a canary probe fired within the cluster
 // window — i.e. this hit belongs to an automated crawl, not the recipient.
 func recentlyProbed(probe *time.Time) bool {
@@ -173,16 +181,31 @@ func (s *Server) countInteraction(r *http.Request, t *store.TrackedFull, status,
 	if isAutomated(r.UserAgent(), t.SentAt) {
 		return
 	}
-	if recentlyProbed(t.ScannerProbeAt) {
-		if recent, _ := s.store.HasRecentEvent(r.Context(), rid, suspectedType, scannerClusterWindow); !recent {
-			_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, suspectedType, s.clientIP(r), r.UserAgent())
-		}
+	// Race-safe probe check: the canary fetch that marks this crawl may be in
+	// flight right now (scanners open all links concurrently), so re-read the
+	// probe after a short wait before deciding the hit is human.
+	probe := t.ScannerProbeAt
+	if !recentlyProbed(probe) {
+		time.Sleep(scannerRaceWait)
+		probe, _ = s.store.ProbeTime(r.Context(), rid)
+	}
+	if recentlyProbed(probe) {
+		s.recordSuspected(r, t.CampaignID, rid, suspectedType)
 		return
 	}
 	// Record the event only on the first transition into this stage, so a
 	// target (or an attacker who knows the token) cannot flood the events table.
 	if changed, _ := s.store.AdvanceStatus(r.Context(), rid, status); changed {
 		_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, eventType, s.clientIP(r), r.UserAgent())
+	}
+}
+
+// recordSuspected logs a human-looking hit that the canary correlation
+// attributed to a scanner crawl. Deduplicated inside the cluster window so a
+// scanner replaying the link cannot flood the events table.
+func (s *Server) recordSuspected(r *http.Request, campaignID, rid, suspectedType string) {
+	if recent, _ := s.store.HasRecentEvent(r.Context(), rid, suspectedType, scannerClusterWindow); !recent {
+		_ = s.store.RecordEvent(r.Context(), campaignID, &rid, suspectedType, s.clientIP(r), r.UserAgent())
 	}
 }
 
@@ -200,6 +223,27 @@ func (s *Server) handleCanary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = s.store.MarkScannerProbe(r.Context(), t.ResultID)
+	// Retrospective retraction: a SLOW sequential crawler may have had its real
+	// link/submit hit counted BEFORE this probe landed. If such an event sits
+	// inside the cluster window, pull it back — demote the status and log the
+	// suspected counterpart — so a scanner click never stands. (The fast
+	// concurrent case is already caught by the probe re-read in
+	// countInteraction.) A human click retracted this way is rare: scanners
+	// crawl at delivery, and the hit would have to precede the probe within the
+	// window.
+	if ev, err := s.store.LastCountedHit(r.Context(), t.ResultID); err == nil && ev != nil &&
+		time.Since(ev.CreatedAt) < scannerClusterWindow {
+		base := "sent"
+		if opened, _ := s.store.HasRecentEvent(r.Context(), t.ResultID, "email_opened", 24*time.Hour); opened {
+			base = "opened"
+		}
+		_ = s.store.DemoteStatus(r.Context(), t.ResultID, base)
+		suspected := "suspected_click"
+		if ev.Type == "data_submitted" {
+			suspected = "suspected_submit"
+		}
+		s.recordSuspected(r, t.CampaignID, t.ResultID, suspected)
+	}
 	s.serveTracked(w, r, t, token)
 }
 
