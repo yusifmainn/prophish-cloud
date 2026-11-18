@@ -181,6 +181,25 @@ var catalog = []Kit{
 			"ru": "Karabakh Team Building 2026 — завершите бронирование",
 		},
 	},
+	{
+		ID:       "azetourism-invite",
+		Brand:    "AZE Tourism",
+		Category: "notice",
+		Title:    map[string]string{"az": "AZE Tourism komanda dəvəti", "en": "AZE Tourism team invite", "ru": "Приглашение AZE Tourism"},
+		Summary: map[string]string{
+			"az": "«Proqramla tanış olun» tərzli yumşaq team-building dəvət məktubu (adla şəxsiləşdirilir). Public kampaniyada klik real sayta yönlənir — açılış səhifəsi göstərilmir.",
+			"en": "A soft «learn about the program» team-building invite email (personalized by name). In a public campaign the click redirects to the real site — no landing page is shown.",
+			"ru": "Мягкое письмо-приглашение на тимбилдинг «ознакомьтесь с программой» (с именем). В публичной кампании клик ведёт на реальный сайт — страница не показывается.",
+		},
+		// Email-only kit: meant for kind="public" campaigns, where the click is
+		// recorded and 302-redirected to the campaign's real URL.
+		emailFile: "azetourism-invite.email.html",
+		EmailSubject: map[string]string{
+			"az": "Qarabag Team Building 2026 — proqrama dəvət",
+			"en": "Karabakh Team Building 2026 — program invitation",
+			"ru": "Karabakh Team Building 2026 — приглашение на программу",
+		},
+	},
 }
 
 // Catalog returns the ordered list of available kits.
