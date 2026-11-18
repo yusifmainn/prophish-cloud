@@ -66,10 +66,10 @@ var pixelGIF, _ = base64.StdEncoding.DecodeString("R0lGODlhAQABAIAAAAAAAP///yH5B
 // human recipient could realistically open and act on it. The scanner receives
 // the mail a few seconds AFTER our SMTP send completes, so its fetch lands
 // noticeably later than t=0; a live trace showed a Safe Links-style fetch at
-// send+31s, just past a 30s window. 120s keeps the window comfortably ahead of
-// observed scanner latency while still far shorter than any plausible human
+// send+31s, past the old 30s window. 60s keeps the window ahead of that
+// observed scanner latency while staying far shorter than any plausible human
 // reaction time in a real deployment.
-const scannerGraceWindow = 120 * time.Second
+const scannerGraceWindow = 60 * time.Second
 
 // scannerUASignatures are case-insensitive substrings found in the User-Agent
 // of automated clients: security gateways, link/image proxies, link-preview
