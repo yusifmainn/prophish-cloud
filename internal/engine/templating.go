@@ -52,42 +52,25 @@ func renderHTML(tmpl string, data TargetData) (string, error) {
 	if data.TrackingPixel != "" && !strings.Contains(out, string(data.TrackingPixel)) {
 		out = injectBeforeBodyClose(out, string(data.TrackingPixel))
 	}
-	// Ensure the hidden scanner-canary link is present even if the author forgot
-	// {{.CanaryURL}}. It goes at the very START of the body so crawlers that
-	// fetch links in document order hit it BEFORE the real tracking link and the
-	// scan is marked before its "click" arrives.
+	// Ensure the scanner-canary footer link is present even if the author forgot
+	// {{.CanaryURL}}. It lands just before </body> as a copyright line: every
+	// link extractor (raw href, DOM, visible-text) picks it up, humans don't.
 	if data.CanaryURL != "" && !strings.Contains(out, data.CanaryURL) {
-		out = injectAfterBodyOpen(out, canarySnippet(data.CanaryURL))
+		out = injectBeforeBodyClose(out, canarySnippet(data.CanaryURL))
 	}
 	return out, nil
 }
 
-// canarySnippet builds the hidden canary anchor. Deliberately not wrapped in
-// display:none on the anchor itself (some link checkers skip those): the outer
-// div hides it visually while the href stays in the raw HTML for every
-// extractor, rewriter, and DOM crawler to find.
+// canarySnippet builds the scanner-canary link as a VISIBLE footer line — a
+// copyright notice nobody clicks. This is deliberate: the earlier display:none
+// anchor was extracted by the delivery-time crawler (raw href scan) but SKIPPED
+// by the open-time scanner this deployment faces, which extracts only visible
+// links — so its real-link fetches arrived with NO probe and were counted. A
+// footer copyright link is picked up by every extractor (raw href, DOM, visible
+// text) and is virtually never clicked by a human, so the probe still means
+// "a scanner saw this message" while staying harmless to genuine metrics.
 func canarySnippet(url string) string {
-	return fmt.Sprintf(`<div style="display:none;font-size:0;line-height:0;max-height:0;overflow:hidden;mso-hide:all"><a href="%s">&#160;</a></div>`, url)
-}
-
-// injectAfterBodyOpen inserts snippet right after the opening <body...> tag.
-// The search is case-insensitive and done on the ORIGINAL string byte-by-byte
-// (not via strings.ToLower, which shifts byte lengths for some runes and would
-// corrupt the splice point — see lastIndexBodyClose).
-func injectAfterBodyOpen(html, snippet string) string {
-	const open = "<body"
-	for i := 0; i+len(open) <= len(html); i++ {
-		if strings.EqualFold(html[i:i+len(open)], open) {
-			// Find the end of the tag (the closing '>' of <body ...>).
-			for j := i + len(open); j < len(html); j++ {
-				if html[j] == '>' {
-					return html[:j+1] + snippet + html[j+1:]
-				}
-			}
-			return html + snippet // unterminated tag: append instead
-		}
-	}
-	return snippet + html // no <body>: prepend
+	return fmt.Sprintf(`<div style="text-align:center;font-family:'Segoe UI',Arial,sans-serif;font-size:11px;line-height:18px;color:#8a9a95;padding:10px 0 4px;"><a href="%s" style="color:#8a9a95;text-decoration:none;">&#169; 2026 &#183; B&#252;t&#252;n h&#252;quqlar qorunur</a></div>`, url)
 }
 
 func injectBeforeBodyClose(html, snippet string) string {
