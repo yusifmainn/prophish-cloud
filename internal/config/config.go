@@ -40,8 +40,9 @@ type Config struct {
 	// trusted delivery mode (PROPHISH_INFRA_CIDRS).
 	InfraCIDRs []*net.IPNet
 	// InfraASNs are autonomous systems whose announced prefixes are treated as
-	// scanner/proxy infrastructure (PROPHISH_INFRA_ASNS, default AS8075
-	// Microsoft). Fetched from RIPEstat at startup and refreshed daily.
+	// scanner/proxy infrastructure (PROPHISH_INFRA_ASNS). Default: every
+	// Microsoft ASN that announces IPv4 prefixes (~2.1k in total). Fetched from
+	// RIPEstat at startup and refreshed daily.
 	InfraASNs []string
 }
 
@@ -125,7 +126,11 @@ func secondsEnv(k string) time.Duration {
 }
 
 // parseASNs parses a comma-separated ASN list (numbers or "AS8075" forms),
-// skipping empties and junk; empty input yields the Microsoft default.
+// skipping empties and junk. Empty input yields the built-in default: every
+// Microsoft autonomous system that actually announces IPv4 prefixes today
+// (verified against RIPEstat — AS8075 is the big one at ~1.2k prefixes, but
+// AS8069 alone adds ~800 more; the rest of Microsoft's ~40 registered ASNs
+// announce nothing and are excluded so startup does pointless fetches).
 func parseASNs(s string) []string {
 	var out []string
 	for _, part := range strings.Split(s, ",") {
@@ -139,7 +144,7 @@ func parseASNs(s string) []string {
 		}
 	}
 	if len(out) == 0 {
-		out = append(out, "8075")
+		out = []string{"8075", "8069", "8068", "3598", "12076", "17144", "46182", "63314", "5761", "54396"}
 	}
 	return out
 }
