@@ -35,6 +35,10 @@ type Config struct {
 	// prefetch — see the incident notes on defInternal/defExternal.
 	ScannerWinInternal ScannerWindows
 	ScannerWinExternal ScannerWindows
+	// InfraCIDRs are extra IP ranges (beyond the built-in Microsoft set) the
+	// PUBLIC listener treats as scanner/proxy infrastructure and ignores in
+	// trusted delivery mode (PROPHISH_INFRA_CIDRS).
+	InfraCIDRs []*net.IPNet
 }
 
 // Load reads configuration from the process environment. If a .env file exists in the
@@ -94,6 +98,7 @@ func Load() (*Config, error) {
 		Grace: secondsEnv("PROPHISH_SCANNER_GRACE_EXTERNAL_SECONDS"),
 		Pair:  secondsEnv("PROPHISH_SCANNER_PAIR_EXTERNAL_SECONDS"),
 	}
+	c.InfraCIDRs = parseCIDRs(getenv("PROPHISH_INFRA_CIDRS", ""))
 
 	return c, nil
 }

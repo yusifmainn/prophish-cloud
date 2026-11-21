@@ -241,3 +241,38 @@ func TestRouteWindows(t *testing.T) {
 		t.Error("anything not explicitly internal must get the conservative external preset")
 	}
 }
+
+func TestIsInfraIP(t *testing.T) {
+	// The live phantom events arrived from 48.209.223.88 (AS8075 Microsoft,
+	// RIPE-verified covering prefix 48.208.0.0/13) — the built-in list must
+	// catch it, and must leave corporate/user space alone.
+	for _, ip := range []string{"48.209.223.88", "13.64.0.1", "40.76.0.1", "104.40.1.1", "65.52.0.1"} {
+		if !isInfraIP(ip) {
+			t.Errorf("expected %s to be recognized as infrastructure", ip)
+		}
+	}
+	for _, ip := range []string{"203.0.113.7", "10.20.51.5", "85.132.12.9", "", "not-an-ip"} {
+		if isInfraIP(ip) {
+			t.Errorf("expected %q to NOT be infrastructure", ip)
+		}
+	}
+}
+
+func TestTrustedHitDrop(t *testing.T) {
+	browser := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+	// Infrastructure IP loses regardless of a browser-looking UA.
+	if why := trustedHitDrop(browser, "48.209.223.88"); why != "infra" {
+		t.Errorf("infra IP with browser UA: got %q, want infra", why)
+	}
+	// Bot/empty UA loses on a user network.
+	if why := trustedHitDrop("curl/8.4.0", "203.0.113.7"); why != "ua" {
+		t.Errorf("bot UA on user IP: got %q, want ua", why)
+	}
+	if why := trustedHitDrop("", "203.0.113.7"); why != "ua" {
+		t.Errorf("empty UA on user IP: got %q, want ua", why)
+	}
+	// The human passes.
+	if why := trustedHitDrop(browser, "203.0.113.7"); why != "" {
+		t.Errorf("human hit: got %q, want empty (counted)", why)
+	}
+}

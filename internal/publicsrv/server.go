@@ -118,6 +118,74 @@ func windowsFor(route string) ScannerWindows {
 	return defExternal
 }
 
+// infraCIDRs are IP ranges that belong to scanner/security-proxy
+// infrastructure (cloud datacenters) rather than end users. In TRUSTED
+// delivery mode, hits from these ranges are ignored: the operator asserts no
+// scanner touches the mail, so whatever still arrives from cloud datacenter
+// space is the scanner rendering/verifying the message — not the human
+// opening it. This is what makes "opened = human opened, clicked = human
+// clicked" hold even when the tenant's ATP/SafeLinks still scans a sender.
+//
+// Built-ins are Microsoft's long-stable Azure/MS supernets — the egress of
+// M365 ATP, SafeLinks and the image proxy (verified live: phantom
+// opens/clicks arrived from 48.209.223.88 = 48.208.0.0/13, AS8075). Extend
+// via PROPHISH_INFRA_CIDRS. Dropped hits are still written to tracking_hits
+// (outcome 'ignored', reason 'infra') so every decision stays auditable.
+var infraCIDRs = mustCIDRs(
+	"13.64.0.0/11", "13.96.0.0/13", "13.104.0.0/14",
+	"40.64.0.0/10", "48.208.0.0/13", "65.52.0.0/14",
+	"104.40.0.0/13", "157.54.0.0/15", "157.56.0.0/14",
+	"168.61.0.0/16", "168.62.0.0/15", "191.232.0.0/13",
+	"199.60.28.0/22", "207.46.0.0/16",
+)
+
+func mustCIDRs(ss ...string) []*net.IPNet {
+	out := make([]*net.IPNet, 0, len(ss))
+	for _, s := range ss {
+		_, n, err := net.ParseCIDR(s)
+		if err != nil {
+			panic("publicsrv: bad built-in infra CIDR " + s + ": " + err.Error())
+		}
+		out = append(out, n)
+	}
+	return out
+}
+
+// AddInfraCIDRs appends operator-configured infrastructure ranges
+// (PROPHISH_INFRA_CIDRS) to the built-in list.
+func AddInfraCIDRs(nets []*net.IPNet) {
+	infraCIDRs = append(infraCIDRs, nets...)
+}
+
+// isInfraIP reports whether the client IP belongs to known scanner/proxy
+// infrastructure.
+func isInfraIP(ipStr string) bool {
+	ip := net.ParseIP(strings.TrimSpace(ipStr))
+	if ip == nil {
+		return false
+	}
+	for _, n := range infraCIDRs {
+		if n.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
+// trustedHitDrop reports why a trusted-mode click/submit hit is NOT the
+// human: it comes from known scanner infrastructure, or its User-Agent is a
+// bot/scanner signature (an empty UA is treated as automated too — real
+// browsers always send one on clicks).
+func trustedHitDrop(ua, ip string) string {
+	if isInfraIP(ip) {
+		return "infra"
+	}
+	if isScannerUA(ua) {
+		return "ua"
+	}
+	return ""
+}
+
 // scannerRaceWait is how long countInteraction waits and re-reads the canary
 // probe before counting a hit. Scanners fetch the canary and the real link
 // CONCURRENTLY (observed gap between the two hits: 3ms — both requests are in
@@ -226,9 +294,22 @@ func (s *Server) handleOpen(w http.ResponseWriter, r *http.Request) {
 	if t, err := s.store.TrackedByToken(r.Context(), token); err == nil {
 		rid := t.ResultID
 		outcome, reason := store.HitCounted, "counted"
-		win := windowsFor(t.DeliveryRoute)
-		if why := openIgnoreReason(t.TrustedDelivery, win.Grace, win.Pair, t.SentAt, t.ScannerProbeAt); why != "" {
-			outcome, reason = store.HitIgnored, why
+		ignored := ""
+		if t.TrustedDelivery {
+			// Human-only: the instant "open" fired at delivery by the M365
+			// image proxy / ATP render comes from Microsoft datacenter space.
+			// A real user's image download comes from their own network, so
+			// the IP is the reliable discriminator (UA is deliberately NOT
+			// used here — desktop clients send sparse UAs on image fetches).
+			if isInfraIP(s.clientIP(r)) {
+				ignored = "infra"
+			}
+		} else {
+			win := windowsFor(t.DeliveryRoute)
+			ignored = openIgnoreReason(false, win.Grace, win.Pair, t.SentAt, t.ScannerProbeAt)
+		}
+		if ignored != "" {
+			outcome, reason = store.HitIgnored, ignored
 		} else if changed, _ := s.store.AdvanceStatus(r.Context(), rid, "opened"); !changed {
 			outcome, reason = store.HitDuplicate, "duplicate"
 		} else {
@@ -265,40 +346,53 @@ func (s *Server) recordHit(r *http.Request, t *store.TrackedFull, route string, 
 }
 
 // countInteraction advances a result's status for a tracked hit (click or
-// submit), attributing it to the recipient only when it does NOT look automated
-// — neither a known scanner UA, nor inside the post-send grace window, nor
-// inside the canary cluster window. Suppressed human-looking hits are logged as
-// suspected_* (deduped) so the operator sees what was filtered and why. Every
-// request — counted, suppressed or ignored — lands in tracking_hits with its
-// outcome and machine-readable reason. In trusted delivery mode none of the
-// filtering applies: the first hit of each kind counts directly, with no UA
-// check, no windows and no race wait (the operator asserts the sender is
-// allowlisted, so the first clicker IS the user).
+// submit), attributing it to the recipient only when it does NOT look
+// automated. Every request — counted, suppressed or ignored — lands in
+// tracking_hits with its outcome and machine-readable reason.
+//
+// Trusted delivery mode: "the first clicker is the user", with one exception
+// — hits from known scanner infrastructure (cloud datacenter IPs, bot/empty
+// User-Agents) are still dropped, so trusted campaigns report human events
+// only. No windows, no canary, no race wait.
+//
+// Untrusted mode: the scanner filter applies — UA signatures, the route's
+// grace window, and the canary pair window (with the race wait).
 func (s *Server) countInteraction(r *http.Request, t *store.TrackedFull, route string, hitAt time.Time, status, eventType, suspectedType string) {
 	rid := t.ResultID
+	if t.TrustedDelivery {
+		if why := trustedHitDrop(r.UserAgent(), s.clientIP(r)); why != "" {
+			s.recordHit(r, t, route, hitAt, store.HitIgnored, why)
+			return
+		}
+		s.countHumanHit(r, t, route, hitAt, status, eventType)
+		return
+	}
 	win := windowsFor(t.DeliveryRoute)
-	if why := preWindowDecision(t.TrustedDelivery, win.Grace, r.UserAgent(), t.SentAt); why != "" {
+	if why := preWindowDecision(false, win.Grace, r.UserAgent(), t.SentAt); why != "" {
 		s.recordHit(r, t, route, hitAt, store.HitIgnored, why)
 		return
 	}
 	// Race-safe probe check: the canary fetch that marks this crawl may be in
 	// flight right now (scanners open all links concurrently), so re-read the
-	// probe after a short wait before deciding the hit is human. Trusted
-	// campaigns carry no canary, so nothing can be in flight — skip the wait.
-	if !t.TrustedDelivery {
-		probe := t.ScannerProbeAt
-		if !recentlyProbed(probe, win.Pair) {
-			time.Sleep(scannerRaceWait)
-			probe, _ = s.store.ProbeTime(r.Context(), rid)
-		}
-		if recentlyProbed(probe, win.Pair) {
-			s.recordHit(r, t, route, hitAt, store.HitSuspected, "pair_window")
-			s.recordSuspected(r, t.CampaignID, rid, suspectedType, win.Pair)
-			return
-		}
+	// probe after a short wait before deciding the hit is human.
+	probe := t.ScannerProbeAt
+	if !recentlyProbed(probe, win.Pair) {
+		time.Sleep(scannerRaceWait)
+		probe, _ = s.store.ProbeTime(r.Context(), rid)
 	}
-	// Record the event only on the first transition into this stage, so a
-	// target (or an attacker who knows the token) cannot flood the events table.
+	if recentlyProbed(probe, win.Pair) {
+		s.recordHit(r, t, route, hitAt, store.HitSuspected, "pair_window")
+		s.recordSuspected(r, t.CampaignID, rid, suspectedType, win.Pair)
+		return
+	}
+	s.countHumanHit(r, t, route, hitAt, status, eventType)
+}
+
+// countHumanHit records a hit as a genuine user interaction: the result
+// advances once (later hits of the same kind are duplicates) and the
+// transition event is logged with the hit's fingerprint.
+func (s *Server) countHumanHit(r *http.Request, t *store.TrackedFull, route string, hitAt time.Time, status, eventType string) {
+	rid := t.ResultID
 	outcome, reason := store.HitCounted, "counted"
 	if changed, _ := s.store.AdvanceStatus(r.Context(), rid, status); !changed {
 		outcome, reason = store.HitDuplicate, "duplicate"

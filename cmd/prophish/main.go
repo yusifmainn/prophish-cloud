@@ -115,6 +115,9 @@ func main() {
 			publicsrv.ScannerWindows(cfg.ScannerWinExternal),
 		)
 	}
+	if len(cfg.InfraCIDRs) > 0 {
+		publicsrv.AddInfraCIDRs(cfg.InfraCIDRs)
+	}
 
 	adminServer := &http.Server{
 		Addr:              cfg.AdminAddr,
