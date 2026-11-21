@@ -228,8 +228,13 @@ func (l *Launcher) Launch(ctx context.Context, campaignID string) error {
 			Email:         it.Email,
 			Position:      it.Position,
 			URL:           clickURL(baseURL, it.Token),
-			CanaryURL:     canaryURL(baseURL, it.Token),
 			TrackingPixel: pixelTag(baseURL, it.Token),
+		}
+		// Trusted delivery (sender allowlisted in the target tenant): no scanner
+		// is expected to crawl the message, so no canary link is injected — and
+		// the public server counts the first open/click directly.
+		if !camp.TrustedDelivery {
+			data.CanaryURL = canaryURL(baseURL, it.Token)
 		}
 		// Campaign-level opt-out: without a pixel the render step cannot inject
 		// one, so no "opened" events are recorded for this campaign.

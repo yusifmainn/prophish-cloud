@@ -105,6 +105,17 @@ func main() {
 		log.Fatalf("server: %v", err)
 	}
 
+	// Scanner-classification windows are deployment-dependent (fast internal
+	// delivery puts real opens inside the long external defaults); apply the
+	// operator's per-route overrides before the public listener starts serving.
+	if cfg.ScannerWinInternal.Grace > 0 || cfg.ScannerWinInternal.Pair > 0 ||
+		cfg.ScannerWinExternal.Grace > 0 || cfg.ScannerWinExternal.Pair > 0 {
+		publicsrv.SetScannerWindows(
+			publicsrv.ScannerWindows(cfg.ScannerWinInternal),
+			publicsrv.ScannerWindows(cfg.ScannerWinExternal),
+		)
+	}
+
 	adminServer := &http.Server{
 		Addr:              cfg.AdminAddr,
 		Handler:           srv.AdminRouter(),

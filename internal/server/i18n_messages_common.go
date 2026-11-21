@@ -132,6 +132,7 @@ func init() {
 		"action.campaign.delete":      {"az": "Kampaniya silindi", "en": "Campaign deleted", "ru": "Кампания удалена"},
 		"action.campaign.resend":      {"az": "Yenidən göndərildi", "en": "Resent", "ru": "Повторно отправлено"},
 		"action.campaign.report_pdf":  {"az": "PDF hesabat yükləndi", "en": "PDF report downloaded", "ru": "PDF-отчёт скачан"},
+		"action.hit.promote":          {"az": "Hit real hadisə sayıldı", "en": "Hit promoted to real interaction", "ru": "Попадание засчитано как реальное"},
 
 		// ---- Login screen ----
 		"login.title":         {"az": "Giriş", "en": "Sign in", "ru": "Вход"},

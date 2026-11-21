@@ -1,0 +1,15 @@
+-- Two delivery modes per campaign (operator-selected on the form):
+--
+--   untrusted (default): the receiving tenant's mail security scans the
+--     message — the engine injects the canary link and the public server's
+--     scanner filter (grace window, pair window, UA signatures, 2s race wait)
+--     separates scanner hits from human ones.
+--
+--   trusted: the operator has allowlisted the sender in the target tenant
+--     (Advanced Delivery / transport rules — verified per the runbook), so no
+--     scanner interference is expected. The engine sends WITHOUT the canary
+--     link and the public server counts the FIRST open and the FIRST click
+--     directly: no grace window, no pair window, no UA filtering, no race
+--     wait. The trade-off is the operator's assertion: if the tenant still
+--     scans despite the allowlist, those scanner hits count as real.
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS trusted_delivery BOOLEAN NOT NULL DEFAULT FALSE;

@@ -127,6 +127,18 @@ type Campaign struct {
 	// TunnelManaged marks campaigns whose public URL comes from an app-managed
 	// per-campaign cloudflared quick tunnel (restarted on boot/exit).
 	TunnelManaged bool
+	// TrustedDelivery selects the "trusted sender" delivery mode: the target
+	// tenant has allowlisted this sender, so no scanner interference is
+	// expected. The engine omits the canary link and the public server counts
+	// the first open/click directly (no scanner filter). False = the default
+	// untrusted mode (canary + time windows + UA filter).
+	TrustedDelivery bool
+	// DeliveryRoute is "internal" (same mail environment, sub-second-to-seconds
+	// delivery) or "external" (crosses an external relay, slower delivery). In
+	// untrusted mode it selects the scanner-window preset: short for internal
+	// (real opens arrive within seconds of send), long for external (catches
+	// delivery-time prefetch). Trusted mode ignores it.
+	DeliveryRoute string
 }
 
 type CampaignResult struct {

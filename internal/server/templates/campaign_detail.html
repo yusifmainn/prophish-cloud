@@ -98,6 +98,7 @@
       <tr><th>{{t "campd.landing_page"}}</th><td>{{.C.PageName}}</td></tr>
       {{end}}
       <tr><th>{{t "campd.smtp_profile"}}</th><td>{{.C.ProfileName}}</td></tr>
+      <tr><th>{{t "campd.delivery_mode"}}</th><td>{{if .Camp.TrustedDelivery}}<span class="pill ok">{{t "camp.delivery_trusted"}}</span>{{else}}<span class="pill neutral">{{t "camp.delivery_untrusted"}}</span>{{end}} · {{if eq .Camp.DeliveryRoute "internal"}}{{t "camp.route_internal"}}{{else}}{{t "camp.route_external"}}{{end}}</td></tr>
     </table>
   </div>
 
@@ -137,6 +138,32 @@
         {{range .Events}}
         <tr><td>{{lt "01-02 15:04:05" .CreatedAt}}</td><td>{{.Email}}</td><td><span class="pill {{eventclass .Type}}">{{eventlabel .Type}}</span></td><td class="muted">{{.IP}}</td></tr>
         {{else}}<tr><td colspan="4" class="muted">{{t "campd.no_events"}}</td></tr>{{end}}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>{{t "campd.raw_hits"}}</h2>
+    <p class="hint" style="margin:0 0 10px">{{t "campd.hits_hint"}}</p>
+    <table>
+      <thead><tr><th>{{t "campd.time"}}</th><th>Email</th><th>{{t "campd.request_type"}}</th><th>IP</th><th>{{t "campd.user_agent"}}</th><th>{{t "campd.outcome"}}</th><th>{{t "campd.reason"}}</th><th>{{t "campd.operations"}}</th></tr></thead>
+      <tbody>
+        {{range .Hits}}
+        <tr>
+          <td>{{lt "01-02 15:04:05" .CreatedAt}}</td>
+          <td>{{.Email}}</td>
+          <td class="muted">{{t (printf "campd.route_%s" .Route)}}</td>
+          <td class="muted">{{.IP}}</td>
+          <td class="muted" style="display:inline-block;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{.UserAgent}}">{{.UserAgent}}</td>
+          <td><span class="pill {{hitclass .Outcome}}">{{t (printf "campd.hit_%s" .Outcome)}}</span></td>
+          <td class="muted">{{if .Reason}}<code>{{.Reason}}</code>{{else}}—{{end}}</td>
+          <td>{{if .Promoted}}<span class="muted">✓ {{t "campd.promoted"}}</span>{{else if and (or (eq .Outcome "suspected") (eq .Outcome "ignored")) (ne .Route "canary")}}
+            <form method="post" action="/campaigns/{{$.C.ID}}/hits/{{.ID}}/promote" style="margin:0" data-confirm="{{t "campd.confirm_promote"}}">
+              <button type="submit" class="secondary" style="padding:3px 10px;font-size:12px">{{t "campd.promote"}}</button>
+            </form>
+          {{else}}<span class="muted">—</span>{{end}}</td>
+        </tr>
+        {{else}}<tr><td colspan="8" class="muted">{{t "campd.no_hits"}}</td></tr>{{end}}
       </tbody>
     </table>
   </div>

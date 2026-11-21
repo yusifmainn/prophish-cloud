@@ -195,6 +195,7 @@ func (s *Server) AdminRouter() http.Handler {
 		r.Post("/campaigns/{id}/schedule", s.handleCampaignSchedule)
 		r.Post("/campaigns/{id}/cancel", s.handleCampaignCancel)
 		r.Post("/campaigns/{id}/resend", s.handleCampaignResend)
+		r.Post("/campaigns/{id}/hits/{hitID}/promote", s.handleHitPromote)
 		r.Post("/campaigns/{id}/archive", s.handleCampaignArchive)
 		r.With(adminOnly).Post("/campaigns/{id}/delete", s.handleCampaignDelete)
 

@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,6 +28,13 @@ type Config struct {
 	TrustedProxies  []*net.IPNet   // CIDRs whose X-Forwarded-For is trusted on the public listener
 	AdminAllowCIDRs []*net.IPNet   // CIDRs allowed to reach the ADMIN panel (empty = no restriction; loopback always allowed)
 	Location        *time.Location // display/scheduling time zone (PROPHISH_TIMEZONE), defaults to UTC
+	// Scanner-classification window presets for the PUBLIC tracking listener,
+	// per delivery route (zero fields = the server's built-in defaults: internal
+	// 5s/5s, external 15s/10s). Deployment-dependent: with fast internal
+	// delivery, real human opens land inside long windows and get discarded as
+	// prefetch — see the incident notes on defInternal/defExternal.
+	ScannerWinInternal ScannerWindows
+	ScannerWinExternal ScannerWindows
 }
 
 // Load reads configuration from the process environment. If a .env file exists in the
@@ -78,7 +86,32 @@ func Load() (*Config, error) {
 	}
 	c.Location = loc
 
+	c.ScannerWinInternal = ScannerWindows{
+		Grace: secondsEnv("PROPHISH_SCANNER_GRACE_INTERNAL_SECONDS"),
+		Pair:  secondsEnv("PROPHISH_SCANNER_PAIR_INTERNAL_SECONDS"),
+	}
+	c.ScannerWinExternal = ScannerWindows{
+		Grace: secondsEnv("PROPHISH_SCANNER_GRACE_EXTERNAL_SECONDS"),
+		Pair:  secondsEnv("PROPHISH_SCANNER_PAIR_EXTERNAL_SECONDS"),
+	}
+
 	return c, nil
+}
+
+// ScannerWindows mirrors the public server's per-route classification preset.
+type ScannerWindows struct {
+	Grace time.Duration
+	Pair  time.Duration
+}
+
+// secondsEnv parses a whole-seconds env var into a Duration; missing or
+// unparseable values yield 0, meaning "use the component's built-in default".
+func secondsEnv(k string) time.Duration {
+	n, err := strconv.Atoi(strings.TrimSpace(os.Getenv(k)))
+	if err != nil || n <= 0 {
+		return 0
+	}
+	return time.Duration(n) * time.Second
 }
 
 // parseCIDRs parses a comma-separated list of CIDRs (ignoring unparseable ones).

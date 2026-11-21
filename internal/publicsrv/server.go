@@ -70,27 +70,53 @@ func publicHeaders(next http.Handler) http.Handler {
 var bannerB64 string
 
 var bannerPNG, _ = base64.StdEncoding.DecodeString(strings.TrimSpace(bannerB64))
-// scannerGraceWindow is how long after a message is sent we treat pixel/link
-// hits as automated. This is a last-resort net for prefetchers that fetch ONLY
-// the visible link and never the canary (which the canary correlation cannot
-// see); the primary scanner defense is the canary cluster window, which works
-// no matter how late delivery lags SMTP. A short window suffices: a human
-// cannot receive a message and act on it in 15 seconds, while any automated
-// fetch tied to the sending path fires immediately. A live trace showed the
-// canary-crawling scanner's own fetches land at delivery time — well past this
-// window — and those are covered by the cluster window instead.
-const scannerGraceWindow = 15 * time.Second
+// ScannerWindows is one route's classification-window preset: how long after
+// send a hit is treated as automated (Grace), and how long after a canary
+// probe a hit is attributed to the same scanner burst (Pair).
+type ScannerWindows struct {
+	Grace time.Duration
+	Pair  time.Duration
+}
 
-// scannerPairWindow is the burst window the canary correlation covers. A
-// scanner crawl is a paired burst: it fetches the canary and the real link
-// back-to-back — observed live: 3ms apart. So a real link/form hit is only
-// attributed to the scanner if a canary probe fired within this window BEFORE
-// the hit; a hit arriving after the burst (no fresh probe) is a HUMAN click
-// and must count, even seconds after delivery. 10s is a ~3000x margin over the
-// observed 3ms burst while keeping the scanner's own fuses covered; the probe
-// event log (migration 0011) measures this interval across deployments so the
-// window can be re-tuned against real data.
-const scannerPairWindow = 10 * time.Second
+// The two route presets. Delivery speed is what separates them: with fast
+// INTERNAL delivery a REAL user opens the mail within seconds of sending (a
+// live incident had every genuine open discarded by the old 15s grace window),
+// so the internal preset is short; with EXTERNAL delivery across a relay the
+// message lands later, and the delivery-time prefetch that HAS no canary probe
+// arrives well after send — only the long external preset catches it.
+var (
+	defInternal = ScannerWindows{Grace: 5 * time.Second, Pair: 5 * time.Second}
+	defExternal = ScannerWindows{Grace: 15 * time.Second, Pair: 10 * time.Second}
+)
+
+// SetScannerWindows overrides the per-route window presets (any zero field
+// keeps its current value). Called once at startup from the
+// PROPHISH_SCANNER_*_SECONDS env vars; the optimal values depend on how fast
+// delivery is on each route in the target environment.
+func SetScannerWindows(internal, external ScannerWindows) {
+	if internal.Grace > 0 {
+		defInternal.Grace = internal.Grace
+	}
+	if internal.Pair > 0 {
+		defInternal.Pair = internal.Pair
+	}
+	if external.Grace > 0 {
+		defExternal.Grace = external.Grace
+	}
+	if external.Pair > 0 {
+		defExternal.Pair = external.Pair
+	}
+}
+
+// windowsFor returns the classification preset for a campaign's delivery
+// route. Anything that is not explicitly "internal" gets the conservative
+// external preset (matching the DB default).
+func windowsFor(route string) ScannerWindows {
+	if route == "internal" {
+		return defInternal
+	}
+	return defExternal
+}
 
 // scannerRaceWait is how long countInteraction waits and re-reads the canary
 // probe before counting a hit. Scanners fetch the canary and the real link
@@ -137,47 +163,80 @@ func isScannerUA(ua string) bool {
 	return false
 }
 
-// isAutomated reports whether a tracking hit should be ignored as automated,
-// either because the User-Agent is a known scanner/bot or because it arrived
-// within scannerGraceWindow of the message being sent.
-func isAutomated(ua string, sentAt *time.Time) bool {
+// preWindowDecision classifies a click/submit hit by identity and send-time,
+// BEFORE the canary pair window is consulted. grace is the route's post-send
+// window: a hit inside it is a delivery-time prefetch (no human can receive
+// and act that fast on THIS route). Returns the machine-readable ignore reason
+// ("" when the hit survives this layer): a scanner User-Agent signature, or
+// arrival inside the grace window. In trusted delivery mode nothing is
+// discarded at this layer — the first clicker is the user by definition.
+func preWindowDecision(trusted bool, grace time.Duration, ua string, sentAt *time.Time) string {
+	if trusted {
+		return ""
+	}
 	if isScannerUA(ua) {
-		return true
+		return "ua"
 	}
-	if sentAt != nil && time.Since(*sentAt) < scannerGraceWindow {
-		return true
+	if sentAt != nil && time.Since(*sentAt) < grace {
+		return "grace_window"
 	}
-	return false
+	return ""
 }
 
-// isOpenAutomated attributes an image fetch (open). Unlike clicks, opens are
+// isAutomated reports whether a tracking hit should be ignored as automated,
+// either because the User-Agent is a known scanner/bot or because it arrived
+// inside the route's post-send grace window.
+func isAutomated(trusted bool, grace time.Duration, ua string, sentAt *time.Time) bool {
+	return preWindowDecision(trusted, grace, ua, sentAt) != ""
+}
+
+// openIgnoreReason attributes an image fetch (open). Unlike clicks, opens are
 // deliberately NOT User-Agent filtered: mail image proxies (Gmail, Yahoo,
 // Apple, Microsoft) legitimately send sparse or even EMPTY User-Agents when a
 // HUMAN downloads images, so UA filtering drops genuine opens. Automation is
-// proven by timing instead: inside the post-send grace window, or inside the
-// scanner's paired burst after a canary probe. Everything else — including a
-// proxy fetch minutes after delivery — is a real open.
-func isOpenAutomated(sentAt, probe *time.Time) bool {
-	if sentAt != nil && time.Since(*sentAt) < scannerGraceWindow {
-		return true
+// proven by timing instead: inside the route's grace window, or inside the
+// scanner's paired burst (pair) after a canary probe. Everything else —
+// including a proxy fetch minutes after delivery — is a real open. In trusted
+// delivery mode every fetch counts: the first opener is the user. Returns the
+// ignore reason ("" when the fetch counts as a real open).
+func openIgnoreReason(trusted bool, grace, pair time.Duration, sentAt, probe *time.Time) string {
+	if trusted {
+		return ""
 	}
-	return recentlyProbed(probe, scannerPairWindow)
+	if sentAt != nil && time.Since(*sentAt) < grace {
+		return "grace_window"
+	}
+	if recentlyProbed(probe, pair) {
+		return "pair_window"
+	}
+	return ""
+}
+
+// isOpenAutomated reports whether an image fetch is treated as automated.
+func isOpenAutomated(trusted bool, grace, pair time.Duration, sentAt, probe *time.Time) bool {
+	return openIgnoreReason(trusted, grace, pair, sentAt, probe) != ""
 }
 
 func (s *Server) handleOpen(w http.ResponseWriter, r *http.Request) {
 	token := chi.URLParam(r, "token")
+	hitAt := time.Now()
 	// TrackedByToken (not ResultByToken): the latter scanned landing_page_id
 	// into a plain string and failed on NULL for public campaigns, silently
 	// killing ALL open tracking for them.
 	if t, err := s.store.TrackedByToken(r.Context(), token); err == nil {
 		rid := t.ResultID
-		if !isOpenAutomated(t.SentAt, t.ScannerProbeAt) {
+		outcome, reason := store.HitCounted, "counted"
+		win := windowsFor(t.DeliveryRoute)
+		if why := openIgnoreReason(t.TrustedDelivery, win.Grace, win.Pair, t.SentAt, t.ScannerProbeAt); why != "" {
+			outcome, reason = store.HitIgnored, why
+		} else if changed, _ := s.store.AdvanceStatus(r.Context(), rid, "opened"); !changed {
+			outcome, reason = store.HitDuplicate, "duplicate"
+		} else {
 			// Record the event only on the first transition into this stage, so a
 			// target (or an attacker who knows the token) cannot flood the events table.
-			if changed, _ := s.store.AdvanceStatus(r.Context(), rid, "opened"); changed {
-				_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "email_opened", s.clientIP(r), r.UserAgent())
-			}
+			_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, "email_opened", s.clientIP(r), r.UserAgent())
 		}
+		s.recordHit(r, t, "open", hitAt, outcome, reason)
 	}
 	w.Header().Set("Content-Type", "image/png")
 	w.Header().Set("Cache-Control", "no-store, max-age=0")
@@ -191,44 +250,69 @@ func (s *Server) handleClick(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	s.countInteraction(r, t, "clicked", "link_clicked", "suspected_click")
+	s.countInteraction(r, t, "click", time.Now(), "clicked", "link_clicked", "suspected_click")
 	s.serveTracked(w, r, t, token)
+}
+
+// recordHit writes the raw-request row for a tracking hit. A failure is logged,
+// never blocks the response: forensic logging must not become an outage path.
+// hitAt is the request's arrival time, captured before any classification wait,
+// so the row reflects when the request actually landed.
+func (s *Server) recordHit(r *http.Request, t *store.TrackedFull, route string, hitAt time.Time, outcome, reason string) {
+	if err := s.store.RecordHit(r.Context(), t.ResultID, t.CampaignID, route, s.clientIP(r), r.UserAgent(), outcome, reason, hitAt); err != nil {
+		log.Printf("publicsrv: record %s hit (result %s): %v", route, t.ResultID, err)
+	}
 }
 
 // countInteraction advances a result's status for a tracked hit (click or
 // submit), attributing it to the recipient only when it does NOT look automated
 // — neither a known scanner UA, nor inside the post-send grace window, nor
 // inside the canary cluster window. Suppressed human-looking hits are logged as
-// suspected_* (deduped) so the operator sees what was filtered and why.
-func (s *Server) countInteraction(r *http.Request, t *store.TrackedFull, status, eventType, suspectedType string) {
+// suspected_* (deduped) so the operator sees what was filtered and why. Every
+// request — counted, suppressed or ignored — lands in tracking_hits with its
+// outcome and machine-readable reason. In trusted delivery mode none of the
+// filtering applies: the first hit of each kind counts directly, with no UA
+// check, no windows and no race wait (the operator asserts the sender is
+// allowlisted, so the first clicker IS the user).
+func (s *Server) countInteraction(r *http.Request, t *store.TrackedFull, route string, hitAt time.Time, status, eventType, suspectedType string) {
 	rid := t.ResultID
-	if isAutomated(r.UserAgent(), t.SentAt) {
+	win := windowsFor(t.DeliveryRoute)
+	if why := preWindowDecision(t.TrustedDelivery, win.Grace, r.UserAgent(), t.SentAt); why != "" {
+		s.recordHit(r, t, route, hitAt, store.HitIgnored, why)
 		return
 	}
 	// Race-safe probe check: the canary fetch that marks this crawl may be in
 	// flight right now (scanners open all links concurrently), so re-read the
-	// probe after a short wait before deciding the hit is human.
-	probe := t.ScannerProbeAt
-	if !recentlyProbed(probe, scannerPairWindow) {
-		time.Sleep(scannerRaceWait)
-		probe, _ = s.store.ProbeTime(r.Context(), rid)
-	}
-	if recentlyProbed(probe, scannerPairWindow) {
-		s.recordSuspected(r, t.CampaignID, rid, suspectedType)
-		return
+	// probe after a short wait before deciding the hit is human. Trusted
+	// campaigns carry no canary, so nothing can be in flight — skip the wait.
+	if !t.TrustedDelivery {
+		probe := t.ScannerProbeAt
+		if !recentlyProbed(probe, win.Pair) {
+			time.Sleep(scannerRaceWait)
+			probe, _ = s.store.ProbeTime(r.Context(), rid)
+		}
+		if recentlyProbed(probe, win.Pair) {
+			s.recordHit(r, t, route, hitAt, store.HitSuspected, "pair_window")
+			s.recordSuspected(r, t.CampaignID, rid, suspectedType, win.Pair)
+			return
+		}
 	}
 	// Record the event only on the first transition into this stage, so a
 	// target (or an attacker who knows the token) cannot flood the events table.
-	if changed, _ := s.store.AdvanceStatus(r.Context(), rid, status); changed {
+	outcome, reason := store.HitCounted, "counted"
+	if changed, _ := s.store.AdvanceStatus(r.Context(), rid, status); !changed {
+		outcome, reason = store.HitDuplicate, "duplicate"
+	} else {
 		_ = s.store.RecordEvent(r.Context(), t.CampaignID, &rid, eventType, s.clientIP(r), r.UserAgent())
 	}
+	s.recordHit(r, t, route, hitAt, outcome, reason)
 }
 
 // recordSuspected logs a human-looking hit that the canary correlation
 // attributed to a scanner crawl. Deduplicated inside the cluster window so a
 // scanner replaying the link cannot flood the events table.
-func (s *Server) recordSuspected(r *http.Request, campaignID, rid, suspectedType string) {
-	if recent, _ := s.store.HasRecentEvent(r.Context(), rid, suspectedType, scannerPairWindow); !recent {
+func (s *Server) recordSuspected(r *http.Request, campaignID, rid, suspectedType string, window time.Duration) {
+	if recent, _ := s.store.HasRecentEvent(r.Context(), rid, suspectedType, window); !recent {
 		_ = s.store.RecordEvent(r.Context(), campaignID, &rid, suspectedType, s.clientIP(r), r.UserAgent())
 	}
 }
@@ -241,12 +325,15 @@ func (s *Server) recordSuspected(r *http.Request, campaignID, rid, suspectedType
 // scanner itself. The hit is never counted as a click.
 func (s *Server) handleCanary(w http.ResponseWriter, r *http.Request) {
 	token := chi.URLParam(r, "token")
+	hitAt := time.Now()
 	t, err := s.store.TrackedByToken(r.Context(), token)
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
+	s.recordHit(r, t, "canary", hitAt, store.HitProbe, "canary")
 	_ = s.store.MarkScannerProbe(r.Context(), t.ResultID)
+	win := windowsFor(t.DeliveryRoute)
 	// Log every probe as an event. scanner_probe_at keeps only the LATEST probe;
 	// the event log preserves each hit with its UA/IP, which is what lets us
 	// measure the interval between the canary fetch and the scanner's real-link
@@ -273,7 +360,7 @@ func (s *Server) handleCanary(w http.ResponseWriter, r *http.Request) {
 			first = t.ScannerProbeAt // probes predate probe-event logging (0011)
 		}
 		if first != nil {
-			if hits, herr := s.store.CountedHitsAround(r.Context(), rid, *first, scannerPairWindow); herr == nil && len(hits) > 0 {
+			if hits, herr := s.store.CountedHitsAround(r.Context(), rid, *first, win.Pair); herr == nil && len(hits) > 0 {
 				openRetracted := false
 				for _, h := range hits {
 					if h.Type == "email_opened" {
@@ -284,7 +371,7 @@ func (s *Server) handleCanary(w http.ResponseWriter, r *http.Request) {
 					if h.Type == "data_submitted" {
 						suspected = "suspected_submit"
 					}
-					s.recordSuspected(r, t.CampaignID, rid, suspected)
+					s.recordSuspected(r, t.CampaignID, rid, suspected, win.Pair)
 				}
 				// Demote: back to 'opened' only if a genuine open survives the
 				// retraction; if the open itself is retracted, back to 'sent'.
@@ -355,7 +442,7 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	// IMPORTANT: we intentionally do NOT read or store r.PostForm values.
 	// Only the fact of submission is recorded, for awareness reporting.
-	s.countInteraction(r, t, "submitted", "data_submitted", "suspected_submit")
+	s.countInteraction(r, t, "submit", time.Now(), "submitted", "data_submitted", "suspected_submit")
 
 	redirect := t.RedirectURL
 	if redirect == "" {

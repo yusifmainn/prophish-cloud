@@ -66,6 +66,19 @@ var templateFuncs = template.FuncMap{
 			return "neutral"
 		}
 	},
+	// hitclass maps a raw-hit outcome to a status-pill colour class.
+	"hitclass": func(o string) string {
+		switch o {
+		case "counted":
+			return "ok"
+		case "suspected":
+			return "warn"
+		case "probe":
+			return "info"
+		default: // duplicate, ignored
+			return "neutral"
+		}
+	},
 	// actionlabel localizes an audit-log action code for the audit screen
 	// (language-aware at render time; raw code fallback for unknown/future codes).
 	"actionlabel": func(code string) string { return label(defaultLang, "action", code) },

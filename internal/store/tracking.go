@@ -31,6 +31,14 @@ type TrackedFull struct {
 	// recipient was never scanner-probed. A real link/form hit inside the
 	// cluster window after this moment is treated as the same automated crawl.
 	ScannerProbeAt *time.Time
+	// TrustedDelivery mirrors the campaign's delivery mode: true = the sender is
+	// allowlisted in the target tenant, so no scanner filtering is applied — the
+	// FIRST open/click counts directly (no windows, no UA filter, no race wait).
+	TrustedDelivery bool
+	// DeliveryRoute is "internal" (seconds-fast delivery) or "external" (slower
+	// relay). In untrusted mode it picks the scanner-window preset on the
+	// public server; trusted mode ignores it.
+	DeliveryRoute string
 }
 
 func (s *Store) TrackedByToken(c ctx, token string) (*TrackedFull, error) {
@@ -42,7 +50,7 @@ func (s *Store) TrackedByToken(c ctx, token string) (*TrackedFull, error) {
 		`SELECT r.id, r.campaign_id, r.status,
 		        coalesce(tg.first_name,''), coalesce(tg.last_name,''), coalesce(tg.position,''),
 		        coalesce(lp.name,''), coalesce(lp.html_body,''), coalesce(lp.redirect_url,''),
-		        c.kind, coalesce(c.redirect_url,''), r.sent_at, r.scanner_probe_at
+		        c.kind, coalesce(c.redirect_url,''), r.sent_at, r.scanner_probe_at, c.trusted_delivery, c.delivery_route
 		   FROM campaign_results r
 		   JOIN campaigns c   ON c.id = r.campaign_id
 		   JOIN targets   tg  ON tg.id = r.target_id
@@ -51,7 +59,7 @@ func (s *Store) TrackedByToken(c ctx, token string) (*TrackedFull, error) {
 		Scan(&t.ResultID, &t.CampaignID, &t.Status,
 			&t.FirstName, &t.LastName, &t.Position,
 			&t.PageName, &t.PageHTML, &t.RedirectURL,
-			&t.CampaignKind, &t.CampaignRedirectURL, &t.SentAt, &t.ScannerProbeAt)
+			&t.CampaignKind, &t.CampaignRedirectURL, &t.SentAt, &t.ScannerProbeAt, &t.TrustedDelivery, &t.DeliveryRoute)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
