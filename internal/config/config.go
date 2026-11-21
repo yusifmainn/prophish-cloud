@@ -39,6 +39,10 @@ type Config struct {
 	// PUBLIC listener treats as scanner/proxy infrastructure and ignores in
 	// trusted delivery mode (PROPHISH_INFRA_CIDRS).
 	InfraCIDRs []*net.IPNet
+	// InfraASNs are autonomous systems whose announced prefixes are treated as
+	// scanner/proxy infrastructure (PROPHISH_INFRA_ASNS, default AS8075
+	// Microsoft). Fetched from RIPEstat at startup and refreshed daily.
+	InfraASNs []string
 }
 
 // Load reads configuration from the process environment. If a .env file exists in the
@@ -99,6 +103,7 @@ func Load() (*Config, error) {
 		Pair:  secondsEnv("PROPHISH_SCANNER_PAIR_EXTERNAL_SECONDS"),
 	}
 	c.InfraCIDRs = parseCIDRs(getenv("PROPHISH_INFRA_CIDRS", ""))
+	c.InfraASNs = parseASNs(getenv("PROPHISH_INFRA_ASNS", "8075"))
 
 	return c, nil
 }
@@ -119,6 +124,25 @@ func secondsEnv(k string) time.Duration {
 	return time.Duration(n) * time.Second
 }
 
+// parseASNs parses a comma-separated ASN list (numbers or "AS8075" forms),
+// skipping empties and junk; empty input yields the Microsoft default.
+func parseASNs(s string) []string {
+	var out []string
+	for _, part := range strings.Split(s, ",") {
+		part = strings.TrimSpace(strings.TrimPrefix(part, "AS"))
+		part = strings.TrimSpace(strings.TrimPrefix(part, "as"))
+		if part == "" {
+			continue
+		}
+		if _, err := strconv.Atoi(part); err == nil {
+			out = append(out, part)
+		}
+	}
+	if len(out) == 0 {
+		out = append(out, "8075")
+	}
+	return out
+}
 // parseCIDRs parses a comma-separated list of CIDRs (ignoring unparseable ones).
 func parseCIDRs(s string) []*net.IPNet {
 	var out []*net.IPNet

@@ -276,3 +276,20 @@ func TestTrustedHitDrop(t *testing.T) {
 		t.Errorf("human hit: got %q, want empty (counted)", why)
 	}
 }
+
+func TestDynamicInfraCIDRs(t *testing.T) {
+	// The ASN-fetched list replaces wholesale on each refresh and is consulted
+	// alongside the static built-ins.
+	defer SetDynamicInfraCIDRs(nil)
+	if isInfraIP("90.100.1.2") {
+		t.Fatal("90.100.1.2 must not be infrastructure before the refresh")
+	}
+	SetDynamicInfraCIDRs(mustCIDRs("90.100.0.0/16"))
+	if !isInfraIP("90.100.1.2") {
+		t.Error("dynamic list must be consulted by isInfraIP")
+	}
+	SetDynamicInfraCIDRs(nil)
+	if isInfraIP("90.100.1.2") {
+		t.Error("replacing with nil must clear the dynamic list")
+	}
+}

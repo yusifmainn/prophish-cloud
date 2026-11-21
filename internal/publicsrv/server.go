@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -134,8 +135,8 @@ func windowsFor(route string) ScannerWindows {
 var infraCIDRs = mustCIDRs(
 	"13.64.0.0/11", "13.96.0.0/13", "13.104.0.0/14",
 	"40.64.0.0/10", "48.208.0.0/13", "65.52.0.0/14",
-	"104.40.0.0/13", "157.54.0.0/15", "157.56.0.0/14",
-	"168.61.0.0/16", "168.62.0.0/15", "191.232.0.0/13",
+	"72.144.0.0/14", "104.40.0.0/13", "157.54.0.0/15",
+	"157.56.0.0/14", "168.61.0.0/16", "168.62.0.0/15", "191.232.0.0/13",
 	"199.60.28.0/22", "207.46.0.0/16",
 )
 
@@ -151,6 +152,25 @@ func mustCIDRs(ss ...string) []*net.IPNet {
 	return out
 }
 
+// infraMu guards dynamicInfraCIDRs, the live ASN-fetched list (see
+// SetDynamicInfraCIDRs). The static built-ins never change, so they are read
+// lock-free; only the dynamic slice needs synchronisation.
+var (
+	infraMu           sync.RWMutex
+	dynamicInfraCIDRs []*net.IPNet
+)
+
+// SetDynamicInfraCIDRs REPLACES the ASN-fetched infrastructure list (the
+// built-in static ranges stay). Called by the periodic refresher in
+// cmd/prophish with the prefixes currently announced by the configured
+// scanner ASNs (default AS8075 Microsoft): cloud ASNs add and move ranges
+// constantly, so any fixed list goes stale within weeks.
+func SetDynamicInfraCIDRs(nets []*net.IPNet) {
+	infraMu.Lock()
+	dynamicInfraCIDRs = nets
+	infraMu.Unlock()
+}
+
 // AddInfraCIDRs appends operator-configured infrastructure ranges
 // (PROPHISH_INFRA_CIDRS) to the built-in list.
 func AddInfraCIDRs(nets []*net.IPNet) {
@@ -158,13 +178,21 @@ func AddInfraCIDRs(nets []*net.IPNet) {
 }
 
 // isInfraIP reports whether the client IP belongs to known scanner/proxy
-// infrastructure.
+// infrastructure: the static built-ins (plus env extras) and the live
+// ASN-fetched dynamic list.
 func isInfraIP(ipStr string) bool {
 	ip := net.ParseIP(strings.TrimSpace(ipStr))
 	if ip == nil {
 		return false
 	}
 	for _, n := range infraCIDRs {
+		if n.Contains(ip) {
+			return true
+		}
+	}
+	infraMu.RLock()
+	defer infraMu.RUnlock()
+	for _, n := range dynamicInfraCIDRs {
 		if n.Contains(ip) {
 			return true
 		}
