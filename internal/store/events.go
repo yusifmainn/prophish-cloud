@@ -2,6 +2,20 @@ package store
 
 import "time"
 
+// CountEvents returns the campaign's total event rows (all types).
+func (s *Store) CountEvents(c ctx, campaignID string) (int64, error) {
+	var n int64
+	err := s.db.QueryRow(c, `SELECT count(*) FROM events WHERE campaign_id=$1`, campaignID).Scan(&n)
+	return n, err
+}
+
+// CountHits returns the campaign's total raw tracking-hit rows.
+func (s *Store) CountHits(c ctx, campaignID string) (int64, error) {
+	var n int64
+	err := s.db.QueryRow(c, `SELECT count(*) FROM tracking_hits WHERE campaign_id=$1`, campaignID).Scan(&n)
+	return n, err
+}
+
 // RecordEvent appends an immutable event. IMPORTANT: this never stores submitted
 // field values or credentials — only metadata (which campaign/result, type, ip, ua).
 func (s *Store) RecordEvent(c ctx, campaignID string, resultID *string, eventType, ip, ua string) error {

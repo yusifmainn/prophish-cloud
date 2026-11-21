@@ -378,7 +378,52 @@
     sync();
   }
 
-  function init() { wireToggle(); markActive(); wireConfirms(); wireFlash(); wireTabs(); wireCampaignForm(); wireLivePoll(); wireBulkSelect(); }
+  // Live reload for the campaign detail page: poll the page's JSON snapshot
+  // and reload ONLY when something the screen shows actually changed (status,
+  // result counters, new events or raw hits) — no manual refresh to see fresh
+  // results. A floating toggle pauses/resumes; the choice survives the reload
+  // via sessionStorage. Ticks are skipped while the tab is hidden, and the
+  // sent/total counters are excluded from the fingerprint because the running
+  // banner above already updates those in place.
+  function wireAutoReload() {
+    var el = document.querySelector('[data-autoreload]');
+    if (!el || !window.fetch) return;
+    var url = el.getAttribute('data-autoreload');
+    var last = el.getAttribute('data-snapshot') || '';
+    var INTERVAL = 10000;
+    var timer = null;
+    var paused = sessionStorage.getItem('liveReload') === 'off';
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'secondary';
+    btn.setAttribute('style', 'position:fixed;right:18px;bottom:18px;z-index:60;padding:6px 14px;font-size:12px;opacity:.9;box-shadow:0 2px 10px rgba(0,0,0,.4)');
+    function paint() { btn.textContent = paused ? '▶ Canlı yenilə' : '⏸ Canlı yeniləmə'; }
+    paint();
+    btn.addEventListener('click', function () {
+      paused = !paused;
+      try { sessionStorage.setItem('liveReload', paused ? 'off' : 'on'); } catch (e) {}
+      paint();
+      if (!paused) tick();
+    });
+    document.body.appendChild(btn);
+
+    function tick() {
+      if (paused || document.hidden) return;
+      fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
+        .then(function (res) { return res.ok ? res.text() : null; })
+        .then(function (txt) {
+          if (!txt) return;
+          if (last && txt !== last) location.reload();
+          last = txt;
+        })
+        .catch(function () {});
+    }
+    function start() { if (!timer) timer = setInterval(tick, INTERVAL); }
+    start();
+  }
+
+  function init() { wireToggle(); markActive(); wireConfirms(); wireFlash(); wireTabs(); wireCampaignForm(); wireLivePoll(); wireBulkSelect(); wireAutoReload(); }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

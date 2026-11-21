@@ -535,6 +535,7 @@ func (s *Server) handleCampaignDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	riskLabel := s.t(r, riskKey)
 	_, hostURL := s.listenerData(r)
+	snap, _ := s.buildCampaignSnapshot(r, id)
 	s.render(w, r, http.StatusOK, "campaign_detail.html", map[string]any{
 		"C":             view,
 		"Camp":          camp,
@@ -543,6 +544,7 @@ func (s *Server) handleCampaignDetail(w http.ResponseWriter, r *http.Request) {
 		"Pct":           pct,
 		"Events":        events,
 		"Hits":          hits,
+		"LiveSnapshot":  string(snap),
 		"Results":       results,
 		"Groups":        groups,
 		"RiskLabel":     riskLabel,

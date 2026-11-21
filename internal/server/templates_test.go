@@ -68,6 +68,7 @@ func TestTemplatesRender(t *testing.T) {
 			"Camp":  &models.Campaign{ID: "c1", Name: "C", TunnelManaged: true, PublicBaseURL: "https://x.trycloudflare.com"},
 			"Stats": models.ResultStats{Total: 10, Sent: 10, Opened: 6, Clicked: 3, Submitted: 1},
 			"Pct":   Percentages{Sent: 100, Opened: 60, Clicked: 30, Submitted: 10},
+			"LiveSnapshot": `{"s":"draft","o":6,"c":3,"u":1,"r":0,"e":10,"h":12}`,
 		},
 	}
 

@@ -1,6 +1,6 @@
 {{template "head" .}}
 {{template "nav" .}}
-<main>
+<main data-autoreload="/ui/campaigns/{{.C.ID}}/snapshot" data-snapshot="{{.LiveSnapshot}}">
   <div class="pghead" style="padding-right:0">
     <div class="tt" style="flex-basis:100%">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h1 style="margin:0">{{.C.Name}}</h1>{{template "statuspill" .C.Status}}</div>
