@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -52,6 +53,48 @@ func FetchAnnouncedPrefixes(ctx context.Context, asn string) ([]*net.IPNet, erro
 		raw = append(raw, p.Prefix)
 	}
 	return parseIPv4Prefixes(raw)
+}
+
+// DefaultDatacenterListURL is the X4BNet VPN-and-datacenter IPv4 list: every
+// range classified as "not an eyeball network" (hosting providers, VPN exits,
+// cloud/scanner space) rebuilt from ASN data by CI. Plain text, one CIDR per
+// line, comments with '#'. MIT-licensed generated output.
+const DefaultDatacenterListURL = "https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt"
+
+// FetchDatacenterRanges downloads a plain-text IPv4 CIDR list (one per line,
+// '#' comments allowed) and returns the parsed networks. An empty url falls
+// back to DefaultDatacenterListURL. Used for the trusted-mode datacenter
+// filter: scanners/security sandboxes egress from hosting/VPN space, never
+// from a residential ISP, so a hit from these ranges cannot be the human.
+func FetchDatacenterRanges(ctx context.Context, url string) ([]*net.IPNet, error) {
+	if strings.TrimSpace(url) == "" {
+		url = DefaultDatacenterListURL
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("datacenter list: HTTP %d", resp.StatusCode)
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 64<<20))
+	if err != nil {
+		return nil, err
+	}
+	var lines []string
+	for _, ln := range strings.Split(string(body), "\n") {
+		ln = strings.TrimSpace(ln)
+		if ln == "" || strings.HasPrefix(ln, "#") {
+			continue
+		}
+		lines = append(lines, ln)
+	}
+	return parseIPv4Prefixes(lines)
 }
 
 // parseIPv4Prefixes parses CIDR strings, silently skipping v6 and junk.

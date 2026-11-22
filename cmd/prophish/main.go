@@ -64,6 +64,38 @@ func refreshInfraPrefixes(ctx context.Context, asns []string, cachePath string) 
 	}
 }
 
+// refreshDatacenterRanges fetches the public VPN/hosting IPv4 list and
+// installs it as the trusted-mode datacenter filter, then repeats once a day.
+// Same contract as the infra refresher: any failure keeps the previous list,
+// so tracking never depends on the list host being up.
+func refreshDatacenterRanges(ctx context.Context, url, cachePath string) {
+	refresh := func() {
+		rctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+		nets, err := netutil.FetchDatacenterRanges(rctx, url)
+		cancel()
+		if err != nil {
+			log.Printf("datacenter: fetch list: %v (keeping previous list)", err)
+			return
+		}
+		publicsrv.SetDatacenterCIDRs(nets)
+		if err := netutil.SavePrefixCache(cachePath, nets); err != nil {
+			log.Printf("datacenter: cache write: %v", err)
+		}
+		log.Printf("datacenter: refreshed %d VPN/hosting ranges", len(nets))
+	}
+	refresh()
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			refresh()
+		}
+	}
+}
+
 func main() {
 
 	cfg, err := config.Load()
@@ -157,6 +189,9 @@ func main() {
 	if len(cfg.InfraCIDRs) > 0 {
 		publicsrv.AddInfraCIDRs(cfg.InfraCIDRs)
 	}
+	if len(cfg.HumanCIDRs) > 0 {
+		publicsrv.AddHumanCIDRs(cfg.HumanCIDRs)
+	}
 
 	// Trusted-mode infrastructure list: a fresh cache (24h) loads instantly at
 	// startup; a background refresh then keeps it in sync with what the
@@ -169,6 +204,16 @@ func main() {
 		log.Printf("infra: loaded %d cached prefixes", len(nets))
 	}
 	go refreshInfraPrefixes(bgCtx, cfg.InfraASNs, infraCachePath)
+
+	// Trusted-mode datacenter filter: VPN/hosting ranges (the X4BNet list, via
+	// PROPHISH_DC_LIST_URL) whose hits cannot be a human. Same cache-then-
+	// refresh pattern as the infra list.
+	dcCachePath := filepath.Join(os.TempDir(), "prophish-datacenter-ranges.json")
+	if nets, ok := netutil.LoadPrefixCache(dcCachePath, 24*time.Hour); ok {
+		publicsrv.SetDatacenterCIDRs(nets)
+		log.Printf("datacenter: loaded %d cached ranges", len(nets))
+	}
+	go refreshDatacenterRanges(bgCtx, cfg.DatacenterListURL, dcCachePath)
 
 	adminServer := &http.Server{
 		Addr:              cfg.AdminAddr,

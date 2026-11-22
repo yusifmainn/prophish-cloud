@@ -30,9 +30,12 @@ type Config struct {
 	Location        *time.Location // display/scheduling time zone (PROPHISH_TIMEZONE), defaults to UTC
 	// Scanner-classification window presets for the PUBLIC tracking listener,
 	// per delivery route (zero fields = the server's built-in defaults: internal
-	// 5s/5s, external 15s/10s). Deployment-dependent: with fast internal
-	// delivery, real human opens land inside long windows and get discarded as
-	// prefetch — see the incident notes on defInternal/defExternal.
+	// 5s/5s, external 15s/10s). Untrusted campaigns use grace+pair to separate
+	// scanner prefetch from human hits; trusted campaigns apply ONLY the grace
+	// window, and only to VPN/hosting IPs (delivery-time sandbox render vs.
+	// later VPN user). Deployment-dependent: with fast internal delivery, real
+	// human opens land inside long windows and get discarded as prefetch —
+	// see the incident notes on defInternal/defExternal.
 	ScannerWinInternal ScannerWindows
 	ScannerWinExternal ScannerWindows
 	// InfraCIDRs are extra IP ranges (beyond the built-in Microsoft set) the
@@ -44,6 +47,13 @@ type Config struct {
 	// Microsoft ASN that announces IPv4 prefixes (~2.1k in total). Fetched from
 	// RIPEstat at startup and refreshed daily.
 	InfraASNs []string
+	// HumanCIDRs are networks exempt from the trusted-mode datacenter drop
+	// (PROPHISH_HUMAN_CIDRS): a company whose web-filtering egress lives in
+	// hosting/VPN space would otherwise have its in-window hits ignored.
+	HumanCIDRs []*net.IPNet
+	// DatacenterListURL overrides the source of the VPN/hosting range list
+	// (PROPHISH_DC_LIST_URL). Default: the X4BNet datacenter list on GitHub.
+	DatacenterListURL string
 }
 
 // Load reads configuration from the process environment. If a .env file exists in the
@@ -105,6 +115,8 @@ func Load() (*Config, error) {
 	}
 	c.InfraCIDRs = parseCIDRs(getenv("PROPHISH_INFRA_CIDRS", ""))
 	c.InfraASNs = parseASNs(getenv("PROPHISH_INFRA_ASNS", "8075"))
+	c.HumanCIDRs = parseCIDRs(getenv("PROPHISH_HUMAN_CIDRS", ""))
+	c.DatacenterListURL = strings.TrimSpace(getenv("PROPHISH_DC_LIST_URL", ""))
 
 	return c, nil
 }
@@ -148,6 +160,7 @@ func parseASNs(s string) []string {
 	}
 	return out
 }
+
 // parseCIDRs parses a comma-separated list of CIDRs (ignoring unparseable ones).
 func parseCIDRs(s string) []*net.IPNet {
 	var out []*net.IPNet

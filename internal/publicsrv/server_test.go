@@ -81,15 +81,15 @@ func TestIsAutomatedTimingWindow(t *testing.T) {
 }
 
 func TestRecentlyProbed(t *testing.T) {
-	if recentlyProbed(nil, 10 * time.Second) {
+	if recentlyProbed(nil, 10*time.Second) {
 		t.Error("no probe must mean not probed")
 	}
-	stale := time.Now().Add(-10 * time.Second - time.Minute)
-	if recentlyProbed(&stale, 10 * time.Second) {
+	stale := time.Now().Add(-10*time.Second - time.Minute)
+	if recentlyProbed(&stale, 10*time.Second) {
 		t.Error("a probe older than the pair window must not suppress hits")
 	}
 	fresh := time.Now().Add(-time.Second)
-	if !recentlyProbed(&fresh, 10 * time.Second) {
+	if !recentlyProbed(&fresh, 10*time.Second) {
 		t.Error("a probe inside the pair window must suppress hits as automated")
 	}
 }
@@ -260,20 +260,67 @@ func TestIsInfraIP(t *testing.T) {
 
 func TestTrustedHitDrop(t *testing.T) {
 	browser := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
-	// Infrastructure IP loses regardless of a browser-looking UA.
-	if why := trustedHitDrop(browser, "48.209.223.88"); why != "infra" {
+	sentAgo := time.Now().Add(-5 * time.Minute)
+	grace := 15 * time.Second
+
+	// Infrastructure IP loses regardless of a browser-looking UA, any time.
+	if why := trustedHitDrop(browser, "48.209.223.88", grace, &sentAgo); why != "infra" {
 		t.Errorf("infra IP with browser UA: got %q, want infra", why)
 	}
 	// Bot/empty UA loses on a user network.
-	if why := trustedHitDrop("curl/8.4.0", "203.0.113.7"); why != "ua" {
+	if why := trustedHitDrop("curl/8.4.0", "203.0.113.7", grace, &sentAgo); why != "ua" {
 		t.Errorf("bot UA on user IP: got %q, want ua", why)
 	}
-	if why := trustedHitDrop("", "203.0.113.7"); why != "ua" {
+	if why := trustedHitDrop("", "203.0.113.7", grace, &sentAgo); why != "ua" {
 		t.Errorf("empty UA on user IP: got %q, want ua", why)
 	}
 	// The human passes.
-	if why := trustedHitDrop(browser, "203.0.113.7"); why != "" {
+	if why := trustedHitDrop(browser, "203.0.113.7", grace, &sentAgo); why != "" {
 		t.Errorf("human hit: got %q, want empty (counted)", why)
+	}
+	// No timing context: never a window-based drop.
+	if why := trustedHitDrop(browser, "203.0.113.7", grace, nil); why != "" {
+		t.Errorf("human hit without sentAt: got %q, want empty (counted)", why)
+	}
+}
+
+func TestTrustedDatacenterTiming(t *testing.T) {
+	// The 200-recipient case: the mass scanner render lands inside the grace
+	// window and must be dropped automatically, while a VPN user (datacenter
+	// IP, browser UA, human-paced arrival) must count — nobody can whitelist
+	// VPN exits by hand at that scale.
+	browser := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+	SetDatacenterCIDRs(mustCIDRs("94.46.32.0/19"))
+	defer SetDatacenterCIDRs(nil)
+	justSent := time.Now().Add(-2 * time.Second)
+	sentAgo := time.Now().Add(-5 * time.Minute)
+	grace := 15 * time.Second
+
+	// Delivery-time sandbox render: datacenter IP inside the window — dropped
+	// regardless of how browser-like the sandbox UA is.
+	if why := trustedHitDrop(browser, "94.46.34.70", grace, &justSent); why != "datacenter" {
+		t.Errorf("datacenter IP inside grace window: got %q, want datacenter", why)
+	}
+	if why := trustedOpenIgnore("94.46.34.70", grace, &justSent); why != "datacenter" {
+		t.Errorf("open from datacenter IP inside grace window: got %q, want datacenter", why)
+	}
+	// VPN user: datacenter IP, browser UA, arrived later — counted.
+	if why := trustedHitDrop(browser, "94.46.34.70", grace, &sentAgo); why != "" {
+		t.Errorf("datacenter IP outside window with browser UA (VPN user): got %q, want empty (counted)", why)
+	}
+	if why := trustedOpenIgnore("94.46.34.70", grace, &sentAgo); why != "" {
+		t.Errorf("open from datacenter IP outside window (VPN user): got %q, want empty (counted)", why)
+	}
+	// Automated recheck from hosting space at any time: bot UA loses.
+	if why := trustedHitDrop("python-requests/2.31", "94.46.34.70", grace, &sentAgo); why != "ua" {
+		t.Errorf("datacenter IP outside window with bot UA (recheck): got %q, want ua", why)
+	}
+	// Microsoft proxy inside the window: open dropped; clicks likewise.
+	if why := trustedOpenIgnore("72.145.93.148", grace, &justSent); why != "infra" {
+		t.Errorf("open from Microsoft infra: got %q, want infra", why)
+	}
+	if why := trustedHitDrop(browser, "72.145.93.148", grace, &sentAgo); why != "infra" {
+		t.Errorf("click from Microsoft infra outside window: got %q, want infra", why)
 	}
 }
 
@@ -291,5 +338,51 @@ func TestDynamicInfraCIDRs(t *testing.T) {
 	SetDynamicInfraCIDRs(nil)
 	if isInfraIP("90.100.1.2") {
 		t.Error("replacing with nil must clear the dynamic list")
+	}
+}
+
+func TestDatacenterFiltering(t *testing.T) {
+	// Live incident: a security-check click from 94.46.34.70 (HostRoyale
+	// Ankara, AS203020) was counted as the human. The IP sits inside
+	// 94.46.32.0/19 on the X4BNet VPN/datacenter list, so trusted mode must
+	// drop it even with a perfect browser UA.
+	browser := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+	defer SetDatacenterCIDRs(nil)
+	oldHuman := humanCIDRs
+	defer func() { humanCIDRs = oldHuman }()
+
+	SetDatacenterCIDRs(mustCIDRs("94.46.32.0/19"))
+	justSent := time.Now().Add(-2 * time.Second)
+	if why := trustedHitDrop(browser, "94.46.34.70", 15*time.Second, &justSent); why != "datacenter" {
+		t.Errorf("datacenter IP inside grace window: got %q, want datacenter", why)
+	}
+	if !isDatacenterIP("94.46.34.70") {
+		t.Error("94.46.34.70 must be recognized as datacenter")
+	}
+	if why := trustedHitDrop(browser, "203.0.113.7", 15*time.Second, &justSent); why != "" {
+		t.Errorf("eyeball-network IP: got %q, want empty (counted)", why)
+	}
+	if isDatacenterIP("") || isDatacenterIP("not-an-ip") || isDatacenterIP("2001:db8::1") {
+		t.Error("junk and v6 addresses must not match the v4-only list")
+	}
+	// Without a send time the window rule cannot fire: fail open.
+	if why := trustedHitDrop(browser, "94.46.34.70", 15*time.Second, nil); why != "" {
+		t.Errorf("no sentAt: got %q, want empty (counted)", why)
+	}
+	// The operator allowlist overrides the drop (corporate egress in hosting
+	// space, VPN users).
+	humanCIDRs = mustCIDRs("94.46.32.0/19")
+	if isDatacenterIP("94.46.34.70") {
+		t.Error("human-allowlisted range must not be dropped as datacenter")
+	}
+	if why := trustedHitDrop(browser, "94.46.34.70", 15*time.Second, &justSent); why != "" {
+		t.Errorf("human-allowlisted IP: got %q, want empty (counted)", why)
+	}
+	// Without a list the filter fails open: better to count a scanner than to
+	// drop a human.
+	humanCIDRs = oldHuman
+	SetDatacenterCIDRs(nil)
+	if why := trustedHitDrop(browser, "94.46.34.70", 15*time.Second, &justSent); why != "" {
+		t.Errorf("no list loaded: got %q, want empty (fail open)", why)
 	}
 }

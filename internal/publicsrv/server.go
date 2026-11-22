@@ -71,6 +71,7 @@ func publicHeaders(next http.Handler) http.Handler {
 var bannerB64 string
 
 var bannerPNG, _ = base64.StdEncoding.DecodeString(strings.TrimSpace(bannerB64))
+
 // ScannerWindows is one route's classification-window preset: how long after
 // send a hit is treated as automated (Grace), and how long after a canary
 // probe a hit is attributed to the same scanner burst (Pair).
@@ -200,16 +201,115 @@ func isInfraIP(ipStr string) bool {
 	return false
 }
 
+// datacenterMu guards datacenterCIDRs, the live list of VPN/hosting ranges
+// (see SetDatacenterCIDRs). Like the infra list, only the dynamic slice needs
+// synchronisation; the human allowlist is startup-only (like infraCIDRs).
+var (
+	datacenterMu    sync.RWMutex
+	datacenterCIDRs []*net.IPNet
+
+	// humanCIDRs are operator-allowlisted networks (PROPHISH_HUMAN_CIDRS) that
+	// must NEVER be dropped by the datacenter filter — e.g. the company's
+	// web-filtering egress that lives in hosting space. Checked first.
+	humanCIDRs []*net.IPNet
+)
+
+// SetDatacenterCIDRs REPLACES the VPN/datacenter range list (fetched from the
+// X4BNet list by the periodic refresher in cmd/prophish).
+func SetDatacenterCIDRs(nets []*net.IPNet) {
+	datacenterMu.Lock()
+	datacenterCIDRs = nets
+	datacenterMu.Unlock()
+}
+
+// AddHumanCIDRs appends operator-configured networks exempt from the
+// datacenter drop (PROPHISH_HUMAN_CIDRS). Startup-only, like AddInfraCIDRs.
+func AddHumanCIDRs(nets []*net.IPNet) {
+	humanCIDRs = append(humanCIDRs, nets...)
+}
+
+// isHumanIP reports whether the client IP belongs to an operator-allowlisted
+// network that overrides the datacenter filter.
+func isHumanIP(ip net.IP) bool {
+	for _, n := range humanCIDRs {
+		if n.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
+// isDatacenterIP reports whether the client IP belongs to a known VPN/hosting
+// datacenter range — "not an eyeball network". Scanners and security sandboxes
+// egress from hosting space (verified live: a security-check click arrived
+// from 94.46.34.70 = HostRoyale Ankara, AS203020, inside 94.46.32.0/19), while
+// a real human reaches the internet from a residential/mobile ISP. The list is
+// v4-only; the human allowlist wins over the drop. Failing open (empty list)
+// is deliberate: better to count a scanner than to drop a human.
+func isDatacenterIP(ipStr string) bool {
+	ip := net.ParseIP(strings.TrimSpace(ipStr))
+	if ip == nil || ip.To4() == nil {
+		return false
+	}
+	if isHumanIP(ip) {
+		return false
+	}
+	datacenterMu.RLock()
+	defer datacenterMu.RUnlock()
+	for _, n := range datacenterCIDRs {
+		if n.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
 // trustedHitDrop reports why a trusted-mode click/submit hit is NOT the
-// human: it comes from known scanner infrastructure, or its User-Agent is a
-// bot/scanner signature (an empty UA is treated as automated too — real
-// browsers always send one on clicks).
-func trustedHitDrop(ua, ip string) string {
+// human, applying the layered datacenter rule:
+//   - scanner infrastructure (Microsoft cloud) — never the human, any time;
+//   - a VPN/hosting IP inside the route's post-send grace window — the
+//     delivery-time sandbox render (no recipient, VPN or not, can receive
+//     and act on the mail that fast on this route);
+//   - any IP with a bot/empty User-Agent — an automated recheck.
+//
+// A datacenter IP OUTSIDE the window with a browser UA is counted: that is
+// the VPN/remote worker. With hundreds of recipients no operator can
+// whitelist every VPN exit node by hand — the grace window is what
+// separates the mass delivery-time scanner render (hits every recipient at
+// once, seconds after send) from the occasional VPN user (human-paced, any
+// time later) fully automatically. grace is the route preset (internal 5s /
+// external 15s out of the box); a nil sentAt falls back to counting.
+func trustedHitDrop(ua, ip string, grace time.Duration, sentAt *time.Time) string {
 	if isInfraIP(ip) {
 		return "infra"
 	}
+	if isDatacenterIP(ip) {
+		if sentAt != nil && time.Since(*sentAt) < grace {
+			return "datacenter"
+		}
+		if isScannerUA(ua) {
+			return "ua"
+		}
+		return ""
+	}
 	if isScannerUA(ua) {
 		return "ua"
+	}
+	return ""
+}
+
+// trustedOpenIgnore classifies a trusted-mode image fetch (open). Unlike
+// clicks, datacenter hits OUTSIDE the grace window are never User-Agent
+// filtered: desktop clients send sparse UAs on image fetches, so a UA check
+// would drop the VPN user's genuine open. Inside the window the fetch can
+// only be the delivery-time sandbox render; outside it only the human
+// downloads images. A nil sentAt falls back to counting.
+func trustedOpenIgnore(ip string, grace time.Duration, sentAt *time.Time) string {
+	if isInfraIP(ip) {
+		return "infra"
+	}
+	if isDatacenterIP(ip) && sentAt != nil && time.Since(*sentAt) < grace {
+		return "datacenter"
 	}
 	return ""
 }
@@ -324,14 +424,14 @@ func (s *Server) handleOpen(w http.ResponseWriter, r *http.Request) {
 		outcome, reason := store.HitCounted, "counted"
 		ignored := ""
 		if t.TrustedDelivery {
-			// Human-only: the instant "open" fired at delivery by the M365
-			// image proxy / ATP render comes from Microsoft datacenter space.
-			// A real user's image download comes from their own network, so
-			// the IP is the reliable discriminator (UA is deliberately NOT
-			// used here — desktop clients send sparse UAs on image fetches).
-			if isInfraIP(s.clientIP(r)) {
-				ignored = "infra"
-			}
+			// Human-only, fully automatic: the instant "open" fired at delivery
+			// by the M365 image proxy / ATP render comes from Microsoft
+			// datacenter space, and a security sandbox rendering the mail comes
+			// from VPN/hosting space — both inside the route's grace window.
+			// A real user's image download comes later, from their own network
+			// or a VPN exit (counted). The IP is the reliable discriminator
+			// (UA is deliberately NOT used — desktop clients send sparse UAs).
+			ignored = trustedOpenIgnore(s.clientIP(r), windowsFor(t.DeliveryRoute).Grace, t.SentAt)
 		} else {
 			win := windowsFor(t.DeliveryRoute)
 			ignored = openIgnoreReason(false, win.Grace, win.Pair, t.SentAt, t.ScannerProbeAt)
@@ -378,17 +478,21 @@ func (s *Server) recordHit(r *http.Request, t *store.TrackedFull, route string, 
 // automated. Every request — counted, suppressed or ignored — lands in
 // tracking_hits with its outcome and machine-readable reason.
 //
-// Trusted delivery mode: "the first clicker is the user", with one exception
-// — hits from known scanner infrastructure (cloud datacenter IPs, bot/empty
-// User-Agents) are still dropped, so trusted campaigns report human events
-// only. No windows, no canary, no race wait.
+// Trusted delivery mode: "the first clicker is the user", with the layered
+// infra/datacenter exceptions — scanner infrastructure is never the human,
+// and a VPN/hosting IP is only the human when it arrives outside the route's
+// grace window with a browser UA (automatically separating the mass
+// delivery-time sandbox render from the occasional VPN user). Ignored hits
+// never consume the first-hit slot: the human's own later hit still counts.
+// No canary, no race wait.
 //
 // Untrusted mode: the scanner filter applies — UA signatures, the route's
 // grace window, and the canary pair window (with the race wait).
 func (s *Server) countInteraction(r *http.Request, t *store.TrackedFull, route string, hitAt time.Time, status, eventType, suspectedType string) {
 	rid := t.ResultID
 	if t.TrustedDelivery {
-		if why := trustedHitDrop(r.UserAgent(), s.clientIP(r)); why != "" {
+		win := windowsFor(t.DeliveryRoute)
+		if why := trustedHitDrop(r.UserAgent(), s.clientIP(r), win.Grace, t.SentAt); why != "" {
 			s.recordHit(r, t, route, hitAt, store.HitIgnored, why)
 			return
 		}
