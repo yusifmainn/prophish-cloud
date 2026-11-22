@@ -50,6 +50,7 @@ func (s *Server) handleCampaignReportPDF(w http.ResponseWriter, r *http.Request)
 	pdfBytes, err := report.Generate(report.Data{
 		CampaignName: view.Name,
 		ClientName:   view.ClientName,
+		ProviderName: s.cfg.ProviderName,
 		AuthScope:    view.AuthScope,
 		AuthValidTo:  view.AuthValidTo,
 		GeneratedAt:  time.Now(),

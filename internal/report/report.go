@@ -8,6 +8,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-pdf/fpdf"
@@ -39,6 +40,7 @@ type GroupStat struct {
 type Data struct {
 	CampaignName string
 	ClientName   string
+	ProviderName string // service provider ("Xidmətverən"); empty → PROPhish
 	AuthScope    string
 	AuthValidTo  time.Time
 	GeneratedAt  time.Time
@@ -128,25 +130,48 @@ func Generate(d Data) ([]byte, error) {
 	pdf.CellFormat(contentW-8, 8, "PROPhish — Phishing Məlumatlandırma Hesabatı", "", 0, "L", false, 0, "")
 	pdf.Ln(16)
 
-	// ---- Meta ----
+	// ---- Meta: official info block ----
+	// A boxed two-column table (shaded label column, hairline borders) reads as
+	// a formal document header — the same fields a signed awareness/pentest
+	// report would carry: müştəri, xidmətverən, icazə və tarixlər.
 	pdf.SetY(34)
-	metaRow := func(label, val string) {
-		pdf.SetX(left)
-		pdf.SetFont("DejaVu", "B", 10)
-		setText(colMuted)
-		pdf.CellFormat(34, 6, label, "", 0, "L", false, 0, "")
-		pdf.SetFont("DejaVu", "", 10)
-		setText(colInk)
-		pdf.CellFormat(contentW-34, 6, val, "", 1, "L", false, 0, "")
+	sectionTitle(pdf, left, "Hesabat məlumatları")
+	provider := d.ProviderName
+	if provider == "" {
+		provider = "PROPhish"
 	}
-	metaRow("Kampaniya:", nz(d.CampaignName))
-	metaRow("Müştəri:", nz(d.ClientName))
 	validTo := "—"
 	if !d.AuthValidTo.IsZero() {
-		validTo = d.AuthValidTo.In(time.Local).Format("2006-01-02")
+		validTo = d.AuthValidTo.In(time.Local).Format("02.01.2006")
 	}
-	metaRow("İcazə (RoE):", trim(nz(d.AuthScope), 70)+"  (bitmə: "+validTo+")")
-	metaRow("Hesabat tarixi:", d.GeneratedAt.In(time.Local).Format("2006-01-02 15:04"))
+	preparedBy := d.GeneratedBy
+	if preparedBy == "" {
+		preparedBy = "—"
+	}
+	metaRows := []struct{ label, val string }{
+		{"Müştəri / Sifarişçi", nz(d.ClientName)},
+		{"Xidmətverən", provider},
+		{"Kampaniya", nz(d.CampaignName)},
+		{"İcazə (RoE)", trim(nz(d.AuthScope), 70)},
+		{"İcazə bitmə tarixi", validTo},
+		{"Hesabat tarixi", d.GeneratedAt.In(time.Local).Format("02.01.2006 15:04")},
+		{"Hazırlayan", preparedBy},
+	}
+	const labelW = 46.0
+	for i, row := range metaRows {
+		border := "LTR"
+		if i == len(metaRows)-1 {
+			border = "LRB"
+		}
+		pdf.SetX(left)
+		pdf.SetFont("DejaVu", "B", 9.5)
+		setText(colMuted)
+		setFill(colTrack)
+		pdf.CellFormat(labelW, 7, " "+row.label, border, 0, "L", true, 0, "")
+		pdf.SetFont("DejaVu", "", 9.5)
+		setText(colInk)
+		pdf.CellFormat(contentW-labelW, 7, " "+row.val, strings.TrimPrefix(border, "L"), 1, "L", false, 0, "")
+	}
 
 	pdf.Ln(2)
 	setDraw(pdf, colLine)

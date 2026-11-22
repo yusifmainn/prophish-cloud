@@ -55,6 +55,8 @@ services:
       PROPHISH_TRUSTED_PROXIES: ${PROPHISH_TRUSTED_PROXIES:-127.0.0.1/32,::1/128}
       # Operator time zone for scheduling + display (IANA name). Defaults to UTC.
       PROPHISH_TIMEZONE: ${PROPHISH_TIMEZONE:-UTC}
+      # Company name shown as "Xidmətverən" on client-facing PDF reports.
+      PROPHISH_PROVIDER_NAME: ${PROPHISH_PROVIDER_NAME:-}
     ports:
       # Admin panel. Localhost by default (reach it over a VPN/SSH tunnel); set
       # PROPHISH_ADMIN_BIND=0.0.0.0 in .env for direct access without a tunnel —

@@ -13,6 +13,7 @@ func TestGeneratePDF(t *testing.T) {
 	data := Data{
 		CampaignName: "Q4 Təhlükəsizlik Məlumatlandırma Testi",
 		ClientName:   "Nümunə Bank ASC",
+		ProviderName: "Nümunə Kibertəhlükəsizlik MMC",
 		AuthScope:    "example.com — bütün şöbələr üzrə işçilər",
 		AuthValidTo:  time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
 		GeneratedAt:  time.Date(2026, 11, 9, 17, 0, 0, 0, time.UTC),

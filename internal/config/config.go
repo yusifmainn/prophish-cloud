@@ -54,6 +54,9 @@ type Config struct {
 	// DatacenterListURL overrides the source of the VPN/hosting range list
 	// (PROPHISH_DC_LIST_URL). Default: the X4BNet datacenter list on GitHub.
 	DatacenterListURL string
+	// ProviderName is the service-provider company shown as "Xidmətverən" on
+	// client-facing PDF reports (PROPHISH_PROVIDER_NAME). Empty → "PROPhish".
+	ProviderName string
 }
 
 // Load reads configuration from the process environment. If a .env file exists in the
@@ -117,6 +120,7 @@ func Load() (*Config, error) {
 	c.InfraASNs = parseASNs(getenv("PROPHISH_INFRA_ASNS", "8075"))
 	c.HumanCIDRs = parseCIDRs(getenv("PROPHISH_HUMAN_CIDRS", ""))
 	c.DatacenterListURL = strings.TrimSpace(getenv("PROPHISH_DC_LIST_URL", ""))
+	c.ProviderName = strings.TrimSpace(getenv("PROPHISH_PROVIDER_NAME", ""))
 
 	return c, nil
 }
